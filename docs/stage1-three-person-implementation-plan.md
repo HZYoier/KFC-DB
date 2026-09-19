@@ -65,6 +65,8 @@ docs/
 
 公共对象命名：主键 `PK_<Table>`、外键 `FK_<Child>_<Parent>`、唯一键 `UQ_<Table>_<BusinessColumn>`、检查约束 `CK_<Table>_<Rule>`、默认约束 `DF_<Table>_<Column>`、索引 `IX_<Table>_<Column>`（唯一索引与过滤唯一索引用 `UQ_<Table>_<Column>`，例如 `UQ_ProductCategory_is_primary`）、存储过程 `dbo.sp_<verb>_<noun>`、视图 `dbo.v_<subject>`、数据库角色 `role_<job>`。
 
+公共注释口径：脚本行内注释**只写对象“是什么”**（中文名、单位、口径），**不写“能取哪些值”**。枚举取值的唯一权威是 `04`/`05`/`06` 里的命名 `CHECK` 约束，各域数据字典的“取值范围”列跟随它。同一份取值写进注释、数据字典、`CHECK` 三处而又没约定谁说了算必然分叉——A 域已经出现过 `01` 注释写小写 `single` 而 `CHECK` 要写 `SINGLE` 的不一致。字段中文名在脚本里重复一遍是可以接受的：脚本是三人共读、要交要评的 DDL 文件，逐字段带中文名比裸英文可读得多，且字段名几乎不变。
+
 <a id="sec-2"></a>
 
 ## 2. 三人边界与接口契约
@@ -109,7 +111,7 @@ docs/
 | C | `RolePermission` | `(business_role_id, permission_code)` | `permission_name`, `status` |
 | C | `AuditLog` | `audit_log_id` | `employee_id`, `action_name`, `entity_name`, `entity_id`, `detail_json`, `logged_at` |
 
-`weekday_no` 固定为 `1` 至 `7`（周一至周日）。它必须以 `DATEDIFF(DAY, DATEFROMPARTS(1900,1,1), CAST(@at AS DATE)) % 7 + 1` 计算（1900-01-01 为周一，取模得 0 即周一，故必须 `+1`），严禁直接使用受 `SET DATEFIRST` 影响的 `DATEPART(WEEKDAY, @at)`。`product_type` 只能是 `SINGLE` 或 `COMBO`。`customer_type` 只能是 `GUEST`、`WOW`、`PAID`。A 域六张表的 `status`（`Category`、`Product`、`Ingredient`、`Promotion`、`MemberLevel`、`Customer`）统一只能为 `ACTIVE` 或 `INACTIVE`，与 C 的 `EmployeeAccount.status`、`BusinessRole.status` 取值保持一致。
+`weekday_no` 固定为 `1` 至 `7`（周一至周日）。它必须以 `DATEDIFF(DAY, DATEFROMPARTS(1900,1,1), CAST(@at AS DATE)) % 7 + 1` 计算（1900-01-01 为周一，取模得 0 即周一，故必须 `+1`），严禁直接使用受 `SET DATEFIRST` 影响的 `DATEPART(WEEKDAY, @at)`。`product_type` 只能是 `SINGLE` 或 `COMBO`。`customer_type` 只能是 `GUEST`、`WOW`、`PAID`。A 域六张表的 `status`（`Category`、`Product`、`Ingredient`、`Promotion`、`MemberLevel`、`Customer`）统一只能为 `ACTIVE` 或 `INACTIVE`，与 C 的 `EmployeeAccount.status`、`BusinessRole.status` 取值保持一致。`Promotion.promotion_type` 第一阶段只允许 `FIXED_PRICE`（一口价，价格取自 `PromotionProductRule.promo_price`）；新增促销类型必须同时修改本节、`fn_get_effective_product_price` 和相应 `CHECK` 约束，不得只放开约束而不实现分支——那会让价格函数把新类型当一口价静默算错。
 
 <a id="sec-2-2"></a>
 
@@ -195,6 +197,7 @@ dbo.sp_receive_inventory       @purchase_order_id BIGINT, @employee_id BIGINT
 ### A-1：建表与关系
 
 - [ ] 在 `01_master_schema.sql` 依次创建 `Category`、`MemberLevel`、`Ingredient`、`Product`、`ProductCategory`、`Customer`、`ProductBom`、`ComboComponent`、`Promotion`、`PromotionProductRule`。
+- [ ] `01` 里除 `Customer.member_level_id`（散客可能未定级，可空有业务含义）与复合主键的组成列（主键隐式 `NOT NULL`）外，**所有列一律显式写 `NOT NULL`**。原因是 `CHECK` 的表达式在 `NULL` 上求值为 `UNKNOWN`，`CHECK` 会直接放行——受 `CHECK` 约束的列若可空，等于绕过 `04` 里全部取值与数值约束。
 - [ ] 为 `ProductCategory` 的两个字段、`Customer.member_level_id`、`ProductBom.product_id`、`ProductBom.ingredient_id`、`ComboComponent` 的两个商品字段、促销规则的促销和商品字段建立外键。`ProductCategory` 用复合主键，另建过滤唯一索引保证每个商品至多一个 `is_primary = 1` 分类；`sp_create_product` 必须同时写入至少一条分类关系。
 - [ ] 在 `ProductBom` 和 `ComboComponent` 使用复合主键，不另设无意义的 ID。
 - [ ] `Customer.mobile` 建唯一约束；允许用“游客临时手机号”建档，但格式固定为 `TEMP-` 加 11 位订单来源号码，不能为 NULL，并以命名 `CHECK` 约束保证该格式。
@@ -206,7 +209,7 @@ dbo.sp_receive_inventory       @purchase_order_id BIGINT, @employee_id BIGINT
 
 - [ ] 对 `Product.base_price > 0`、`Ingredient.safety_stock_qty >= 0`、`ProductBom.usage_qty > 0`、`ComboComponent.quantity > 0`、`PromotionProductRule.promo_price > 0`、`PromotionProductRule.priority >= 0`、`MemberLevel.point_multiplier > 0`、`MemberLevel.threshold_points >= 0`、`Customer.current_points >= 0` 创建命名 `CHECK` 约束。
 - [ ] 对 `Promotion.end_at > Promotion.start_at` 和 `PromotionProductRule.end_time > PromotionProductRule.start_time` 创建检查约束。
-- [ ] 枚举取值的命名 `CHECK` 约束同样必须建（不得只在注释里约定）：`Category`、`Product`、`Ingredient`、`Promotion`、`MemberLevel`、`Customer` 的 `status` 只能是 `ACTIVE` 或 `INACTIVE`；`Product.product_type` 只能是 `SINGLE` 或 `COMBO`；`Customer.customer_type` 只能是 `GUEST`、`WOW`、`PAID`。
+- [ ] 枚举取值的命名 `CHECK` 约束同样必须建（不得只在注释里约定）：`Category`、`Product`、`Ingredient`、`Promotion`、`MemberLevel`、`Customer` 的 `status` 只能是 `ACTIVE` 或 `INACTIVE`；`Product.product_type` 只能是 `SINGLE` 或 `COMBO`；`Customer.customer_type` 只能是 `GUEST`、`WOW`、`PAID`；`Promotion.promotion_type` 只能是 `FIXED_PRICE`。
 - [ ] 实现下列过程，所有写操作记录 `created_at` / `updated_at`（如表内存在该字段），失败时使用 `THROW` 返回可读错误：
 
 ```text
@@ -375,3 +378,6 @@ sp_create_customer             sp_update_customer_member_level
 | 2026-09-10 | 二次评审修订：`@ordered_at` 判据由“业务角色”改为“`test_*` 测试主体白名单”（原判据与 09b 种子冲突）；值班经理可提交本店任意 `PENDING` 建议（原“只能提交自己的”使自动建议无法进入审批）；09d 补 `sp_submit_replenishment_suggestion` 步骤；新增 `v_pickup_board` 供 `role_waiter`（原授权引用不存在的视图）；明确自动建议 `created_by_employee_id` 取触发实扣的当前员工；补 `purchase_order_no` 生成规则与 `rejected_by_employee_id` 字段；`sp_adjust_inventory` 补操作人校验与开放建议置 `CLOSED`；`sp_write_audit_log` 要求静态 SQL 保持所有权链；证书用户加授 `ALTER ANY USER`；`TEMP-` 手机号加 `CHECK`；统一“故意抛错”的注入方式；`00_create_database.sql` 注明 `GO` 分隔 | 项目组 | 待确认 |
 | 2026-09-14 | 客户端不再限定 SSMS：Tech Stack 改为“VS Code + mssql 扩展或 SSMS 22 均可”；补注官方 mssql 扩展不支持 SQLCMD 的 `:r`，`run_all.sql` 只能走 `sqlcmd -i` 或 SSMS SQLCMD Mode；验收报告与提交规则中“SSMS 版本/SSMS 窗口”改为“客户端版本/客户端窗口”；`sqlcmd` 命令统一补 `-C`（ODBC Driver 18 默认强制加密，本地自签证书不加此参数会报证书链错误） | 项目组 | 待确认 |
 | 2026-09-16 | 建库实施反馈修订：全局约束新增 SET 选项批（`QUOTED_IDENTIFIER` 等必须为 ON，否则过滤索引创建与相关 DML 报错 1934；`ProductCategory.is_primary` 与 `SalesOrder.pickup_code` 都涉及；`CREATE PROCEDURE` 会在创建时固化该选项，过程脚本同样要先设置）；§2.1 定义 A 域六张表 `status` 只能为 `ACTIVE` 或 `INACTIVE`，并在 §3 A-2 补充相应枚举 `CHECK` 约束；§1 补索引命名规则 `IX_<Table>_<Column>` 与 `UQ_<Table>_<Column>` | 项目组 | 待确认 |
+| 2026-09-19 | 定义 `Promotion.promotion_type` 取值：第一阶段只允许 `FIXED_PRICE`（一口价，价格取自 `PromotionProductRule.promo_price`），§2.1 与 §3 A-2 同步补充；约定新增促销类型必须同时改本节、价格函数与 `CHECK` 约束，不得只放开约束不实现分支，以免价格函数把新类型静默当一口价处理 | 项目组 | 待确认 |
+| 2026-09-19 | A 域非空订正：`01` 原除主键与 `ProductCategory.is_primary` 外全部列可空，而 `CHECK` 在 `NULL` 上求值为 `UNKNOWN` 会放行，等于绕过全部数值与取值约束。已为 32 个业务列补 `NOT NULL`（`Customer.member_level_id` 保留可空），§3 A-1 补相应要求。同时订正 `PromotionProductRule.priority` 注释方向为“数字越大优先级越高”，与 §2.2 的 `ORDER BY priority DESC` 一致；`04` 文件名拼写 `constrains` 订正为 `constraints`，与 `run_all.sql` 第 20 行对齐 | 项目组 | 待确认 |
+| 2026-09-19 | 新增公共注释口径（§1）：脚本行内注释只写对象“是什么”，不写“能取哪些值”；枚举取值的唯一权威是 `04`/`05`/`06` 的命名 `CHECK`，各域数据字典的“取值范围”列跟随。起因是 `01` 注释把 `product_type`、`customer_type` 的取值按小写/别名写了一遍，与 `CHECK` 将采用的 `SINGLE`/`COMBO`、`GUEST`/`WOW`/`PAID` 不一致（`01` 两处注释已按新口径改为只写中文名） | 项目组 | 待确认 |
