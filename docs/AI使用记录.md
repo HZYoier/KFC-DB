@@ -32,3 +32,12 @@
 
 ---
 
+## （2026-09-20）——第一阶段 B 域验收脚本复核修正
+
+**本次会话与同步：** 在已同步的远程 `origin`（`https://github.com/HZYoier/KFC-DB.git`）上下文中继续成员 B 的第一阶段订单履约工作，分支为 `codex/member-b-order`；本次变更前的提交上下文为 `2d70779`。
+
+**AI 做了什么：** 按复核结论更新 `sql/10b_order_acceptance_tests.sql`：把存储过程 `EXEC` 中的内联 JSON、金额计算和交易号生成改为先赋值的本地变量，并把测试订单号收敛为不超过 40 字符的短前缀加 UUID 片段；保留既有积分快照、会员等级阈值、回滚和部分写入断言。更新 `docs/AI使用记录.md`，并写入本轮任务报告 `.superpowers/sdd/stage1-three-person-implementation-plan/task-5-report.md`。
+
+**核对结果：** 使用 Microsoft SQL Server ScriptDom 对验收脚本做静态语法解析，结果为 0 个错误；同时完成 `EXEC` 参数、订单号长度和 `git diff --check` 的静态复核。该记录只描述本次实现和复核状态，不新增业务需求。
+
+---
