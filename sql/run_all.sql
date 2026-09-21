@@ -2,8 +2,11 @@
 -- run_all.sql
 -- 负责人：C（库存、补货、员工权限、审计与总集成）
 -- 用途：第一阶段唯一部署入口，按冻结顺序执行全部脚本
--- 用法（必须在仓库根目录执行；ODBC Driver 18 必须加 -C）：
---     sqlcmd -S <实例> -E -C -i sql/run_all.sql
+-- 用法（必须在仓库根目录执行；ODBC Driver 18 必须加 -C，且必须加 -f 65001）：
+--     sqlcmd -S <实例> -E -C -f 65001 -i sql/run_all.sql
+-- 注意 -f 65001 不可省略：本目录脚本是 UTF-8 无 BOM，不加时 sqlcmd 按代码页 936
+--       解码，中文串字面量会吞掉收尾单引号，使该批次被当成未闭合字符串而静默作废
+--       （表现为 exit=0、无任何输出、语句根本没执行），比报错更危险。
 -- SSMS：打开本文件并启用 SQLCMD Mode 后执行。
 -- 注意：官方 VS Code mssql 扩展不支持 SQLCMD 的 :r，不能直接执行本文件。
 -- 顺序依据：docs/stage1-three-person-implementation-plan.md 第 1 节
