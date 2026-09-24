@@ -2,12 +2,15 @@
 -- 06_inventory_constraints_crud.sql
 -- 负责人：C（库存、补货、员工权限、审计与总集成）
 -- 用途：C 域命名 CHECK 约束；跨域审计过程 sp_write_audit_log；
---       库存人工调整与补货闭环过程；订单库存接口过程（锁库/释放/实扣）
+--       库存人工调整与补货闭环过程；订单库存接口过程（锁库/释放/实扣）；
+--       员工业务角色同步过程（分配/撤销/停用）
 -- 依赖：01_master_schema.sql、02_order_schema.sql、03_inventory_security_schema.sql
 -- 依据：docs/stage1-three-person-implementation-plan.md §2.3、§2.4、§5 C-1、
 --       docs/stage1-cross-domain-interface-contract.md §3.4
--- 进度：已含第一段（C 域约束 + 审计过程）、第二段（库存调整与补货闭环）与
---       第三段的锁库/释放/实扣；sp_receive_inventory 待签名定案后追加（见下）。
+-- 进度：批次 1 C 域命名 CHECK；批次 2 sp_write_audit_log；批次 3 库存调整与补货闭环；
+--       批次 4 锁库/释放/实扣；批次 5 员工业务角色同步（分配/撤销/停用）。
+--       批次 5 的三个过程需由 08_roles_permissions.sql 用证书签名授予
+--       ALTER ANY ROLE / ALTER ANY USER（§5 C-1 line 303）；改过本文件后必须重跑 08 的签名。
 -- 待办：sp_receive_inventory 的签名冲突已记入 plan §8 变更记录 2026-09-24，
 --       按 §6.3「三人确认后再改」，确认前不实现。
 -- 说明：sp_write_audit_log 在写入前按 USER_NAME() 解析当前登录主体映射的启用员工，
@@ -1341,6 +1344,515 @@ BEGIN
             ROLLBACK TRANSACTION;
         ELSE IF @owns_tran = 0 AND XACT_STATE() = 1
             ROLLBACK TRANSACTION sp_consume_order_inventory;
+
+        THROW;
+    END CATCH;
+END;
+GO
+
+-- ============================================================================
+-- 批次 5：员工业务角色同步过程（§5 C-1 line 302-303）
+-- 职责：把 BusinessRole.role_code 映射为同名数据库角色 role_<code>（§1 line 66 命名
+--   约定），同步维护 EmployeeBusinessRole 业务映射与数据库角色成员关系，并写审计。
+-- 权限：这三个过程不以 EXECUTE AS OWNER 提权——提权后 USER_NAME() 会变成过程所有者，
+--   店长身份就没了——而是在 08_roles_permissions.sql 中由证书用户签名取得
+--   ALTER ANY ROLE / ALTER ANY USER（§5 C-1 line 303）。普通店长只持有这三个过程的
+--   EXECUTE。⚠ 模块一经 ALTER 签名即失效：改过本批次后必须重跑 08 的 ADD SIGNATURE。
+-- 白名单：动态角色名只能来自 7 个固定业务角色。三个过程都先按白名单校验 role_code，
+--   再按命名约定拼出 role_<code> 并用 QUOTENAME 包裹，故动态标识符只可能是
+--   role_store_manager … role_rider 之一，另有 sys.database_principals 存在性校验兜底。
+--   白名单在三个过程里各写一次（SET 批次之间无法共享常量），新增业务角色须三处同改。
+-- 边界：过程一律不创建服务器登录名或数据库用户，目标员工必须已由 DBA 建好同名数据库
+--   用户；停用员工只撤销数据库角色成员关系与业务映射，不删除员工行本身。
+-- 启动引导：09c 让 test_store_manager 用本过程给自己分配 store_manager 业务角色时，
+--   业务映射尚未存在；08 已把该用户直接加入 role_store_manager 作为受控引导（§5 C-2
+--   line 313、C-3 line 320），故店长身份判定为「已有 store_manager 业务角色 或 已是
+--   role_store_manager 数据库角色成员」。
+-- 已知操作风险：停用或撤销唯一的店长会让角色同步失去可用入口，计划未要求拦截，故不
+--   拦截；恢复只能由 DBA 手工把某个数据库用户加回 role_store_manager。
+-- ============================================================================
+SET ANSI_NULLS ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET QUOTED_IDENTIFIER ON;
+SET NUMERIC_ROUNDABORT OFF;
+GO
+
+-- 分配业务角色（§5 C-1 line 302）：仅对已由 DBA 建立数据库用户的启用员工执行；
+-- 目标用户已是该数据库角色成员时不重复 ADD MEMBER，只补业务映射并写审计。
+CREATE PROCEDURE dbo.sp_assign_employee_business_role
+    @employee_id             BIGINT,
+    @business_role_id        BIGINT,
+    @assigned_by_employee_id BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @employee_id IS NULL OR @business_role_id IS NULL OR @assigned_by_employee_id IS NULL
+    BEGIN
+        THROW 50000, N'sp_assign_employee_business_role：@employee_id、@business_role_id、@assigned_by_employee_id 都不能为 NULL。', 1;
+    END;
+
+    -- 店长身份：USER_NAME() 解析为启用员工，且传入的操作人 ID 等于解析结果
+    DECLARE @operator_employee_id BIGINT;
+
+    SELECT @operator_employee_id = ea.employee_id
+    FROM dbo.EmployeeAccount AS ea
+    WHERE ea.database_user_name = USER_NAME()
+      AND ea.status = 'ACTIVE';
+
+    IF @operator_employee_id IS NULL
+    BEGIN
+        THROW 50000, N'sp_assign_employee_business_role：当前登录主体未映射到启用员工，拒绝执行。', 1;
+    END;
+
+    IF @assigned_by_employee_id <> @operator_employee_id
+    BEGIN
+        THROW 50000, N'sp_assign_employee_business_role：传入的授权员工 ID 与当前登录主体解析出的员工不一致，拒绝执行。', 1;
+    END;
+
+    IF NOT EXISTS (SELECT 1
+                   FROM dbo.EmployeeBusinessRole AS ebr
+                   JOIN dbo.BusinessRole AS br
+                     ON br.business_role_id = ebr.business_role_id
+                   WHERE ebr.employee_id = @operator_employee_id
+                     AND br.role_code = 'store_manager'
+                     AND br.status = 'ACTIVE')
+       AND ISNULL(IS_ROLEMEMBER(N'role_store_manager'), 0) <> 1
+    BEGIN
+        THROW 50000, N'sp_assign_employee_business_role：仅店长可分配业务角色。', 1;
+    END;
+
+    -- 目标员工必须存在、启用，且已由 DBA 建立同名数据库用户
+    DECLARE @target_user_name VARCHAR(128), @target_status VARCHAR(20);
+
+    SELECT @target_user_name = ea.database_user_name,
+           @target_status    = ea.status
+    FROM dbo.EmployeeAccount AS ea
+    WHERE ea.employee_id = @employee_id;
+
+    IF @target_user_name IS NULL
+    BEGIN
+        THROW 50000, N'sp_assign_employee_business_role：目标员工不存在，拒绝分配。', 1;
+    END;
+
+    IF @target_status <> 'ACTIVE'
+    BEGIN
+        THROW 50000, N'sp_assign_employee_business_role：只能为启用员工分配业务角色，请先启用该员工。', 1;
+    END;
+
+    IF NOT EXISTS (SELECT 1
+                   FROM sys.database_principals AS dp
+                   WHERE dp.name = @target_user_name
+                     AND dp.type IN ('S', 'U', 'G', 'E'))
+    BEGIN
+        THROW 50000, N'sp_assign_employee_business_role：目标员工尚未建立同名数据库用户，拒绝分配（本过程不创建登录名或用户，需由 DBA 先建立）。', 1;
+    END;
+
+    -- 业务角色必须存在、启用，且其 role_code 在固定白名单内
+    DECLARE @role_code VARCHAR(20), @role_status VARCHAR(20);
+
+    SELECT @role_code   = br.role_code,
+           @role_status = br.status
+    FROM dbo.BusinessRole AS br
+    WHERE br.business_role_id = @business_role_id;
+
+    IF @role_code IS NULL
+    BEGIN
+        THROW 50000, N'sp_assign_employee_business_role：业务角色不存在，拒绝分配。', 1;
+    END;
+
+    IF @role_status <> 'ACTIVE'
+    BEGIN
+        THROW 50000, N'sp_assign_employee_business_role：业务角色已停用，拒绝分配。', 1;
+    END;
+
+    IF @role_code NOT IN (N'store_manager', N'shift_manager', N'cashier',
+                          N'chef', N'packer', N'waiter', N'rider')
+    BEGIN
+        THROW 50000, N'sp_assign_employee_business_role：业务角色编码不在权限白名单内，拒绝分配。', 1;
+    END;
+
+    DECLARE @db_role_name SYSNAME = N'role_' + @role_code;
+
+    IF NOT EXISTS (SELECT 1
+                   FROM sys.database_principals AS dp
+                   WHERE dp.name = @db_role_name
+                     AND dp.type = 'R')
+    BEGIN
+        THROW 50000, N'sp_assign_employee_business_role：对应的数据库角色不存在，请先部署 08_roles_permissions.sql。', 1;
+    END;
+
+    DECLARE @owns_tran BIT = CASE WHEN @@TRANCOUNT = 0 THEN 1 ELSE 0 END;
+
+    IF @owns_tran = 1
+        BEGIN TRANSACTION;
+    ELSE
+        SAVE TRANSACTION sp_assign_employee_business_role;
+
+    BEGIN TRY
+        DECLARE @member_added BIT = 0, @mapping_inserted BIT = 0;
+
+        IF NOT EXISTS (SELECT 1
+                       FROM sys.database_role_members AS drm
+                       JOIN sys.database_principals AS r
+                         ON r.principal_id = drm.role_principal_id
+                       JOIN sys.database_principals AS m
+                         ON m.principal_id = drm.member_principal_id
+                       WHERE r.name = @db_role_name
+                         AND m.name = @target_user_name)
+        BEGIN
+            -- EXEC(...) 的括号内不允许出现函数调用，动态语句必须先算进变量
+            DECLARE @add_member_sql NVARCHAR(300) =
+                N'ALTER ROLE ' + QUOTENAME(@db_role_name)
+              + N' ADD MEMBER ' + QUOTENAME(@target_user_name) + N';';
+
+            EXEC (@add_member_sql);
+            SET @member_added = 1;
+        END;
+
+        IF NOT EXISTS (SELECT 1
+                       FROM dbo.EmployeeBusinessRole
+                       WHERE employee_id = @employee_id
+                         AND business_role_id = @business_role_id)
+        BEGIN
+            INSERT INTO dbo.EmployeeBusinessRole
+                (employee_id, business_role_id, assigned_by_employee_id, assigned_at)
+            VALUES
+                (@employee_id, @business_role_id, @operator_employee_id, SYSDATETIME());
+            SET @mapping_inserted = 1;
+        END;
+
+        DECLARE @detail_json NVARCHAR(MAX) =
+        (
+            SELECT @target_user_name AS employee_database_user,
+                   @role_code        AS role_code,
+                   @db_role_name     AS database_role,
+                   @member_added     AS member_added,
+                   @mapping_inserted AS mapping_inserted
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        EXEC dbo.sp_write_audit_log
+             @employee_id = @operator_employee_id,
+             @action_name = 'ASSIGN_EMPLOYEE_BUSINESS_ROLE',
+             @entity_name = 'EmployeeBusinessRole',
+             @entity_id   = @employee_id,
+             @detail_json = @detail_json;
+
+        IF @owns_tran = 1
+            COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @owns_tran = 1 AND XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+        ELSE IF @owns_tran = 0 AND XACT_STATE() = 1
+            ROLLBACK TRANSACTION sp_assign_employee_business_role;
+
+        THROW;
+    END CATCH;
+END;
+GO
+
+-- 撤销业务角色（§5 C-1 line 302）：同步 DROP MEMBER 与删除业务映射；
+-- 两者都不存在时视为误操作抛错，不做静默成功。
+CREATE PROCEDURE dbo.sp_revoke_employee_business_role
+    @employee_id          BIGINT,
+    @business_role_id     BIGINT,
+    @operator_employee_id BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @employee_id IS NULL OR @business_role_id IS NULL OR @operator_employee_id IS NULL
+    BEGIN
+        THROW 50000, N'sp_revoke_employee_business_role：@employee_id、@business_role_id、@operator_employee_id 都不能为 NULL。', 1;
+    END;
+
+    DECLARE @operator_id BIGINT;
+
+    SELECT @operator_id = ea.employee_id
+    FROM dbo.EmployeeAccount AS ea
+    WHERE ea.database_user_name = USER_NAME()
+      AND ea.status = 'ACTIVE';
+
+    IF @operator_id IS NULL
+    BEGIN
+        THROW 50000, N'sp_revoke_employee_business_role：当前登录主体未映射到启用员工，拒绝执行。', 1;
+    END;
+
+    IF @operator_employee_id <> @operator_id
+    BEGIN
+        THROW 50000, N'sp_revoke_employee_business_role：传入的操作员工 ID 与当前登录主体解析出的员工不一致，拒绝执行。', 1;
+    END;
+
+    IF NOT EXISTS (SELECT 1
+                   FROM dbo.EmployeeBusinessRole AS ebr
+                   JOIN dbo.BusinessRole AS br
+                     ON br.business_role_id = ebr.business_role_id
+                   WHERE ebr.employee_id = @operator_id
+                     AND br.role_code = 'store_manager'
+                     AND br.status = 'ACTIVE')
+       AND ISNULL(IS_ROLEMEMBER(N'role_store_manager'), 0) <> 1
+    BEGIN
+        THROW 50000, N'sp_revoke_employee_business_role：仅店长可撤销业务角色。', 1;
+    END;
+
+    DECLARE @target_user_name VARCHAR(128);
+
+    SELECT @target_user_name = ea.database_user_name
+    FROM dbo.EmployeeAccount AS ea
+    WHERE ea.employee_id = @employee_id;
+
+    IF @target_user_name IS NULL
+    BEGIN
+        THROW 50000, N'sp_revoke_employee_business_role：目标员工不存在，拒绝撤销。', 1;
+    END;
+
+    -- 业务角色允许已停用：停用的角色同样需要清理成员关系，故只校验存在性与白名单
+    DECLARE @role_code VARCHAR(20);
+
+    SELECT @role_code = br.role_code
+    FROM dbo.BusinessRole AS br
+    WHERE br.business_role_id = @business_role_id;
+
+    IF @role_code IS NULL
+    BEGIN
+        THROW 50000, N'sp_revoke_employee_business_role：业务角色不存在，拒绝撤销。', 1;
+    END;
+
+    IF @role_code NOT IN (N'store_manager', N'shift_manager', N'cashier',
+                          N'chef', N'packer', N'waiter', N'rider')
+    BEGIN
+        THROW 50000, N'sp_revoke_employee_business_role：业务角色编码不在权限白名单内，拒绝撤销。', 1;
+    END;
+
+    DECLARE @db_role_name SYSNAME = N'role_' + @role_code;
+
+    IF NOT EXISTS (SELECT 1
+                   FROM sys.database_principals AS dp
+                   WHERE dp.name = @db_role_name
+                     AND dp.type = 'R')
+    BEGIN
+        THROW 50000, N'sp_revoke_employee_business_role：对应的数据库角色不存在，请先部署 08_roles_permissions.sql。', 1;
+    END;
+
+    DECLARE @owns_tran BIT = CASE WHEN @@TRANCOUNT = 0 THEN 1 ELSE 0 END;
+
+    IF @owns_tran = 1
+        BEGIN TRANSACTION;
+    ELSE
+        SAVE TRANSACTION sp_revoke_employee_business_role;
+
+    BEGIN TRY
+        DECLARE @member_dropped BIT = 0, @mapping_deleted BIT = 0;
+
+        IF EXISTS (SELECT 1
+                   FROM sys.database_role_members AS drm
+                   JOIN sys.database_principals AS r
+                     ON r.principal_id = drm.role_principal_id
+                   JOIN sys.database_principals AS m
+                     ON m.principal_id = drm.member_principal_id
+                   WHERE r.name = @db_role_name
+                     AND m.name = @target_user_name)
+        BEGIN
+            -- 同上：动态语句先算进变量，EXEC(...) 括号里不能放函数
+            DECLARE @drop_member_sql NVARCHAR(300) =
+                N'ALTER ROLE ' + QUOTENAME(@db_role_name)
+              + N' DROP MEMBER ' + QUOTENAME(@target_user_name) + N';';
+
+            EXEC (@drop_member_sql);
+            SET @member_dropped = 1;
+        END;
+
+        IF EXISTS (SELECT 1
+                   FROM dbo.EmployeeBusinessRole
+                   WHERE employee_id = @employee_id
+                     AND business_role_id = @business_role_id)
+        BEGIN
+            DELETE FROM dbo.EmployeeBusinessRole
+            WHERE employee_id = @employee_id
+              AND business_role_id = @business_role_id;
+            SET @mapping_deleted = 1;
+        END;
+
+        IF @member_dropped = 0 AND @mapping_deleted = 0
+        BEGIN
+            THROW 50000, N'sp_revoke_employee_business_role：该员工并未拥有此业务角色，无可撤销。', 1;
+        END;
+
+        DECLARE @detail_json NVARCHAR(MAX) =
+        (
+            SELECT @target_user_name AS employee_database_user,
+                   @role_code        AS role_code,
+                   @db_role_name     AS database_role,
+                   @member_dropped   AS member_dropped,
+                   @mapping_deleted  AS mapping_deleted
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        EXEC dbo.sp_write_audit_log
+             @employee_id = @operator_id,
+             @action_name = 'REVOKE_EMPLOYEE_BUSINESS_ROLE',
+             @entity_name = 'EmployeeBusinessRole',
+             @entity_id   = @employee_id,
+             @detail_json = @detail_json;
+
+        IF @owns_tran = 1
+            COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @owns_tran = 1 AND XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+        ELSE IF @owns_tran = 0 AND XACT_STATE() = 1
+            ROLLBACK TRANSACTION sp_revoke_employee_business_role;
+
+        THROW;
+    END CATCH;
+END;
+GO
+
+-- 变更员工状态（§5 C-1 line 302）：停用时必须撤销其全部 role_* 成员关系并清掉业务
+-- 映射；重新启用不自动恢复业务角色，需由店长重新分配。
+CREATE PROCEDURE dbo.sp_update_employee_status
+    @employee_id          BIGINT,
+    @status               VARCHAR(20),
+    @operator_employee_id BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @employee_id IS NULL OR @status IS NULL OR @operator_employee_id IS NULL
+    BEGIN
+        THROW 50000, N'sp_update_employee_status：@employee_id、@status、@operator_employee_id 都不能为 NULL。', 1;
+    END;
+
+    IF @status NOT IN ('ACTIVE', 'INACTIVE')
+    BEGIN
+        THROW 50000, N'sp_update_employee_status：@status 取值不合法，必须符合 CK_EmployeeAccount_status 的允许取值。', 1;
+    END;
+
+    DECLARE @operator_id BIGINT;
+
+    SELECT @operator_id = ea.employee_id
+    FROM dbo.EmployeeAccount AS ea
+    WHERE ea.database_user_name = USER_NAME()
+      AND ea.status = 'ACTIVE';
+
+    IF @operator_id IS NULL
+    BEGIN
+        THROW 50000, N'sp_update_employee_status：当前登录主体未映射到启用员工，拒绝执行。', 1;
+    END;
+
+    IF @operator_employee_id <> @operator_id
+    BEGIN
+        THROW 50000, N'sp_update_employee_status：传入的操作员工 ID 与当前登录主体解析出的员工不一致，拒绝执行。', 1;
+    END;
+
+    IF NOT EXISTS (SELECT 1
+                   FROM dbo.EmployeeBusinessRole AS ebr
+                   JOIN dbo.BusinessRole AS br
+                     ON br.business_role_id = ebr.business_role_id
+                   WHERE ebr.employee_id = @operator_id
+                     AND br.role_code = 'store_manager'
+                     AND br.status = 'ACTIVE')
+       AND ISNULL(IS_ROLEMEMBER(N'role_store_manager'), 0) <> 1
+    BEGIN
+        THROW 50000, N'sp_update_employee_status：仅店长可变更员工状态。', 1;
+    END;
+
+    DECLARE @target_user_name VARCHAR(128), @status_before VARCHAR(20);
+
+    SELECT @target_user_name = ea.database_user_name,
+           @status_before    = ea.status
+    FROM dbo.EmployeeAccount AS ea
+    WHERE ea.employee_id = @employee_id;
+
+    IF @target_user_name IS NULL
+    BEGIN
+        THROW 50000, N'sp_update_employee_status：目标员工不存在，拒绝变更。', 1;
+    END;
+
+    DECLARE @owns_tran BIT = CASE WHEN @@TRANCOUNT = 0 THEN 1 ELSE 0 END;
+
+    IF @owns_tran = 1
+        BEGIN TRANSACTION;
+    ELSE
+        SAVE TRANSACTION sp_update_employee_status;
+
+    BEGIN TRY
+        DECLARE @revoked_role_codes VARCHAR(500) = '';
+
+        IF @status = 'INACTIVE'
+        BEGIN
+            -- 停用即撤销全部 role_* 成员关系；一条动态批次完成，角色名取自白名单 IN 列表
+            DECLARE @drop_sql NVARCHAR(MAX) =
+            (
+                SELECT STRING_AGG(CAST(N'ALTER ROLE ' + QUOTENAME(r.name)
+                                       + N' DROP MEMBER ' + QUOTENAME(@target_user_name) + N';' AS NVARCHAR(MAX)), N'')
+                FROM sys.database_role_members AS drm
+                JOIN sys.database_principals AS r
+                  ON r.principal_id = drm.role_principal_id
+                JOIN sys.database_principals AS m
+                  ON m.principal_id = drm.member_principal_id
+                WHERE m.name = @target_user_name
+                  AND r.name IN (N'role_store_manager', N'role_shift_manager', N'role_cashier',
+                                 N'role_chef', N'role_packer', N'role_waiter', N'role_rider')
+            );
+
+            SELECT @revoked_role_codes = ISNULL(STRING_AGG(r.name, N',')
+                                                WITHIN GROUP (ORDER BY r.name), '')
+            FROM sys.database_role_members AS drm
+            JOIN sys.database_principals AS r
+              ON r.principal_id = drm.role_principal_id
+            JOIN sys.database_principals AS m
+              ON m.principal_id = drm.member_principal_id
+            WHERE m.name = @target_user_name
+              AND r.name IN (N'role_store_manager', N'role_shift_manager', N'role_cashier',
+                             N'role_chef', N'role_packer', N'role_waiter', N'role_rider');
+
+            IF @drop_sql IS NOT NULL AND @drop_sql <> N''
+                EXEC (@drop_sql);
+
+            DELETE FROM dbo.EmployeeBusinessRole
+            WHERE employee_id = @employee_id;
+        END;
+
+        -- 审计先于状态更新：sp_write_audit_log 自身要求调用方当前是启用员工，
+        -- 若先停用，操作人是在停用自己时就解析不到了；同一事务内先后不影响原子性。
+        DECLARE @detail_json NVARCHAR(MAX) =
+        (
+            SELECT @target_user_name   AS employee_database_user,
+                   @status_before      AS status_before,
+                   @status             AS status_after,
+                   @revoked_role_codes AS revoked_role_codes
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        EXEC dbo.sp_write_audit_log
+             @employee_id = @operator_id,
+             @action_name = 'UPDATE_EMPLOYEE_STATUS',
+             @entity_name = 'EmployeeAccount',
+             @entity_id   = @employee_id,
+             @detail_json = @detail_json;
+
+        UPDATE dbo.EmployeeAccount
+           SET status = @status
+         WHERE employee_id = @employee_id;
+
+        IF @owns_tran = 1
+            COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @owns_tran = 1 AND XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+        ELSE IF @owns_tran = 0 AND XACT_STATE() = 1
+            ROLLBACK TRANSACTION sp_update_employee_status;
 
         THROW;
     END CATCH;
