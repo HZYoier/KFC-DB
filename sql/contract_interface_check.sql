@@ -49,7 +49,8 @@ DECLARE @parameters TABLE
 INSERT @parameters (object_name, parameter_name, parameter_id, expected_type, expected_max_length)
 VALUES
     (N'dbo.fn_get_effective_product_price', N'@product_id', 1, N'bigint', 8),
-    (N'dbo.fn_get_effective_product_price', N'@at', 2, N'datetime2', 8),
+    -- sys.parameters.max_length reports 6 bytes for DATETIME2(0), not 8.
+    (N'dbo.fn_get_effective_product_price', N'@at', 2, N'datetime2', 6),
     (N'dbo.sp_apply_customer_points', N'@customer_id', 1, N'bigint', 8),
     (N'dbo.sp_apply_customer_points', N'@delta', 2, N'int', 4),
     (N'dbo.sp_lock_order_inventory', N'@order_id', 1, N'bigint', 8),
