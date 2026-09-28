@@ -142,6 +142,12 @@ GRANT SELECT ON dbo.v_pickup_board TO role_waiter;
 GO
 
 -- 批次 5：敏感字段禁止直接 UPDATE——只能经过程修改
+-- 语义说明（据成员 A 的隔离实验，见 plan §8 2026-09-27 一行）：同库 dbo 所有权链会连
+-- 表级与列级 DENY 一并穿透——只持过程 EXECUTE 的主体经过程写这几列照样成功；DENY 只对
+-- “直接 DML”生效（有表级 UPDATE 的主体直接改被 DENY 的列报 Msg 230，被表级 DENY 后
+-- 直接改任意列报 Msg 229）。本文件不向任何业务角色授予表级 DML，故这三条 DENY 目前对
+-- 七个角色都不产生实际约束，其意义是：将来若给角色表级 DML，这三列仍写不了。
+-- 不要把它读成“DENY 正在保护这些列”——保护来自“不授予 DML + 只暴露过程”。
 DENY UPDATE ON dbo.Inventory TO role_store_manager, role_shift_manager, role_cashier, role_chef, role_packer, role_waiter, role_rider;
 DENY UPDATE ON dbo.SalesOrderItem (unit_price) TO role_store_manager, role_shift_manager, role_cashier, role_chef, role_packer, role_waiter, role_rider;
 DENY UPDATE ON dbo.Customer (current_points) TO role_store_manager, role_shift_manager, role_cashier, role_chef, role_packer, role_waiter, role_rider;
@@ -151,13 +157,17 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.symmetric_keys WHERE name = N'##MS_DatabaseMasterKey##')
     CREATE MASTER KEY ENCRYPTION BY PASSWORD = N'KfcDb#Stage1#RoleSync#Dmk';
 GO
--- 追加服务主密钥加密后，证书私钥可被服务直接打开，签名语句无需再传口令
+-- 证书私钥要能被服务直接打开（签名语句才无需传口令），主密钥必须带服务主密钥保护。
+-- 该保护由 CREATE MASTER KEY ENCRYPTION BY PASSWORD 一并建立（建完即同时存在 ESKM 与
+-- ESP2 两行），故无需再 ADD ENCRYPTION BY SERVICE MASTER KEY：原第 160 行在全新库上恒
+-- 不执行（死代码），且它真被执行时会因主密钥处于关闭态报 Msg 15581。保留本守卫只为把
+-- “部署者预建的、只有口令保护的主密钥”这一情形变成可诊断的错误，而不是留到签名处报错。
 IF NOT EXISTS (SELECT 1
                FROM sys.key_encryptions AS ke
                JOIN sys.symmetric_keys AS sk ON sk.symmetric_key_id = ke.key_id
                WHERE sk.name = N'##MS_DatabaseMasterKey##'
                  AND ke.crypt_type = 'ESKM')
-    ALTER MASTER KEY ADD ENCRYPTION BY SERVICE MASTER KEY;
+    THROW 50000, N'08_roles_permissions.sql：数据库主密钥未受服务主密钥保护，证书签名会报 15581；请先 OPEN MASTER KEY，再 ALTER MASTER KEY ADD ENCRYPTION BY SERVICE MASTER KEY 补齐。', 1;
 GO
 
 -- 批次 7：角色同步专用证书与证书用户
