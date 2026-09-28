@@ -59,6 +59,7 @@ VALUES
     (N'dbo.sp_consume_order_inventory', N'@order_id', 1, N'bigint', 8),
     (N'dbo.sp_receive_inventory', N'@purchase_order_id', 1, N'bigint', 8),
     (N'dbo.sp_receive_inventory', N'@employee_id', 2, N'bigint', 8),
+    (N'dbo.sp_receive_inventory', N'@received_qty', 3, N'decimal', 9),
     (N'dbo.sp_write_audit_log', N'@employee_id', 1, N'bigint', 8),
     (N'dbo.sp_write_audit_log', N'@action_name', 2, N'varchar', 50),
     (N'dbo.sp_write_audit_log', N'@entity_name', 3, N'varchar', 50),
@@ -94,6 +95,16 @@ IF EXISTS
     )
 )
     THROW 52902, 'A cross-domain interface has an unexpected parameter count.', 1;
+
+IF EXISTS
+(
+    SELECT 1
+    FROM sys.parameters AS actual_parameter
+    WHERE actual_parameter.object_id = OBJECT_ID(N'dbo.sp_receive_inventory')
+      AND actual_parameter.name = N'@received_qty'
+      AND (actual_parameter.precision <> 12 OR actual_parameter.scale <> 3)
+)
+    THROW 52904, 'sp_receive_inventory @received_qty must be DECIMAL(12,3).', 1;
 
 DECLARE @price_function_id INT = OBJECT_ID(N'dbo.fn_get_effective_product_price', N'IF');
 IF EXISTS

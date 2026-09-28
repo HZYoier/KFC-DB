@@ -129,10 +129,11 @@ dbo.sp_write_audit_log
 ```sql
 dbo.sp_receive_inventory
     @purchase_order_id BIGINT,
-    @employee_id       BIGINT
+    @employee_id       BIGINT,
+    @received_qty      DECIMAL(12,3) = NULL
 ```
 
-该过程不由 B 调用，但名称和参数供 C 的补货验收脚本使用。
+该过程不由 B 调用，但名称和参数供 C 的补货验收脚本使用。`@received_qty` 为可选参数：省略或传入 `NULL` 时保持原两参数调用的兼容语义；传入正数时表示本次实收数量，供 C 实现分批收货。
 
 ## 4. 事务与所有权边界
 
@@ -221,8 +222,8 @@ A 的完工标准里有三条落在别人的脚本里：
 
 | # | 事项 | 提出 | 待定方 |
 | --- | --- | --- | --- |
-| 1 | `sp_receive_inventory` 是否增加第三个参数 `@received_qty DECIMAL(12,3)`：第 3.5 节冻结的两参形态无法表达"本次实收多少"，两次收货验不出来 | C | B |
-| 2 | `contract_interface_check.sql:52` 断言 `fn_get_effective_product_price` 的 `@at` 期望 `max_length = 8`；实测该参数是 `datetime2(0)`、`max_length = 6`、`scale = 0`（A 与 C 各自独立发现）。建议改判 `scale = 0`，或把期望值改为 6 | A、C | B |
-| 3 | `v_order_inventory_trace` 是否授予 `role_shift_manager`（计划 line 311 只规定了该视图的语义，没规定授权） | C | A、B |
+| 1 | `sp_receive_inventory` 增加兼容的第三个可选参数 `@received_qty DECIMAL(12,3) = NULL`，用于表达本次实收数量；B 已在第 3.5 节及只读契约检查器中冻结 | C | B（已确认） |
+| 2 | `fn_get_effective_product_price` 的 `@at` 按 SQL Server 元数据冻结为 `datetime2(0)`、`max_length = 6`；B 的只读契约检查器已改为 6 | A、C | B（已确认） |
+| 3 | B 同意向 `role_shift_manager` 授予 `v_order_inventory_trace` 的 `SELECT`，供值班经理联查订单锁库、释放和实扣；权限仍由 C 在 `08_roles_permissions.sql` 落地 | C | B（已确认，待 A/C 落地） |
 
 非接口性的待确认项（`08` 的 DMK 明文口令取舍、`sp_update_product_status` 仅在状态跃迁时校验 BOM 的残留代价、数据字典与 `01` 注释双份维护）已分别记录在计划变更记录与 `docs/主数据数据字典.md` §11，不在此重复。

@@ -19,7 +19,11 @@ GO
    Roll back that whole test transaction before querying post-failure state. */
 DECLARE @customer_id BIGINT, @product_id BIGINT, @inactive_product_id BIGINT, @no_bom_product_id BIGINT;
 DECLARE @failed BIT, @error_number INT, @before_count INT, @after_count INT, @before_item_count INT, @after_item_count INT, @order_no VARCHAR(40), @items_json NVARCHAR(MAX);
-SELECT TOP (1) @customer_id = c.customer_id FROM dbo.Customer AS c WHERE c.status = 'ACTIVE' ORDER BY c.customer_id;
+SELECT TOP (1) @customer_id = c.customer_id
+FROM dbo.Customer AS c
+JOIN dbo.MemberLevel AS ml ON ml.member_level_id = c.member_level_id
+WHERE c.status = 'ACTIVE' AND ml.status = 'ACTIVE' AND ml.point_multiplier > 0
+ORDER BY c.customer_id;
 SELECT TOP (1) @product_id = p.product_id FROM dbo.Product AS p WHERE p.status = 'ACTIVE' AND p.product_type = 'SINGLE' AND EXISTS (SELECT 1 FROM dbo.ProductBom AS b WHERE b.product_id = p.product_id) ORDER BY p.product_id;
 IF @customer_id IS NULL OR @product_id IS NULL THROW 51000, 'B acceptance fixture requires an ACTIVE customer and ACTIVE SINGLE product with BOM.', 1;
 
@@ -118,7 +122,11 @@ SET NUMERIC_ROUNDABORT OFF;
 GO
 /* An unpaid order cannot enter production. */
 DECLARE @customer_id_2 BIGINT, @product_id_2 BIGINT, @order_id_2 BIGINT, @error_number_2 INT, @order_no_2 VARCHAR(40), @items_json_2 NVARCHAR(MAX);
-SELECT TOP (1) @customer_id_2 = customer_id FROM dbo.Customer WHERE status = 'ACTIVE' ORDER BY customer_id;
+SELECT TOP (1) @customer_id_2 = c.customer_id
+FROM dbo.Customer AS c
+JOIN dbo.MemberLevel AS ml ON ml.member_level_id = c.member_level_id
+WHERE c.status = 'ACTIVE' AND ml.status = 'ACTIVE' AND ml.point_multiplier > 0
+ORDER BY c.customer_id;
 SELECT TOP (1) @product_id_2 = p.product_id FROM dbo.Product AS p WHERE p.status = 'ACTIVE' AND p.product_type = 'SINGLE' AND EXISTS (SELECT 1 FROM dbo.ProductBom AS b WHERE b.product_id = p.product_id) ORDER BY p.product_id;
 SET @order_no_2 = CONCAT('AT-UNPAID-', LEFT(CONVERT(VARCHAR(36), NEWID()), 12));
 SET @items_json_2 = CONCAT(N'[{"product_id":', @product_id_2, N',"quantity":1}]');
@@ -151,7 +159,11 @@ SET NUMERIC_ROUNDABORT OFF;
 GO
 /* Wrong payment amount and a second payment are both rejected in independent rollback-only cases. */
 DECLARE @customer_id_3 BIGINT, @product_id_3 BIGINT, @order_id_3 BIGINT, @amount_3 DECIMAL(10,2), @mismatch_amount_3 DECIMAL(10,2), @error_number_3 INT, @order_no_3 VARCHAR(40), @items_json_3 NVARCHAR(MAX), @mismatch_txn_3 VARCHAR(50), @success_txn_3 VARCHAR(50), @duplicate_txn_3 VARCHAR(50);
-SELECT TOP (1) @customer_id_3 = customer_id FROM dbo.Customer WHERE status = 'ACTIVE' ORDER BY customer_id;
+SELECT TOP (1) @customer_id_3 = c.customer_id
+FROM dbo.Customer AS c
+JOIN dbo.MemberLevel AS ml ON ml.member_level_id = c.member_level_id
+WHERE c.status = 'ACTIVE' AND ml.status = 'ACTIVE' AND ml.point_multiplier > 0
+ORDER BY c.customer_id;
 SELECT TOP (1) @product_id_3 = p.product_id FROM dbo.Product AS p WHERE p.status = 'ACTIVE' AND p.product_type = 'SINGLE' AND EXISTS (SELECT 1 FROM dbo.ProductBom AS b WHERE b.product_id = p.product_id) ORDER BY p.product_id;
 SET @order_no_3 = CONCAT('AT-PAY-', LEFT(CONVERT(VARCHAR(36), NEWID()), 12));
 SET @items_json_3 = CONCAT(N'[{"product_id":', @product_id_3, N',"quantity":1}]');
@@ -213,7 +225,11 @@ BEGIN
     INSERT dbo.Delivery (order_id, delivery_status) VALUES (-1, ''WAITING_PICKUP'');
 END;');
 DECLARE @customer_id_4 BIGINT, @product_id_4 BIGINT, @order_id_4 BIGINT, @amount_4 DECIMAL(10,2), @failed_4 INT, @order_no_4 VARCHAR(40), @items_json_4 NVARCHAR(MAX), @fault_txn_4 VARCHAR(50);
-SELECT TOP (1) @customer_id_4 = customer_id FROM dbo.Customer WHERE status = 'ACTIVE' ORDER BY customer_id;
+SELECT TOP (1) @customer_id_4 = c.customer_id
+FROM dbo.Customer AS c
+JOIN dbo.MemberLevel AS ml ON ml.member_level_id = c.member_level_id
+WHERE c.status = 'ACTIVE' AND ml.status = 'ACTIVE' AND ml.point_multiplier > 0
+ORDER BY c.customer_id;
 SELECT TOP (1) @product_id_4 = p.product_id FROM dbo.Product AS p WHERE p.status = 'ACTIVE' AND p.product_type = 'SINGLE' AND EXISTS (SELECT 1 FROM dbo.ProductBom AS b WHERE b.product_id = p.product_id) ORDER BY p.product_id;
 SET @order_no_4 = CONCAT('AT-ROLLBACK-', LEFT(CONVERT(VARCHAR(36), NEWID()), 12));
 SET @items_json_4 = CONCAT(N'[{"product_id":', @product_id_4, N',"quantity":1}]');
@@ -242,7 +258,11 @@ SET NUMERIC_ROUNDABORT OFF;
 GO
 /* A paid order cannot skip directly to pickup. */
 DECLARE @customer_id_5 BIGINT, @product_id_5 BIGINT, @order_id_5 BIGINT, @amount_5 DECIMAL(10,2), @error_number_5 INT, @order_no_5 VARCHAR(40), @items_json_5 NVARCHAR(MAX), @snapshot_txn_5 VARCHAR(50);
-SELECT TOP (1) @customer_id_5 = customer_id FROM dbo.Customer WHERE status = 'ACTIVE' ORDER BY customer_id;
+SELECT TOP (1) @customer_id_5 = c.customer_id
+FROM dbo.Customer AS c
+JOIN dbo.MemberLevel AS ml ON ml.member_level_id = c.member_level_id
+WHERE c.status = 'ACTIVE' AND ml.status = 'ACTIVE' AND ml.point_multiplier > 0
+ORDER BY c.customer_id;
 SELECT TOP (1) @product_id_5 = p.product_id FROM dbo.Product AS p WHERE p.status = 'ACTIVE' AND p.product_type = 'SINGLE' AND EXISTS (SELECT 1 FROM dbo.ProductBom AS b WHERE b.product_id = p.product_id) ORDER BY p.product_id;
 SET @order_no_5 = CONCAT('AT-SNAPSHOT-', LEFT(CONVERT(VARCHAR(36), NEWID()), 12));
 SET @items_json_5 = CONCAT(N'[{"product_id":', @product_id_5, N',"quantity":1}]');
@@ -270,7 +290,11 @@ GO
 BEGIN TRY
 BEGIN TRANSACTION;
 DECLARE @customer_id_5b BIGINT, @product_id_5b BIGINT, @order_id_5b BIGINT, @price_before_5b DECIMAL(10,2), @price_after_5b DECIMAL(10,2), @order_no_5b VARCHAR(40), @items_json_5b NVARCHAR(MAX);
-SELECT TOP (1) @customer_id_5b = customer_id FROM dbo.Customer WHERE status = 'ACTIVE' ORDER BY customer_id;
+SELECT TOP (1) @customer_id_5b = c.customer_id
+FROM dbo.Customer AS c
+JOIN dbo.MemberLevel AS ml ON ml.member_level_id = c.member_level_id
+WHERE c.status = 'ACTIVE' AND ml.status = 'ACTIVE' AND ml.point_multiplier > 0
+ORDER BY c.customer_id;
 SELECT TOP (1) @product_id_5b = p.product_id FROM dbo.Product AS p WHERE p.status = 'ACTIVE' AND p.product_type = 'SINGLE' AND EXISTS (SELECT 1 FROM dbo.ProductBom AS b WHERE b.product_id = p.product_id) ORDER BY p.product_id;
 SET @order_no_5b = CONCAT('AT-SNAPSHOT-', LEFT(CONVERT(VARCHAR(36), NEWID()), 12));
 SET @items_json_5b = CONCAT(N'[{"product_id":', @product_id_5b, N',"quantity":1}]');
@@ -295,7 +319,11 @@ GO
 BEGIN TRY
 BEGIN TRANSACTION;
 DECLARE @combo_customer_id BIGINT, @combo_product_id BIGINT, @combo_order_id BIGINT, @combo_qty INT = 2, @combo_parent_item_id BIGINT, @combo_parent_price DECIMAL(10,2), @combo_total DECIMAL(10,2), @combo_order_no VARCHAR(40), @combo_items_json NVARCHAR(MAX), @combo_item_count INT, @combo_expected_component_count INT, @combo_actual_component_count INT;
-SELECT TOP (1) @combo_customer_id = customer_id FROM dbo.Customer WHERE status = 'ACTIVE' ORDER BY customer_id;
+SELECT TOP (1) @combo_customer_id = c.customer_id
+FROM dbo.Customer AS c
+JOIN dbo.MemberLevel AS ml ON ml.member_level_id = c.member_level_id
+WHERE c.status = 'ACTIVE' AND ml.status = 'ACTIVE' AND ml.point_multiplier > 0
+ORDER BY c.customer_id;
 SELECT TOP (1) @combo_product_id = p.product_id
 FROM dbo.Product AS p
 WHERE p.product_type = 'COMBO' AND p.status = 'ACTIVE' AND p.base_price > 0
@@ -507,7 +535,11 @@ GO
 BEGIN TRY
 BEGIN TRANSACTION;
 DECLARE @customer_id_7 BIGINT, @product_id_7 BIGINT, @order_id_7 BIGINT, @rider_id_7 BIGINT, @amount_7 DECIMAL(10,2), @ledger_status_7 VARCHAR(20), @order_no_7 VARCHAR(40), @items_json_7 NVARCHAR(MAX), @delivery_txn_7 VARCHAR(50);
-SELECT TOP (1) @customer_id_7 = customer_id FROM dbo.Customer WHERE status = 'ACTIVE' ORDER BY customer_id;
+SELECT TOP (1) @customer_id_7 = c.customer_id
+FROM dbo.Customer AS c
+JOIN dbo.MemberLevel AS ml ON ml.member_level_id = c.member_level_id
+WHERE c.status = 'ACTIVE' AND ml.status = 'ACTIVE' AND ml.point_multiplier > 0
+ORDER BY c.customer_id;
 SELECT TOP (1) @product_id_7 = p.product_id FROM dbo.Product AS p WHERE p.status = 'ACTIVE' AND p.product_type = 'SINGLE' AND EXISTS (SELECT 1 FROM dbo.ProductBom AS b WHERE b.product_id = p.product_id) ORDER BY p.product_id;
 SELECT @rider_id_7 = employee_id FROM dbo.EmployeeAccount WHERE database_user_name = 'test_rider' AND status = 'ACTIVE';
 IF @rider_id_7 IS NULL THROW 51012, 'B acceptance fixture requires active test_rider EmployeeAccount.', 1;
@@ -545,7 +577,11 @@ GO
 BEGIN TRY
 BEGIN TRANSACTION;
 DECLARE @customer_id_8 BIGINT, @product_id_8 BIGINT, @order_id_8 BIGINT, @manager_id_8 BIGINT, @amount_8 DECIMAL(10,2), @order_status_8 VARCHAR(20), @payment_status_8 VARCHAR(20), @refunded_8 DECIMAL(10,2), @order_no_8 VARCHAR(40), @items_json_8 NVARCHAR(MAX), @refund_txn_8 VARCHAR(50);
-SELECT TOP (1) @customer_id_8 = customer_id FROM dbo.Customer WHERE status = 'ACTIVE' ORDER BY customer_id;
+SELECT TOP (1) @customer_id_8 = c.customer_id
+FROM dbo.Customer AS c
+JOIN dbo.MemberLevel AS ml ON ml.member_level_id = c.member_level_id
+WHERE c.status = 'ACTIVE' AND ml.status = 'ACTIVE' AND ml.point_multiplier > 0
+ORDER BY c.customer_id;
 SELECT TOP (1) @product_id_8 = p.product_id FROM dbo.Product AS p WHERE p.status = 'ACTIVE' AND p.product_type = 'SINGLE' AND EXISTS (SELECT 1 FROM dbo.ProductBom AS b WHERE b.product_id = p.product_id) ORDER BY p.product_id;
 SELECT @manager_id_8 = employee_id FROM dbo.EmployeeAccount WHERE database_user_name = 'test_store_manager' AND status = 'ACTIVE';
 IF @manager_id_8 IS NULL THROW 51014, 'B acceptance fixture requires active test_store_manager EmployeeAccount.', 1;
