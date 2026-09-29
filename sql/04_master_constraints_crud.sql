@@ -1393,8 +1393,21 @@ BEGIN
                    WHERE c.mobile = LTRIM(RTRIM(@mobile)))
             THROW 51005, N'sp_create_customer：该手机号已建档。', 1;
 
+        -- 建档即带默认等级：判据与 sp_apply_customer_points 对 0 分顾客算出的那一档完全一致。
+        -- 没有可用基准档是配置缺陷，让它在这里响亮地失败，好过建出一个付不了款的顾客。
+        DECLARE @default_level_id BIGINT = (
+            SELECT TOP (1) ml.member_level_id
+            FROM dbo.MemberLevel AS ml
+            WHERE ml.status = 'ACTIVE'
+              AND ml.threshold_points <= 0
+            ORDER BY ml.threshold_points DESC, ml.member_level_id ASC
+        );
+
+        IF @default_level_id IS NULL
+            THROW 51001, N'sp_create_customer：找不到可用的默认会员等级（threshold_points <= 0 的 ACTIVE 等级），拒绝建档。', 1;
+
         INSERT INTO dbo.Customer (mobile, customer_type, member_level_id, current_points, [status])
-        VALUES (LTRIM(RTRIM(@mobile)), @customer_type, NULL, 0, 'ACTIVE');
+        VALUES (LTRIM(RTRIM(@mobile)), @customer_type, @default_level_id, 0, 'ACTIVE');
 
         IF @owns_tran = 1
             COMMIT TRANSACTION;

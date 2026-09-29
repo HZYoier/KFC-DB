@@ -90,11 +90,12 @@ BEGIN TRY
         (5, 2, 1),
         (5, 4, 2);
 
-    -- 顾客 
+    -- 顾客
+    -- 1 号散客也带默认档（04 的 sp_create_customer 口径：threshold_points <= 0 的 ACTIVE 等级，即 1 号普通会员）
     SET IDENTITY_INSERT dbo.Customer ON;
     INSERT INTO dbo.Customer
         (customer_id, mobile, customer_type, member_level_id, current_points, [status]) VALUES
-        (1, '13900000001', 'GUEST', NULL,    0, 'ACTIVE'),
+        (1, '13900000001', 'GUEST', 1,      0, 'ACTIVE'),
         (2, '13900000002', 'WOW',      2,  500, 'ACTIVE'),
         (3, '13900000003', 'PAID',     3, 1500, 'ACTIVE');
     SET IDENTITY_INSERT dbo.Customer OFF;
