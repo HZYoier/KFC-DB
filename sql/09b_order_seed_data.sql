@@ -334,9 +334,9 @@ BEGIN TRY
 END TRY
 BEGIN CATCH
     -- A failed role call skips its normal REVERT; restore the deployment context
-    -- before rolling back the transaction (including a doomed XACT_ABORT case).
-    IF @impersonated = 1 REVERT;
+    -- only after rolling back a possibly doomed XACT_ABORT transaction.
     IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+    IF @impersonated = 1 REVERT;
     THROW;
 END CATCH;
 GO

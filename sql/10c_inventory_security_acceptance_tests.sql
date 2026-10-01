@@ -18,7 +18,7 @@
 --   ⑤ EXECUTE AS 的收尾一律"先 ROLLBACK 再 REVERT"（不可提交事务里 REVERT 会被拒 Msg 3930）；
 --   ⑥ 计数用临时表 #counters 跨批次累计（局部变量不跨批次），收尾打印 RESULT 并校验分母，
 --      分母不足即 THROW 51199——用于抓住"某批被静默作废"（-f 65001 缺失、Msg 207 家族）。
--- 错误码：本文件用 51100（前置不成立）与 51101–51113（各条断言失败）、51199（计数分母不足）。
+-- 错误码：本文件用 51100（前置不成立）与 51101–51115（各条断言失败）、51199（计数分母不足）。
 -- ============================================================================
 
 USE KFC_DB;
@@ -649,6 +649,133 @@ BEGIN CATCH
 END CATCH;
 GO
 
+-- T12b E2E-07：收银员不能直接修改商品价格、库存或顾客积分（均应由过程维护）
+DECLARE @err_price INT = NULL, @err_inventory INT = NULL, @err_points INT = NULL;
+DECLARE @msg NVARCHAR(2048), @imp BIT = 0;
+DECLARE @product12b BIGINT = (SELECT MIN(product_id) FROM dbo.Product);
+DECLARE @ingredient12b BIGINT = (SELECT MIN(ingredient_id) FROM dbo.Inventory);
+DECLARE @customer12b BIGINT = (SELECT MIN(customer_id) FROM dbo.Customer);
+BEGIN TRY
+    IF @product12b IS NULL OR @ingredient12b IS NULL OR @customer12b IS NULL
+        THROW 51114, N'T12b：缺少商品、库存或顾客夹具。', 1;
+
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        EXECUTE AS USER = 'test_cashier'; SET @imp = 1;
+        UPDATE dbo.Product SET base_price = base_price WHERE product_id = @product12b;
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        REVERT; SET @imp = 0;
+    END TRY
+    BEGIN CATCH
+        SET @err_price = ERROR_NUMBER();
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        IF @imp = 1 REVERT;
+        SET @imp = 0;
+    END CATCH;
+
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        EXECUTE AS USER = 'test_cashier'; SET @imp = 1;
+        UPDATE dbo.Inventory SET on_hand_qty = on_hand_qty WHERE ingredient_id = @ingredient12b;
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        REVERT; SET @imp = 0;
+    END TRY
+    BEGIN CATCH
+        SET @err_inventory = ERROR_NUMBER();
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        IF @imp = 1 REVERT;
+        SET @imp = 0;
+    END CATCH;
+
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        EXECUTE AS USER = 'test_cashier'; SET @imp = 1;
+        UPDATE dbo.Customer SET current_points = current_points WHERE customer_id = @customer12b;
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        REVERT; SET @imp = 0;
+    END TRY
+    BEGIN CATCH
+        SET @err_points = ERROR_NUMBER();
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        IF @imp = 1 REVERT;
+        SET @imp = 0;
+    END CATCH;
+
+    IF @err_price IS NULL OR @err_price <> 229
+       OR @err_inventory IS NULL OR @err_inventory <> 229
+       OR @err_points IS NULL OR @err_points <> 229
+        THROW 51114, N'T12b：收银员直接 UPDATE 商品价格、库存或顾客积分未全部以 229 拒绝。', 1;
+
+    UPDATE #counters SET pass = pass + 1;
+    PRINT 'PASS: T12b 收银员不能直接修改商品价格、库存或顾客积分';
+END TRY
+BEGIN CATCH
+    SET @msg = ERROR_MESSAGE();
+    IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+    IF @imp = 1 REVERT;
+    UPDATE #counters SET fail = fail + 1;
+    PRINT 'FAIL: T12b err=' + CAST(ERROR_NUMBER() AS NVARCHAR(10)) + N' msg=' + ISNULL(@msg, N'');
+END CATCH;
+GO
+
+-- T12c E2E-07：骑手不能确认分配给其他员工的配送单
+DECLARE @err INT = NULL, @msg NVARCHAR(2048), @imp BIT = 0;
+DECLARE @order12c BIGINT = (SELECT order_id FROM dbo.SalesOrder WHERE order_no = 'B-SEED-DELIVERY-001');
+DECLARE @other_employee12c BIGINT = (SELECT employee_id FROM dbo.EmployeeAccount WHERE database_user_name = 'test_waiter');
+BEGIN TRY
+    IF @order12c IS NULL OR @other_employee12c IS NULL
+        THROW 51115, N'T12c：缺少外送种子订单或其他员工夹具。', 1;
+
+    BEGIN TRANSACTION;
+    UPDATE dbo.SalesOrder
+    SET order_status = 'DELIVERING', completed_at = NULL
+    WHERE order_id = @order12c;
+    UPDATE dbo.Delivery
+    SET rider_employee_id = @other_employee12c,
+        delivery_status = 'DELIVERING',
+        picked_up_at = SYSDATETIME(),
+        delivered_at = NULL
+    WHERE order_id = @order12c;
+
+    BEGIN TRY
+        EXECUTE AS USER = 'test_rider'; SET @imp = 1;
+        EXEC dbo.sp_confirm_delivery @order_id = @order12c;
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        REVERT; SET @imp = 0;
+    END TRY
+    BEGIN CATCH
+        SET @err = ERROR_NUMBER(); SET @msg = ERROR_MESSAGE();
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        IF @imp = 1 REVERT;
+        SET @imp = 0;
+    END CATCH;
+
+    IF @err IS NULL OR @err <> 52702
+        THROW 51115, N'T12c：骑手确认分配给其他员工的配送单未以 52702 拒绝。', 1;
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.SalesOrder AS o
+        JOIN dbo.Delivery AS d ON d.order_id = o.order_id
+        WHERE o.order_id = @order12c
+          AND o.order_status = 'COMPLETED'
+          AND d.delivery_status = 'DELIVERED'
+          AND d.rider_employee_id = (SELECT employee_id FROM dbo.EmployeeAccount WHERE database_user_name = 'test_rider')
+    )
+        THROW 51115, N'T12c：越权反例回滚后，外送种子订单未恢复原终态。', 1;
+
+    UPDATE #counters SET pass = pass + 1;
+    PRINT 'PASS: T12c 骑手不能确认分配给其他员工的配送单';
+END TRY
+BEGIN CATCH
+    SET @err = ERROR_NUMBER(); SET @msg = ERROR_MESSAGE();
+    IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+    IF @imp = 1 REVERT;
+    UPDATE #counters SET fail = fail + 1;
+    PRINT 'FAIL: T12c err=' + ISNULL(CAST(@err AS NVARCHAR(10)), N'') + N' msg=' + ISNULL(@msg, N'');
+END CATCH;
+GO
+
 -- T13 收货过程的守卫（E2E-06 的边界）：超量收货与已收齐再收均被拒
 DECLARE @err INT, @msg NVARCHAR(2048), @imp BIT = 0;
 DECLARE @emp_sh13 BIGINT = (SELECT employee_id FROM dbo.EmployeeAccount WHERE database_user_name = 'test_shift_manager');
@@ -687,12 +814,12 @@ BEGIN CATCH
 END CATCH;
 GO
 
--- 收尾：打印 RESULT 并校验分母（13 条）——分母不足说明有批次被静默作废
+-- 收尾：打印 RESULT 并校验分母（17 条）——分母不足说明有批次被静默作废
 DECLARE @pass INT = (SELECT pass FROM #counters);
 DECLARE @fail INT = (SELECT fail FROM #counters);
 PRINT 'RESULT: pass=' + CAST(@pass AS VARCHAR(10)) + ' fail=' + CAST(@fail AS VARCHAR(10));
-IF @pass + @fail <> 15
-    THROW 51199, N'10c：断言计数不足 15，说明有批次被静默作废（检查 -f 65001 与批次编译错误）。', 1;
+IF @pass + @fail <> 17
+    THROW 51199, N'10c：断言计数不足 17，说明有批次被静默作废（检查 -f 65001 与批次编译错误）。', 1;
 IF @fail > 0
     THROW 51198, N'10c：存在失败的验收断言，详见上方 FAIL 行。', 1;
 GO

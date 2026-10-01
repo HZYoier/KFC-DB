@@ -106,6 +106,11 @@ IF EXISTS
 )
     THROW 52904, 'sp_receive_inventory @received_qty must be DECIMAL(12,3).', 1;
 
+DECLARE @receive_definition NVARCHAR(MAX) = LOWER(OBJECT_DEFINITION(OBJECT_ID(N'dbo.sp_receive_inventory', N'P')));
+SET @receive_definition = REPLACE(REPLACE(REPLACE(REPLACE(@receive_definition, N' ', N''), CHAR(9), N''), CHAR(10), N''), CHAR(13), N'');
+IF @receive_definition IS NULL OR @receive_definition NOT LIKE N'%@received_qtydecimal(12,3)=null%'
+    THROW 52905, 'sp_receive_inventory @received_qty must be optional with a NULL default.', 1;
+
 DECLARE @price_function_id INT = OBJECT_ID(N'dbo.fn_get_effective_product_price', N'IF');
 IF EXISTS
 (

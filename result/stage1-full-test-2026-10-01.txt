@@ -1,0 +1,171 @@
+﻿已将数据库上下文更改为 "KFC_DB"。
+KFC_DB 创建完成，兼容级别 = 170
+已将数据库上下文更改为 "KFC_DB"。
+已将数据库上下文更改为 "KFC_DB"。
+已将数据库上下文更改为 "KFC_DB"。
+已将数据库上下文更改为 "KFC_DB"。
+模块 'sp_create_product' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+模块 'sp_update_product_price' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+模块 'sp_set_product_bom' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+模块 'sp_set_combo_component' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+模块 'sp_create_promotion' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+模块 'sp_update_promotion_status' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+模块 'sp_add_promotion_product_rule' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+模块 'sp_update_promotion_product_rule' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+模块 'sp_create_member_level' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+模块 'sp_update_member_level' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+模块 'sp_update_member_level_status' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+已将数据库上下文更改为 "KFC_DB"。
+已将数据库上下文更改为 "KFC_DB"。
+已将数据库上下文更改为 "KFC_DB"。
+product_id           product_name                                       product_type         category_name                                      base_price   effective_price promotion_id        
+-------------------- -------------------------------------------------- -------------------- -------------------------------------------------- ------------ --------------- --------------------
+
+(0 行受影响)
+sale_product_name                                  used_product_name                                  ingredient_name                                    unit_name                                          qty_per_sale   safety_stock_qty
+-------------------------------------------------- -------------------------------------------------- -------------------------------------------------- -------------------------------------------------- -------------- ----------------
+
+(0 行受影响)
+已将数据库上下文更改为 "KFC_DB"。
+order_id             order_no                                           ordered_at                             order_status         order_item_id        item_role            parent_order_item_id product_id           product_name                                       quantity    customization_note  
+-------------------- -------------------------------------------------- -------------------------------------- -------------------- -------------------- -------------------- -------------------- -------------------- -------------------------------------------------- ----------- --------------------
+
+(0 行受影响)
+order_id             order_no                                           customer_id          customer_mobile      customer_type        fulfillment_method   order_status         pickup_code          ordered_at                             order_paid_at                          production_started_at                  production_finished_at                 completed_at                           cancelled_at                           order_created_at                       order_updated_at                       order_item_id        item_role            parent_order_item_id product_id           product_name                                       quantity    unit_price   promotion_id         total_amount payment_id           payment_method       paid_amount  payment_status       payment_paid_at                        refunded_amount refunded_at                           
+-------------------- -------------------------------------------------- -------------------- -------------------- -------------------- -------------------- -------------------- -------------------- -------------------------------------- -------------------------------------- -------------------------------------- -------------------------------------- -------------------------------------- -------------------------------------- -------------------------------------- -------------------------------------- -------------------- -------------------- -------------------- -------------------- -------------------------------------------------- ----------- ------------ -------------------- ------------ -------------------- -------------------- ------------ -------------------- -------------------------------------- --------------- --------------------------------------
+
+(0 行受影响)
+point_ledger_id      customer_id          customer_mobile      customer_type        order_id             order_no                                           paid_amount_snapshot point_multiplier_snapshot point_delta ledger_status        ledger_created_at                      effective_at                           current_points
+-------------------- -------------------- -------------------- -------------------- -------------------- -------------------------------------------------- -------------------- ------------------------- ----------- -------------------- -------------------------------------- -------------------------------------- --------------
+
+(0 行受影响)
+已将数据库上下文更改为 "KFC_DB"。
+ingredient_id        ingredient_name                                    unit_name                                          on_hand_qty    locked_qty     available_qty  safety_stock_qty shortfall_qty 
+-------------------- -------------------------------------------------- -------------------------------------------------- -------------- -------------- -------------- ---------------- --------------
+
+(0 行受影响)
+reference_no                                       ingredient_name                                    unit_name                                          movement_type        on_hand_delta  locked_delta   moved_at                              
+-------------------------------------------------- -------------------------------------------------- -------------------------------------------------- -------------------- -------------- -------------- --------------------------------------
+
+(0 行受影响)
+order_no                                           sale_product_name                                  combo_child_product_name                           ingredient_name                                    unit_name                                          line_required_qty movement_type        on_hand_delta  locked_delta   moved_at                              
+-------------------------------------------------- -------------------------------------------------- -------------------------------------------------- -------------------------------------------------- -------------------------------------------------- ----------------- -------------------- -------------- -------------- --------------------------------------
+
+(0 行受影响)
+replenishment_suggestion_id ingredient_id        ingredient_name                                    unit_name                                          current_qty    suggested_qty  suggestion_status    created_by_name                                    submitted_by_name                                 
+--------------------------- -------------------- -------------------------------------------------- -------------------------------------------------- -------------- -------------- -------------------- -------------------------------------------------- --------------------------------------------------
+
+(0 行受影响)
+已将数据库上下文更改为 "KFC_DB"。
+已将数据库上下文更改为 "KFC_DB"。
+
+(2 行受影响)
+
+(3 行受影响)
+
+(6 行受影响)
+
+(6 行受影响)
+
+(8 行受影响)
+
+(12 行受影响)
+
+(3 行受影响)
+
+(3 行受影响)
+
+(1 行受影响)
+
+(2 行受影响)
+
+(1 行受影响)
+k                 n          
+----------------- -----------
+products                    6
+combo_components            3
+bom_rows                   12
+active_promotions           1
+
+(4 行受影响)
+已将数据库上下文更改为 "KFC_DB"。
+
+(7 行受影响)
+
+(7 行受影响)
+
+(52 行受影响)
+
+(6 行受影响)
+k                       n          
+----------------------- -----------
+business_roles                    7
+employee_accounts                 7
+role_permissions                 52
+employee_business_roles           7
+inventory_rows                    6
+low_stock_ingredients             0
+
+(6 行受影响)
+已将数据库上下文更改为 "KFC_DB"。
+PASS: B seed orders
+已将数据库上下文更改为 "KFC_DB"。
+k                    n          
+-------------------- -----------
+purchase_orders                1
+purchase_order_items           1
+receipt_flows                  2
+open_suggestions               0
+closed_suggestions             1
+09d 完成：采购单 CLOSED 且收齐、关联建议 CLOSED、现有量回到安全线、RECEIPT 两条、审计齐备。
+已将数据库上下文更改为 "KFC_DB"。
+PASS: A1 重复手机号被拒
+PASS: A2 新手机号可建档、初始积分为 0 且带默认等级
+PASS: A3 负数价格被拒
+PASS: A4 正数价格可改且落库
+PASS: A5 促销结束早于开始被拒
+PASS: A6 合法促销可建且建档即未启用
+PASS: A7 重叠促销按 priority 取唯一最高优先级
+PASS: A8 视图与函数在同一时刻同价同促销 ID
+PASS: A9 无用料单品不能上架
+PASS: A10 有用料单品可以上架
+PASS: A11 子项无用料的套餐不能上架
+PASS: A12 单品 BOM 视图分支
+PASS: A13 套餐 BOM 视图分支（展开、缩放与跨子项合计）
+RESULT: pass=13 fail=0
+已将数据库上下文更改为 "KFC_DB"。
+PASS: invalid JSON is rejected
+PASS: non-positive quantity is rejected
+PASS: inactive product is rejected
+PASS: active product without BOM is rejected
+PASS: unpaid order cannot start production
+PASS: payment amount mismatch is rejected
+PASS: duplicate payment is rejected
+PASS: customer without an active member level cannot pay
+PASS: payment FK fault rolls back payment order and ledger
+PASS: invalid state transition is rejected
+PASS: item price snapshot survives product price change
+PASS: combo order expands through B item snapshot, A BOM view, and C inventory lock
+PASS: pickup makes ledger effective with snapshot FLOOR points and known threshold level change
+PASS: delivery completion makes ledger effective
+PASS: full pre-consume refund cancels order and refunds paid amount
+RESULT: pass=15 fail=0
+已将数据库上下文更改为 "KFC_DB"。
+PASS: T1 E2E-01/04 三笔种子订单终态与成交价/促销快照
+PASS: T2 流水形状合规、三类迁移按单据去重 LOCK 3 / CONSUME 2 / RELEASE 1
+PASS: T3 库存永不为负，账本双向勾稽（锁定/现有量），流水引用约定成立
+PASS: T4 E2E-02/03 积分流水全部 EFFECTIVE，顾客积分与流水勾稽
+PASS: T5 E2E-06 建议已关闭且唯一、采购单 CLOSED 收齐、两张 RECEIPT 与建议量勾稽
+PASS: T6 敏感操作（收货/提交/审批/角色分配）审计齐备且字段完整
+PASS: T7 E2E-05 库存不足下单被拒（50000：可用库存不足）且订单/明细/流水零新增
+PASS: T8 E2E-05 对照 小数量下单成功并写入 LOCK 流水（锁定量按 BOM 用量增加）
+PASS: T9 制作完成抛错被拒（50000：现有量或锁定量小于待实扣量），整批回滚后订单/明细/流水/锁定量均回到测试前状态
+PASS: T10 建议 PENDING→（调整）→SUBMITTED→REJECTED，调整/建议调整/提交/驳回四类审计齐备
+PASS: T10b 值班经理审批被拒（229：EXECUTE 只授给 role_store_manager）
+PASS: T10c 对已提交建议的调整被拒（50000：仅可调整处于 PENDING 的建议）
+PASS: T11 E2E-06 下压→建议→提交→审批→两次收货 APPROVED→PARTIALLY_RECEIVED→CLOSED，收货后现有量增加且账实相符
+PASS: T12 E2E-07 取餐员可查取餐板、查不到含金额视图，厨师可查后厨队列，收银员不能调整库存（229）
+PASS: T12b 收银员不能直接修改商品价格、库存或顾客积分
+PASS: T12c 骑手不能确认分配给其他员工的配送单
+PASS: T13 已关闭采购单再收货被拒（50000：只允许对 APPROVED 或 PARTIALLY_RECEIVED 收货）
+RESULT: pass=17 fail=0
