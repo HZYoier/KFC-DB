@@ -158,7 +158,7 @@ dbo.sp_receive_inventory
 
 ---
 
-## 6. A 已冻结的种子常量（`09a_master_seed_data.sql`，2026-09-26）
+## 6. A 已冻结的种子常量（`09a_master_seed_data.sql`，2026-09-26；2026-09-29 修订 `Customer` 1 号等级）
 
 以下 ID 与数值由 A 的 `09a` 用显式 `IDENTITY_INSERT` 固定，B/C 的种子与验收脚本可直接引用。A 若改动会先通知。
 
@@ -168,7 +168,7 @@ dbo.sp_receive_inventory
 | `Ingredient` | `1` 鸡腿肉（片，安全线 40.000）、`2` 汉堡面包（片，40.000）、`3` 生菜（克，500.000）、`4` 沙拉酱（克，800.000）、`5` 薯条（克，1000.000）、`6` 可乐原浆（毫升，2000.000） |
 | `Product` | `1` 香辣鸡腿堡 19.00 SINGLE、`2` 劲脆鸡腿堡 17.50 SINGLE、`3` 薯条(中) 12.00 SINGLE、`4` 可乐(中) 9.00 SINGLE、`5` 双人分享餐 45.00 **COMBO**、`6` 鲜蔬沙拉 14.00 SINGLE |
 | `MemberLevel` | `1` 普通会员 ×1.00 门槛 0、`2` 银卡会员 ×1.20 门槛 500、`3` 金卡会员 ×1.50 门槛 1500 |
-| `Customer` | `1` `13900000001` GUEST（无等级、0 分）、`2` `13900000002` WOW（等级 2、500 分）、`3` `13900000003` PAID（等级 3、1500 分） |
+| `Customer` | `1` `13900000001` GUEST（等级 1、0 分）、`2` `13900000002` WOW（等级 2、500 分）、`3` `13900000003` PAID（等级 3、1500 分） |
 | `Promotion` | `1` 疯狂星期四 FIXED_PRICE，2026-01-01 至 2030-12-31，`ACTIVE`；规则 `1`（商品 1、周四、9.90、`priority` 10）、规则 `2`（商品 1、周四、12.00、`priority` 5） |
 
 约定：
@@ -178,6 +178,9 @@ dbo.sp_receive_inventory
 3. **促销按 `weekday_no` 生效**，周四用 `weekday_no = 4` 表达，与部署当天是星期几无关。`v_active_product_price` 内部写死 `SYSDATETIME()`，所以任何断言促销价的脚本都必须传**固定的周四时刻**，否则断言会退化成标准价。
 4. **号段**：A 的种子顾客占 `13900000001`–`3`；`139000099xx` 保留给 A 的验收夹具。请 B/C 的种子用别的号段（`Customer.mobile` 有唯一约束）。
 5. **套餐不配直接 BOM**：套餐 5 只在 `ComboComponent` 里有行（子项 1、2、4，其中 4 取 2 份）；`ProductBom` 中没有 `product_id = 5`。
+6. **建档即带默认等级（2026-09-29 定）**：`sp_create_customer` 建出的顾客一律 `current_points = 0`、`status = 'ACTIVE'`，并且 `member_level_id` 取默认档——判据与第 2.2 节第 3 条在 0 分时算出的那一档完全相同（`ACTIVE` 且 `threshold_points <= 0` 中门槛最高，同门槛取最小 `member_level_id`；本种子即 `1` 号普通会员）。找不到这样的基准档是配置缺陷，`sp_create_customer` 会 `THROW 51001` 拒绝建档，而不是建出一个付不了款的顾客。
+   - `member_level_id` 仍可空，但空值只可能来自"等级被停用而置空"或 `sp_update_customer_member_level(@member_level_id => NULL)` 这类显式清空，不再来自建档。B 的 52205（无正向倍率等级不得支付）守卫因此依旧是必要的兜底，请保留。
+   - 与第 2.2 节的差异是刻意的：积分入账过程在同样"无档可归"时按既有行为写 `NULL`（顾客已存在，不该因配置缺陷把入账整个打断），建档是入口，宁可响亮失败。
 
 ## 7. A 域验收的跨域依赖与分工
 
@@ -224,6 +227,7 @@ A 的完工标准里有三条落在别人的脚本里：
 | --- | --- | --- | --- |
 | 1 | `sp_receive_inventory` 增加兼容的第三个可选参数 `@received_qty DECIMAL(12,3) = NULL`，用于表达本次实收数量；B 已在第 3.5 节及只读契约检查器中冻结 | C | B（已确认） |
 | 2 | `fn_get_effective_product_price` 的 `@at` 按 SQL Server 元数据冻结为 `datetime2(0)`、`max_length = 6`；B 的只读契约检查器已改为 6 | A、C | B（已确认） |
-| 3 | B 同意向 `role_shift_manager` 授予 `v_order_inventory_trace` 的 `SELECT`，供值班经理联查订单锁库、释放和实扣；权限仍由 C 在 `08_roles_permissions.sql` 落地 | C | B（已确认，待 A/C 落地） |
+| 3 | B 同意向 `role_shift_manager` 授予 `v_order_inventory_trace` 的 `SELECT`，供值班经理联查订单锁库、释放和实扣；C 已在 `08_roles_permissions.sql` 落地 | C | B（已确认并落地） |
+| 4 | B 确认保留支付过程的 52205 守卫。新建顾客由 A 自动带默认等级；`10b` 已增加独立反例：先以正常等级建单，再在回滚事务中显式清空等级，断言支付以 52205 拒绝且不留下订单、支付或积分流水 | A | B（已确认并落地） |
 
 非接口性的待确认项（`08` 的 DMK 明文口令取舍、`sp_update_product_status` 仅在状态跃迁时校验 BOM 的残留代价、数据字典与 `01` 注释双份维护）已分别记录在计划变更记录与 `docs/主数据数据字典.md` §11，不在此重复。

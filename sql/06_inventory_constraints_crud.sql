@@ -2,17 +2,19 @@
 -- 06_inventory_constraints_crud.sql
 -- 负责人：C（库存、补货、员工权限、审计与总集成）
 -- 用途：C 域命名 CHECK 约束；跨域审计过程 sp_write_audit_log；
---       库存人工调整与补货闭环过程；订单库存接口过程（锁库/释放/实扣）；
+--       库存人工调整与补货闭环过程；订单库存接口过程（锁库/释放/实扣/采购收货）；
 --       员工业务角色同步过程（分配/撤销/停用）
 -- 依赖：01_master_schema.sql、02_order_schema.sql、03_inventory_security_schema.sql
 -- 依据：docs/stage1-three-person-implementation-plan.md §2.3、§2.4、§5 C-1、
---       docs/stage1-cross-domain-interface-contract.md §3.4
+--       docs/stage1-cross-domain-interface-contract.md §3.4、§3.5
 -- 进度：批次 1 C 域命名 CHECK；批次 2 sp_write_audit_log；批次 3 库存调整与补货闭环；
---       批次 4 锁库/释放/实扣；批次 5 员工业务角色同步（分配/撤销/停用）。
+--       批次 4 锁库/释放/实扣；批次 5 员工业务角色同步（分配/撤销/停用）；
+--       批次 6 采购收货 sp_receive_inventory。
 --       批次 5 的三个过程需由 08_roles_permissions.sql 用证书签名授予
 --       ALTER ANY ROLE / ALTER ANY USER（§5 C-1 line 303）；改过本文件后必须重跑 08 的签名。
--- 待办：sp_receive_inventory 的签名冲突已记入 plan §8 变更记录 2026-09-24，
---       按 §6.3「三人确认后再改」，确认前不实现。
+-- 说明：批次 6 的 sp_receive_inventory 形态由 B 于 2026-09-28 冻结并写入契约 §3.5：
+--       保留原有两个参数，新增可选的 @received_qty DECIMAL(12,3) = NULL——
+--       省略或传 NULL 时收齐未收数量，传正数时表示本次实收量（分批收货）。
 -- 说明：sp_write_audit_log 在写入前按 USER_NAME() 解析当前登录主体映射的启用员工，
 --       并要求传入的员工 ID 与解析结果一致，不信任客户端伪造的主体 ID。
 -- ============================================================================
@@ -1853,6 +1855,195 @@ BEGIN
             ROLLBACK TRANSACTION;
         ELSE IF @owns_tran = 0 AND XACT_STATE() = 1
             ROLLBACK TRANSACTION sp_update_employee_status;
+
+        THROW;
+    END CATCH;
+END;
+GO
+
+-- 批次 6：采购收货入库（§2.3 line 146；契约 §3.5 冻结的签名）
+SET ANSI_NULLS ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET QUOTED_IDENTIFIER ON;
+SET NUMERIC_ROUNDABORT OFF;
+GO
+
+-- 采购收货（§2.3）：仅值班经理；只允许对 APPROVED / PARTIALLY_RECEIVED 的采购单收货；
+-- 增加现有量、累计 received_qty、写 PURCHASE_ORDER 的 RECEIPT 流水并写审计。
+-- 收齐时采购单转 CLOSED 并把关联建议置 CLOSED，未收齐时转 PARTIALLY_RECEIVED。
+-- @received_qty 省略或传 NULL 表示收齐未收数量（契约 §3.5 的两参数调用语义）。
+CREATE PROCEDURE dbo.sp_receive_inventory
+    @purchase_order_id BIGINT,
+    @employee_id       BIGINT,
+    @received_qty      DECIMAL(12,3) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @purchase_order_id IS NULL OR @employee_id IS NULL
+    BEGIN
+        THROW 50000, N'sp_receive_inventory：@purchase_order_id 与 @employee_id 都不能为 NULL。', 1;
+    END;
+
+    IF @received_qty IS NOT NULL AND @received_qty <= 0
+    BEGIN
+        THROW 50000, N'sp_receive_inventory：本次收货量必须大于零。', 1;
+    END;
+
+    DECLARE @resolved_employee_id BIGINT;
+
+    SELECT @resolved_employee_id = ea.employee_id
+    FROM dbo.EmployeeAccount AS ea
+    WHERE ea.database_user_name = USER_NAME()
+      AND ea.status = 'ACTIVE';
+
+    IF @resolved_employee_id IS NULL
+    BEGIN
+        THROW 50000, N'sp_receive_inventory：当前登录主体未映射到启用员工，拒绝执行。', 1;
+    END;
+
+    IF @employee_id <> @resolved_employee_id
+    BEGIN
+        THROW 50000, N'sp_receive_inventory：传入员工 ID 与当前登录主体解析出的员工不一致，拒绝执行。', 1;
+    END;
+
+    IF NOT EXISTS (SELECT 1
+                   FROM dbo.EmployeeBusinessRole AS ebr
+                   JOIN dbo.BusinessRole AS br
+                     ON br.business_role_id = ebr.business_role_id
+                   WHERE ebr.employee_id = @resolved_employee_id
+                     AND br.role_code = 'shift_manager'
+                     AND br.status = 'ACTIVE')
+    BEGIN
+        THROW 50000, N'sp_receive_inventory：仅值班经理可执行采购收货。', 1;
+    END;
+
+    DECLARE @owns_tran BIT = CASE WHEN @@TRANCOUNT = 0 THEN 1 ELSE 0 END;
+
+    IF @owns_tran = 1
+        BEGIN TRANSACTION;
+    ELSE
+        SAVE TRANSACTION sp_receive_inventory;
+
+    BEGIN TRY
+        DECLARE @purchase_status VARCHAR(20);
+        DECLARE @suggestion_id BIGINT;
+
+        SELECT @purchase_status = po.purchase_status,
+               @suggestion_id = po.replenishment_suggestion_id
+        FROM dbo.PurchaseOrder AS po WITH (UPDLOCK, HOLDLOCK)
+        WHERE po.purchase_order_id = @purchase_order_id;
+
+        IF @purchase_status IS NULL
+        BEGIN
+            THROW 50000, N'sp_receive_inventory：采购单不存在。', 1;
+        END;
+
+        IF @purchase_status NOT IN ('APPROVED', 'PARTIALLY_RECEIVED')
+        BEGIN
+            THROW 50000, N'sp_receive_inventory：只允许对 APPROVED 或 PARTIALLY_RECEIVED 的采购单收货。', 1;
+        END;
+
+        DECLARE @item_count INT = (SELECT COUNT(*) FROM dbo.PurchaseOrderItem WHERE purchase_order_id = @purchase_order_id);
+
+        IF @item_count <> 1
+        BEGIN
+            THROW 50000, N'sp_receive_inventory：采购单明细不唯一，无法确定本次收货的原料。', 1;
+        END;
+
+        DECLARE @ingredient_id BIGINT;
+        DECLARE @ordered_qty DECIMAL(12,3);
+        DECLARE @received_qty_sum DECIMAL(12,3);
+
+        SELECT @ingredient_id = poi.ingredient_id,
+               @ordered_qty = poi.ordered_qty,
+               @received_qty_sum = poi.received_qty
+        FROM dbo.PurchaseOrderItem AS poi WITH (UPDLOCK, HOLDLOCK)
+        WHERE poi.purchase_order_id = @purchase_order_id;
+
+        DECLARE @outstanding_qty DECIMAL(12,3) = @ordered_qty - @received_qty_sum;
+        DECLARE @this_qty DECIMAL(12,3) = COALESCE(@received_qty, @outstanding_qty);
+
+        IF @this_qty <= 0
+        BEGIN
+            THROW 50000, N'sp_receive_inventory：该采购单已收齐，没有可收数量。', 1;
+        END;
+
+        IF @this_qty > @outstanding_qty
+        BEGIN
+            THROW 50000, N'sp_receive_inventory：本次收货量不能超过未收数量。', 1;
+        END;
+
+        DECLARE @on_hand_before DECIMAL(12,3);
+
+        SELECT @on_hand_before = inv.on_hand_qty
+        FROM dbo.Inventory AS inv WITH (UPDLOCK, HOLDLOCK)
+        WHERE inv.ingredient_id = @ingredient_id;
+
+        IF @on_hand_before IS NULL
+        BEGIN
+            THROW 50000, N'sp_receive_inventory：该原料没有库存记录，无法入库。', 1;
+        END;
+
+        UPDATE dbo.Inventory
+           SET on_hand_qty = on_hand_qty + @this_qty,
+               updated_at = SYSDATETIME()
+         WHERE ingredient_id = @ingredient_id;
+
+        UPDATE dbo.PurchaseOrderItem
+           SET received_qty = received_qty + @this_qty
+         WHERE purchase_order_id = @purchase_order_id;
+
+        INSERT INTO dbo.InventoryMovement
+            (ingredient_id, movement_type, on_hand_delta, locked_delta, reference_type, reference_id, moved_at)
+        VALUES
+            (@ingredient_id, 'RECEIPT', @this_qty, 0, 'PURCHASE_ORDER', @purchase_order_id, SYSDATETIME());
+
+        DECLARE @fully_received BIT = CASE WHEN @received_qty_sum + @this_qty = @ordered_qty THEN 1 ELSE 0 END;
+
+        UPDATE dbo.PurchaseOrder
+           SET purchase_status = CASE WHEN @fully_received = 1 THEN 'CLOSED' ELSE 'PARTIALLY_RECEIVED' END
+         WHERE purchase_order_id = @purchase_order_id;
+
+        IF @fully_received = 1
+        BEGIN
+            UPDATE dbo.ReplenishmentSuggestion
+               SET suggestion_status = 'CLOSED'
+             WHERE replenishment_suggestion_id = @suggestion_id
+               AND suggestion_status = 'APPROVED';
+        END;
+
+        DECLARE @detail_json NVARCHAR(MAX) =
+        (
+            SELECT @purchase_order_id AS purchase_order_id,
+                   @ingredient_id AS ingredient_id,
+                   @this_qty AS received_qty,
+                   @outstanding_qty - @this_qty AS outstanding_after,
+                   @on_hand_before AS on_hand_before,
+                   @on_hand_before + @this_qty AS on_hand_after,
+                   CASE WHEN @fully_received = 1 THEN 'CLOSED' ELSE 'PARTIALLY_RECEIVED' END AS purchase_status
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        EXEC dbo.sp_write_audit_log
+             @employee_id = @resolved_employee_id,
+             @action_name = 'RECEIVE_INVENTORY',
+             @entity_name = 'PurchaseOrder',
+             @entity_id   = @purchase_order_id,
+             @detail_json = @detail_json;
+
+        IF @owns_tran = 1
+            COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @owns_tran = 1 AND XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+        ELSE IF @owns_tran = 0 AND XACT_STATE() = 1
+            ROLLBACK TRANSACTION sp_receive_inventory;
 
         THROW;
     END CATCH;

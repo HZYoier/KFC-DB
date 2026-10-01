@@ -1,4 +1,11 @@
 -- 验收
+--
+-- 事务纪律：失败收尾一律「先补 ROLLBACK，再 REVERT」。run_all.sql 是单会话执行，02_order_schema.sql:15
+--   的批次级 SET XACT_ABORT ON 会一直留到本脚本；此时过程内的 THROW 会把外层事务打成不可提交
+--   （XACT_STATE() = -1），而 REVERT 在不可提交事务里被拒（Msg 3930）并中止整批——必须先
+--   IF XACT_STATE() = -1 ROLLBACK TRANSACTION; 把会话救回可提交态，REVERT 才执行得了。
+--   反过来把收尾的 ROLLBACK 提到 REVERT 之前是错的：对照断言的读回在事务内进行（如 A2 的
+--   SELECT、A4 的 @price_after），提前回滚会把读回一起丢掉。
 
 USE KFC_DB;
 GO
@@ -22,6 +29,11 @@ IF NOT EXISTS (SELECT 1 FROM dbo.EmployeeAccount
     THROW 51900, N'10a：test_store_manager 没有 ACTIVE 的 EmployeeAccount 行，请先执行 09c_inventory_opening_seed_data.sql。', 1;
 GO
 
+-- 断言计数：供末批证明 13 条确实都跑过（有批次被静默作废时会少于 13）
+IF OBJECT_ID(N'tempdb..#a10_assertion') IS NOT NULL DROP TABLE #a10_assertion;
+CREATE TABLE #a10_assertion (assertion_no VARCHAR(10) NOT NULL);
+GO
+
 
 -- A1 反例：重复手机号被拒（sp_create_customer 预检 → 51005）
 DECLARE @impersonating BIT = 0;
@@ -42,6 +54,7 @@ BEGIN CATCH
     SET @errmsg = ERROR_MESSAGE();
 END CATCH;
 
+IF XACT_STATE() = -1 ROLLBACK TRANSACTION;
 IF @impersonating = 1 BEGIN REVERT; SET @impersonating = 0; END;
 IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
 
@@ -52,17 +65,19 @@ IF @fail IS NULL AND @err <> 51005
 IF @fail IS NOT NULL THROW 51901, @fail, 1;
 
 PRINT N'PASS: A1 重复手机号被拒';
+INSERT INTO #a10_assertion (assertion_no) VALUES (N'A1');
 GO
 
 
--- A2 对照：新手机号可建档，且建档不带初始积分、不带等级
+-- A2 对照：新手机号可建档，初始积分为 0、等级取默认档（门槛 0 的 ACTIVE 等级）
 DECLARE @impersonating BIT = 0;
 DECLARE @err           INT = NULL;
 DECLARE @errmsg        NVARCHAR(2048) = NULL;
 DECLARE @fail          NVARCHAR(2048) = NULL;
-DECLARE @points        INT;
-DECLARE @level_id      BIGINT;
-DECLARE @status        VARCHAR(20);
+DECLARE @points         INT;
+DECLARE @level_id       BIGINT;
+DECLARE @expected_level BIGINT;
+DECLARE @status         VARCHAR(20);
 
 BEGIN TRANSACTION;
 BEGIN TRY
@@ -75,6 +90,7 @@ BEGIN CATCH
     SET @errmsg = ERROR_MESSAGE();
 END CATCH;
 
+IF XACT_STATE() = -1 ROLLBACK TRANSACTION;
 IF @impersonating = 1 BEGIN REVERT; SET @impersonating = 0; END;
 
 IF @err IS NOT NULL
@@ -90,16 +106,29 @@ SELECT @points   = c.current_points,
 FROM dbo.Customer AS c
 WHERE c.mobile = '13900009999';
 
+-- 默认档的判据与 04 的 sp_create_customer / sp_apply_customer_points 一致：0 分顾客应处的那一档
+SELECT TOP (1) @expected_level = ml.member_level_id
+FROM dbo.MemberLevel AS ml
+WHERE ml.[status] = 'ACTIVE'
+  AND ml.threshold_points <= 0
+ORDER BY ml.threshold_points DESC, ml.member_level_id ASC;
+
 IF @points IS NULL
     SET @fail = N'10a A2（新手机号可建档）：建档后查不到该顾客。';
-IF @fail IS NULL AND (@points <> 0 OR @level_id IS NOT NULL OR @status <> 'ACTIVE')
+IF @fail IS NULL AND @expected_level IS NULL
+    SET @fail = N'10a A2（新手机号可建档）：种子中没有 threshold_points <= 0 的 ACTIVE 等级，默认档无从判定。';
+IF @fail IS NULL AND (@points <> 0 OR @status <> 'ACTIVE'
+                      OR @level_id IS NULL OR @level_id <> @expected_level)
     SET @fail = CONCAT(N'10a A2（新手机号可建档）：建档初始状态不符，实际 积分=', @points,
-                       N' 等级=', ISNULL(CAST(@level_id AS NVARCHAR(20)), N'NULL'), N' 状态=', @status, N'。');
+                       N' 等级=', ISNULL(CAST(@level_id AS NVARCHAR(20)), N'NULL'),
+                       N'（期望默认档 ', ISNULL(CAST(@expected_level AS NVARCHAR(20)), N'NULL'), N'）',
+                       N' 状态=', @status, N'。');
 
 IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
 IF @fail IS NOT NULL THROW 51903, @fail, 1;
 
-PRINT N'PASS: A2 新手机号可建档且不带初始积分';
+PRINT N'PASS: A2 新手机号可建档、初始积分为 0 且带默认等级';
+INSERT INTO #a10_assertion (assertion_no) VALUES (N'A2');
 GO
 
 
@@ -122,6 +151,7 @@ BEGIN CATCH
     SET @errmsg = ERROR_MESSAGE();
 END CATCH;
 
+IF XACT_STATE() = -1 ROLLBACK TRANSACTION;
 IF @impersonating = 1 BEGIN REVERT; SET @impersonating = 0; END;
 IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
 
@@ -132,6 +162,7 @@ IF @fail IS NULL AND @err <> 51000
 IF @fail IS NOT NULL THROW 51904, @fail, 1;
 
 PRINT N'PASS: A3 负数价格被拒';
+INSERT INTO #a10_assertion (assertion_no) VALUES (N'A3');
 GO
 
 
@@ -158,6 +189,7 @@ BEGIN CATCH
     SET @errmsg = ERROR_MESSAGE();
 END CATCH;
 
+IF XACT_STATE() = -1 ROLLBACK TRANSACTION;
 IF @impersonating = 1 BEGIN REVERT; SET @impersonating = 0; END;
 
 IF @err IS NOT NULL
@@ -180,6 +212,7 @@ IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
 IF @fail IS NOT NULL THROW 51906, @fail, 1;
 
 PRINT N'PASS: A4 正数价格可改且落库';
+INSERT INTO #a10_assertion (assertion_no) VALUES (N'A4');
 GO
 
 
@@ -209,6 +242,7 @@ BEGIN CATCH
     SET @errmsg = ERROR_MESSAGE();
 END CATCH;
 
+IF XACT_STATE() = -1 ROLLBACK TRANSACTION;
 IF @impersonating = 1 BEGIN REVERT; SET @impersonating = 0; END;
 IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
 
@@ -219,6 +253,7 @@ IF @fail IS NULL AND @err <> 51000
 IF @fail IS NOT NULL THROW 51907, @fail, 1;
 
 PRINT N'PASS: A5 促销结束早于开始被拒';
+INSERT INTO #a10_assertion (assertion_no) VALUES (N'A5');
 GO
 
 
@@ -246,6 +281,7 @@ BEGIN CATCH
     SET @errmsg = ERROR_MESSAGE();
 END CATCH;
 
+IF XACT_STATE() = -1 ROLLBACK TRANSACTION;
 IF @impersonating = 1 BEGIN REVERT; SET @impersonating = 0; END;
 
 IF @err IS NOT NULL
@@ -266,6 +302,7 @@ IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
 IF @fail IS NOT NULL THROW 51909, @fail, 1;
 
 PRINT N'PASS: A6 合法促销可建且建档即未启用';
+INSERT INTO #a10_assertion (assertion_no) VALUES (N'A6');
 GO
 
 
@@ -307,6 +344,7 @@ ROLLBACK TRANSACTION;
 IF @fail IS NOT NULL THROW 51910, @fail, 1;
 
 PRINT N'PASS: A7 重叠促销按 priority 取唯一最高优先级';
+INSERT INTO #a10_assertion (assertion_no) VALUES (N'A7');
 GO
 
 
@@ -342,6 +380,7 @@ ROLLBACK TRANSACTION;
 IF @fail IS NOT NULL THROW 51911, @fail, 1;
 
 PRINT N'PASS: A8 视图与函数在同一时刻同价同促销 ID';
+INSERT INTO #a10_assertion (assertion_no) VALUES (N'A8');
 GO
 
 
@@ -370,6 +409,7 @@ BEGIN CATCH
     SET @errmsg = ERROR_MESSAGE();
 END CATCH;
 
+IF XACT_STATE() = -1 ROLLBACK TRANSACTION;
 IF @impersonating = 1 BEGIN REVERT; SET @impersonating = 0; END;
 IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
 
@@ -380,6 +420,7 @@ IF @fail IS NULL AND @err <> 51003
 IF @fail IS NOT NULL THROW 51912, @fail, 1;
 
 PRINT N'PASS: A9 无用料单品不能上架';
+INSERT INTO #a10_assertion (assertion_no) VALUES (N'A9');
 GO
 
 
@@ -408,6 +449,7 @@ BEGIN CATCH
     SET @errmsg = ERROR_MESSAGE();
 END CATCH;
 
+IF XACT_STATE() = -1 ROLLBACK TRANSACTION;
 IF @impersonating = 1 BEGIN REVERT; SET @impersonating = 0; END;
 
 IF @err IS NOT NULL
@@ -426,6 +468,7 @@ IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
 IF @fail IS NOT NULL THROW 51914, @fail, 1;
 
 PRINT N'PASS: A10 有用料单品可以上架';
+INSERT INTO #a10_assertion (assertion_no) VALUES (N'A10');
 GO
 
 
@@ -461,6 +504,7 @@ BEGIN CATCH
     SET @errmsg = ERROR_MESSAGE();
 END CATCH;
 
+IF XACT_STATE() = -1 ROLLBACK TRANSACTION;
 IF @impersonating = 1 BEGIN REVERT; SET @impersonating = 0; END;
 IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
 
@@ -471,6 +515,7 @@ IF @fail IS NULL AND @err <> 51003
 IF @fail IS NOT NULL THROW 51915, @fail, 1;
 
 PRINT N'PASS: A11 子项无用料的套餐不能上架';
+INSERT INTO #a10_assertion (assertion_no) VALUES (N'A11');
 GO
 
 
@@ -499,6 +544,7 @@ ROLLBACK TRANSACTION;
 IF @fail IS NOT NULL THROW 51916, @fail, 1;
 
 PRINT N'PASS: A12 单品 BOM 视图分支';
+INSERT INTO #a10_assertion (assertion_no) VALUES (N'A12');
 GO
 
 
@@ -553,4 +599,21 @@ ROLLBACK TRANSACTION;
 IF @fail IS NOT NULL THROW 51917, @fail, 1;
 
 PRINT N'PASS: A13 套餐 BOM 视图分支（展开、缩放与跨子项合计）';
+INSERT INTO #a10_assertion (assertion_no) VALUES (N'A13');
+GO
+
+
+-- 收尾：pass 为实际跑过并打印的断言数，fail 恒为 0（任一条失败即 THROW）
+IF OBJECT_ID(N'tempdb..#a10_assertion') IS NULL
+    THROW 51918, N'10a：断言计数表不存在——部署前提批次未通过（见前面的 51900），本脚本没跑完。', 1;
+
+DECLARE @pass INT = (SELECT COUNT(*) FROM #a10_assertion);
+DECLARE @fail INT = 0;
+PRINT CONCAT(N'RESULT: pass=', @pass, N' fail=', @fail);
+
+IF @pass <> 13
+BEGIN
+    DECLARE @msg NVARCHAR(512) = CONCAT(N'10a：实际只跑过 ', @pass, N' 条断言（期望 13），有批次被静默作废或中途退出。');
+    THROW 51918, @msg, 1;
+END;
 GO

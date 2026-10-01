@@ -10,6 +10,10 @@ SET QUOTED_IDENTIFIER ON;
 SET NUMERIC_ROUNDABORT OFF;
 GO
 
+IF OBJECT_ID(N'tempdb..#b10_assertion') IS NOT NULL DROP TABLE #b10_assertion;
+CREATE TABLE #b10_assertion (assertion_no VARCHAR(10) NOT NULL PRIMARY KEY);
+GO
+
 /*
   部署验收夹具裁定：计划未冻结 A 的 sp_create_product/sp_update_product_price 签名，
   故仅在部署主体、外层事务且最终回滚的本段直接写 Product/Customer。它不绕过任何 B 写入，
@@ -46,6 +50,7 @@ SELECT @after_count = COUNT(*) FROM dbo.SalesOrder;
 SELECT @after_item_count = COUNT(*) FROM dbo.SalesOrderItem;
 IF @failed = 0 OR @error_number <> 52104 OR @after_count <> @before_count OR @after_item_count <> @before_item_count THROW 51001, 'Invalid JSON was accepted, failed for the wrong reason, or left an order/item.', 1;
 PRINT 'PASS: invalid JSON is rejected';
+INSERT #b10_assertion (assertion_no) VALUES ('B01');
 
 SET @failed = 0; SET @error_number = NULL; SET @order_no = CONCAT('AT-ZERO-', LEFT(CONVERT(VARCHAR(36), NEWID()), 12));
 SET @items_json = CONCAT(N'[{"product_id":', @product_id, N',"quantity":0}]');
@@ -65,6 +70,7 @@ SELECT @after_count = COUNT(*) FROM dbo.SalesOrder;
 SELECT @after_item_count = COUNT(*) FROM dbo.SalesOrderItem;
 IF @failed = 0 OR @error_number <> 52107 OR @after_count <> @before_count OR @after_item_count <> @before_item_count THROW 51002, 'Non-positive quantity was accepted, failed for the wrong reason, or left an order/item.', 1;
 PRINT 'PASS: non-positive quantity is rejected';
+INSERT #b10_assertion (assertion_no) VALUES ('B02');
 
 /* A temporary master-data fixture avoids relying on a particular seed product being inactive/no-BOM. */
 SET @failed = 0; SET @error_number = NULL; SET @order_no = CONCAT('AT-INACTIVE-', LEFT(CONVERT(VARCHAR(36), NEWID()), 12));
@@ -88,6 +94,7 @@ SELECT @after_count = COUNT(*) FROM dbo.SalesOrder;
 SELECT @after_item_count = COUNT(*) FROM dbo.SalesOrderItem;
 IF @failed = 0 OR @error_number <> 52109 OR @after_count <> @before_count OR @after_item_count <> @before_item_count THROW 51003, 'Inactive product was accepted, failed for the wrong reason, or left an order/item.', 1;
 PRINT 'PASS: inactive product is rejected';
+INSERT #b10_assertion (assertion_no) VALUES ('B03');
 
 SET @failed = 0; SET @error_number = NULL; SET @order_no = CONCAT('AT-NOBOM-', LEFT(CONVERT(VARCHAR(36), NEWID()), 12));
 BEGIN TRY
@@ -110,6 +117,7 @@ SELECT @after_count = COUNT(*) FROM dbo.SalesOrder;
 SELECT @after_item_count = COUNT(*) FROM dbo.SalesOrderItem;
 IF @failed = 0 OR @error_number <> 52111 OR @after_count <> @before_count OR @after_item_count <> @before_item_count THROW 51004, 'Active product without BOM was accepted, failed for the wrong reason, or left an order/item.', 1;
 PRINT 'PASS: active product without BOM is rejected';
+INSERT #b10_assertion (assertion_no) VALUES ('B04');
 GO
 
 SET ANSI_NULLS ON;
@@ -147,6 +155,7 @@ END CATCH;
 IF @error_number_2 <> 52301 OR EXISTS (SELECT 1 FROM dbo.SalesOrder WHERE order_no = @order_no_2)
     THROW 51005, 'Unpaid order production rejection did not return 52301 and roll back the test order.', 1;
 PRINT 'PASS: unpaid order cannot start production';
+INSERT #b10_assertion (assertion_no) VALUES ('B05');
 GO
 
 SET ANSI_NULLS ON;
@@ -184,6 +193,7 @@ END CATCH;
 IF @error_number_3 <> 52202 OR EXISTS (SELECT 1 FROM dbo.SalesOrder WHERE order_no = @order_no_3)
     THROW 51006, 'Payment amount mismatch did not return 52202 and roll back the test order.', 1;
 PRINT 'PASS: payment amount mismatch is rejected';
+INSERT #b10_assertion (assertion_no) VALUES ('B06');
 
 SET @order_no_3 = CONCAT('AT-DUPPAY-', LEFT(CONVERT(VARCHAR(36), NEWID()), 12));
 SET @items_json_3 = CONCAT(N'[{"product_id":', @product_id_3, N',"quantity":1}]');
@@ -205,6 +215,57 @@ END CATCH;
 IF @error_number_3 <> 52201 OR EXISTS (SELECT 1 FROM dbo.SalesOrder WHERE order_no = @order_no_3)
     THROW 51007, 'A second payment did not return 52201 and roll back the test order.', 1;
 PRINT 'PASS: duplicate payment is rejected';
+INSERT #b10_assertion (assertion_no) VALUES ('B07');
+GO
+
+SET ANSI_NULLS ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET QUOTED_IDENTIFIER ON;
+SET NUMERIC_ROUNDABORT OFF;
+GO
+/* A customer whose member level is explicitly cleared cannot pay; the whole test transaction rolls back. */
+DECLARE @customer_id_3b BIGINT, @product_id_3b BIGINT, @order_id_3b BIGINT, @amount_3b DECIMAL(10,2), @error_number_3b INT, @order_no_3b VARCHAR(40), @items_json_3b NVARCHAR(MAX), @txn_3b VARCHAR(50);
+SELECT TOP (1) @customer_id_3b = c.customer_id
+FROM dbo.Customer AS c
+JOIN dbo.MemberLevel AS ml ON ml.member_level_id = c.member_level_id
+WHERE c.status = 'ACTIVE' AND ml.status = 'ACTIVE' AND ml.point_multiplier > 0
+ORDER BY c.customer_id;
+SELECT TOP (1) @product_id_3b = p.product_id
+FROM dbo.Product AS p
+WHERE p.status = 'ACTIVE' AND p.product_type = 'SINGLE'
+  AND EXISTS (SELECT 1 FROM dbo.ProductBom AS b WHERE b.product_id = p.product_id)
+ORDER BY p.product_id;
+SET @order_no_3b = CONCAT('AT-NOLEVEL-', LEFT(CONVERT(VARCHAR(36), NEWID()), 12));
+SET @items_json_3b = CONCAT(N'[{"product_id":', @product_id_3b, N',"quantity":1}]');
+BEGIN TRY
+    BEGIN TRANSACTION;
+    EXECUTE AS USER = 'test_cashier';
+    EXEC dbo.sp_create_order @customer_id = @customer_id_3b, @fulfillment_method = 'PICKUP', @order_no = @order_no_3b, @items_json = @items_json_3b;
+    REVERT;
+    SELECT @order_id_3b = order_id, @amount_3b = total_amount FROM dbo.SalesOrder WHERE order_no = @order_no_3b;
+    UPDATE dbo.Customer SET member_level_id = NULL WHERE customer_id = @customer_id_3b;
+    SET @txn_3b = CONCAT('AT-NOLEVEL-', LEFT(CONVERT(VARCHAR(36), NEWID()), 12));
+    EXECUTE AS USER = 'test_cashier';
+    EXEC dbo.sp_pay_order @order_id = @order_id_3b, @payment_method = 'CASH', @paid_amount = @amount_3b, @third_party_txn_no = @txn_3b;
+    REVERT;
+    SET @error_number_3b = NULL;
+    ROLLBACK TRANSACTION;
+END TRY
+BEGIN CATCH
+    SET @error_number_3b = ERROR_NUMBER();
+    IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+    IF USER_NAME() = 'test_cashier' REVERT;
+END CATCH;
+IF @error_number_3b IS NULL OR @error_number_3b <> 52205
+   OR EXISTS (SELECT 1 FROM dbo.SalesOrder WHERE order_no = @order_no_3b)
+   OR EXISTS (SELECT 1 FROM dbo.Payment WHERE order_id = @order_id_3b)
+   OR EXISTS (SELECT 1 FROM dbo.PointLedger WHERE order_id = @order_id_3b)
+    THROW 51016, 'Customer without an active member level was not rejected with 52205 or the failed payment left rows.', 1;
+PRINT 'PASS: customer without an active member level cannot pay';
+INSERT #b10_assertion (assertion_no) VALUES ('B08');
 GO
 
 /* Create a rollback-only FK fault at PointLedger insertion; no production injection parameter is added. */
@@ -246,6 +307,7 @@ END CATCH;
 IF @failed_4 <> 547 OR EXISTS (SELECT 1 FROM dbo.SalesOrder WHERE order_no = @order_no_4) OR EXISTS (SELECT 1 FROM dbo.Payment WHERE order_id = @order_id_4) OR EXISTS (SELECT 1 FROM dbo.PointLedger WHERE order_id = @order_id_4)
     THROW 51008, 'Payment FK fault did not return 547 and roll back payment, order, and ledger.', 1;
 PRINT 'PASS: payment FK fault rolls back payment order and ledger';
+INSERT #b10_assertion (assertion_no) VALUES ('B09');
 GO
 
 SET ANSI_NULLS ON;
@@ -284,6 +346,7 @@ END CATCH;
 IF @error_number_5 <> 52501 OR EXISTS (SELECT 1 FROM dbo.SalesOrder WHERE order_no = @order_no_5)
     THROW 51009, 'Invalid PAID to PICKED_UP transition did not return 52501 and roll back the test order.', 1;
 PRINT 'PASS: invalid state transition is rejected';
+INSERT #b10_assertion (assertion_no) VALUES ('B10');
 GO
 
 /* Order item price remains a snapshot when current master price changes. */
@@ -313,6 +376,7 @@ BEGIN CATCH
     IF USER_NAME() LIKE N'test[_]%' REVERT;
     THROW;
 END CATCH;
+INSERT #b10_assertion (assertion_no) VALUES ('B11');
 GO
 
 /* Combo parent expansion is shared by B order creation, A BOM view, and C inventory lock. */
@@ -455,6 +519,7 @@ BEGIN CATCH
     IF USER_NAME() = 'test_cashier' REVERT;
     THROW;
 END CATCH;
+INSERT #b10_assertion (assertion_no) VALUES ('B12');
 GO
 
 SET ANSI_NULLS ON;
@@ -521,6 +586,7 @@ BEGIN CATCH
     IF USER_NAME() LIKE N'test[_]%' REVERT;
     THROW;
 END CATCH;
+INSERT #b10_assertion (assertion_no) VALUES ('B13');
 GO
 
 SET ANSI_NULLS ON;
@@ -563,6 +629,7 @@ BEGIN CATCH
     IF USER_NAME() LIKE N'test[_]%' REVERT;
     THROW;
 END CATCH;
+INSERT #b10_assertion (assertion_no) VALUES ('B14');
 GO
 
 SET ANSI_NULLS ON;
@@ -605,4 +672,18 @@ BEGIN CATCH
     IF USER_NAME() LIKE N'test[_]%' REVERT;
     THROW;
 END CATCH;
+INSERT #b10_assertion (assertion_no) VALUES ('B15');
+GO
+
+IF OBJECT_ID(N'tempdb..#b10_assertion') IS NULL
+    THROW 51017, '10b assertion counter is missing; the acceptance script did not run from its first batch.', 1;
+
+DECLARE @b10_pass INT = (SELECT COUNT(*) FROM #b10_assertion);
+DECLARE @b10_fail INT = 0;
+PRINT CONCAT('RESULT: pass=', @b10_pass, ' fail=', @b10_fail);
+IF @b10_pass <> 15
+BEGIN
+    DECLARE @b10_message NVARCHAR(512) = CONCAT('10b ran ', @b10_pass, ' assertions; expected 15. A batch was skipped or stopped early.');
+    THROW 51018, @b10_message, 1;
+END;
 GO
