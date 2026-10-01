@@ -1,0 +1,11 @@
+已将数据库上下文更改为 "KFC_DB"。
+PASS: T1 账本 locking（locked_qty = Σ locked_delta，无负数）
+PASS: T2 账本 on_hand（期初 + Σ on_hand_delta，无负数）
+PASS: T3 种子订单闭环后锁定量全为 0
+PASS: T4 建议恰一张且 CLOSED，建议量 = 收货总量，无开放建议
+PASS: T5 采购单恰一张、1 条明细、CLOSED 且收齐
+PASS: T6 RECEIPT 恰两条、引用本单、locked_delta = 0、合计 = 订单量
+PASS: T7 看板收货进度 100%、鸡腿肉回到安全线且不再判低
+PASS: T8 审计：收货 2 条（指向本单）+ 审批/提交各至少 1 条
+PASS: T9 三笔种子订单终态不变、总数仍为 3
+RESULT: pass=9 fail=0

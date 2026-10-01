@@ -81,3 +81,28 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/run_all.sql"
 第一阶段的功能与验收目标已经达成：数据库可从空库部署，CRUD/状态过程、查询视图、关系约束、岗位权限和核心经营闭环均有执行证据。
 
 证据位于 [`result/`](../result/README.md)：完整日志、契约检查、对象清点和 PNG 结果图均随仓库交付。
+
+## 9. 独立复验（成员 C）
+
+第 2、5 节记录的是成员 B 的实例。合并后的 `main` 另在成员 C 的环境上独立复跑一轮，作为交叉验证：
+
+| 项目 | 值 |
+| --- | --- |
+| 日期 | 2026-10-01 |
+| 实例 | `.\SQLEXPRESS`（Windows 身份验证，登录为实例 sysadmin） |
+| SQL Server | 17.0.1000.7，Express Edition (64-bit)，兼容级别 170 |
+| 客户端 | `sqlcmd` 17.0.1000.7 + ODBC Driver 18 |
+
+执行命令（仓库根目录，执行前确认 `KFC_DB` 不存在）：
+
+```bat
+sqlcmd -S ".\SQLEXPRESS" -E -C -f 65001 -i sql/run_all.sql
+```
+
+结果与第 5 节一致：退出码 0；`10a` `pass=13 fail=0`、`10b` `pass=15 fail=0`、`10c` `pass=17 fail=0`，连同 `PASS: B seed orders` 共 46 条 `PASS:`、0 条错误消息。`04` 的 11 条「取决于缺少的对象」为已知编译告警（其引用的审计过程由后续脚本创建），非错误。
+
+本轮复跑同时覆盖了合并后相对上一轮验证基线（2026-09-30）的三处改动：`10c` 新增 T12b/T12c（分母 15→17）、`09b` 的异常收尾顺序（`ROLLBACK` → `REVERT`）、`10b` 的断言计数与收尾。追加证据：
+
+- `10c` 单独重复执行：`pass=17 fail=0`（夹具全部回滚，可重复跑）；
+- 收货链独立断言（夹具在仓库外、输出已归档）：`t10` 9/9、`t10b` 18/18（见 `result/stage1-receiving-invariants-c-2026-10-01.txt` 与 `result/stage1-receiving-boundaries-c-2026-10-01.txt`）；
+- 四条回归链（t3+t3b、t4–t7、t8、t9）：144 条断言 0 FAIL；`08` 连跑两遍幂等；`09c` 重跑被守卫 `THROW 51001` 拒绝（预期）。

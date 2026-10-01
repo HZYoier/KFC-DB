@@ -1,0 +1,42 @@
+############ 链 A：批次 3（库存调整与补货闭环） ############
+deployed: all 8 files ok
+--- t3.sql (exit=1)
+    PASS lines: 14
+--- t3b.sql (exit=0)
+    PASS lines: 6
+    RESULT: pass=6 fail=0
+############ 链 B：批次 4 + 07c + 深度复核 + 批次 5 ############
+deployed: all 8 files ok
+--- t4.sql (exit=0)
+    PASS lines: 17
+    RESULT: pass=17 fail=0
+--- t5.sql (exit=0)
+    PASS lines: 16
+    RESULT: pass=16 fail=0
+--- t6.sql (exit=0)
+    PASS lines: 19
+    RESULT: pass=19 fail=0
+--- t7.sql (exit=0)
+    PASS lines: 24
+    RESULT: pass=24 fail=0
+############ 链 C：08 权限与证书签名（自带桩对象，08 跑两遍验幂等）############
+deployed: all 8 files ok
+--- t8_pre.sql (exit=0)
+    PASS lines: 0
+--- 08_roles_permissions.sql (exit=0)
+--- 08_roles_permissions.sql (exit=0)
+--- t8.sql (exit=0)
+    PASS lines: 33
+    RESULT: pass=33 fail=0
+############ 链 D：09c 权限/期初库存种子（08 -> 09a -> 09c，再验守卫）############
+deployed: all 8 files ok
+--- t8_pre.sql (exit=0)
+    PASS lines: 0
+--- 08_roles_permissions.sql (exit=0)
+--- 09a_master_seed_data.sql (exit=0)
+--- 09c_inventory_opening_seed_data.sql (exit=0)
+--- t9.sql (exit=0)
+    PASS lines: 15
+    RESULT: pass=15 fail=0
+--- 09c 重跑（期望被 51001 守卫拒绝）
+    PASS: 09c 重跑被守卫拒绝（exit=1，THROW 51001）
