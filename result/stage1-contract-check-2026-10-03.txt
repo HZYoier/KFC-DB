@@ -1,0 +1,4 @@
+﻿已将数据库上下文更改为 "KFC_DB"。
+result                                                                        
+------------------------------------------------------------------------------
+PASS: cross-domain interface objects and signatures match the frozen contract.

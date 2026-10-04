@@ -814,12 +814,44 @@ BEGIN CATCH
 END CATCH;
 GO
 
--- 收尾：打印 RESULT 并校验分母（17 条）——分母不足说明有批次被静默作废
+-- T14 E2E-07：非店长不能经 sp_assign_employee_business_role 提升角色
+--    该过程的角色同步由证书签名主体代持 ALTER ANY ROLE / ALTER ANY USER（08 line 180），
+--    所以"只有 role_store_manager 能调用"必须有一条反例；否则签名权限可被任意角色借道，
+--    而 09c 对该过程只有 7 次正向调用、全仓库无负例。
+DECLARE @err INT, @msg NVARCHAR(2048), @imp BIT = 0;
+DECLARE @emp_sh14 BIGINT = (SELECT employee_id FROM dbo.EmployeeAccount WHERE database_user_name = 'test_shift_manager');
+DECLARE @target14 BIGINT = (SELECT employee_id FROM dbo.EmployeeAccount WHERE database_user_name = 'test_shift_manager');
+DECLARE @role14 BIGINT = (SELECT business_role_id FROM dbo.BusinessRole WHERE role_code = 'store_manager');
+BEGIN TRY
+    IF @emp_sh14 IS NULL OR @target14 IS NULL OR @role14 IS NULL
+        THROW 51116, N'T14：缺少员工或角色夹具。', 1;
+
+    EXECUTE AS USER = 'test_shift_manager'; SET @imp = 1;
+    EXEC dbo.sp_assign_employee_business_role @employee_id = @target14,
+                                              @business_role_id = @role14,
+                                              @assigned_by_employee_id = @emp_sh14;
+    REVERT; SET @imp = 0;
+    THROW 51116, N'T14：值班经理竟能调用角色分配过程，未按预期被授权层拒绝。', 1;
+END TRY
+BEGIN CATCH
+    SET @err = ERROR_NUMBER(); SET @msg = ERROR_MESSAGE();
+    IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+    IF @imp = 1 REVERT;
+    IF @err = 51116
+    BEGIN UPDATE #counters SET fail = fail + 1; PRINT 'FAIL: T14 ' + @msg; END
+    ELSE IF @err = 229
+    BEGIN UPDATE #counters SET pass = pass + 1; PRINT 'PASS: T14 值班经理不能调用角色分配过程（229：EXECUTE 只授给 role_store_manager）'; END
+    ELSE
+    BEGIN UPDATE #counters SET fail = fail + 1; PRINT 'FAIL: T14 err=' + ISNULL(CAST(@err AS NVARCHAR(10)), N'') + N' msg=' + ISNULL(@msg, N''); END
+END CATCH;
+GO
+
+-- 收尾：打印 RESULT 并校验分母（18 条）——分母不足说明有批次被静默作废
 DECLARE @pass INT = (SELECT pass FROM #counters);
 DECLARE @fail INT = (SELECT fail FROM #counters);
 PRINT 'RESULT: pass=' + CAST(@pass AS VARCHAR(10)) + ' fail=' + CAST(@fail AS VARCHAR(10));
-IF @pass + @fail <> 17
-    THROW 51199, N'10c：断言计数不足 17，说明有批次被静默作废（检查 -f 65001 与批次编译错误）。', 1;
+IF @pass + @fail <> 18
+    THROW 51199, N'10c：断言计数不足 18，说明有批次被静默作废（检查 -f 65001 与批次编译错误）。', 1;
 IF @fail > 0
     THROW 51198, N'10c：存在失败的验收断言，详见上方 FAIL 行。', 1;
 GO

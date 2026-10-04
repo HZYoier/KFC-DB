@@ -111,7 +111,7 @@ GO
 CREATE PROCEDURE dbo.sp_create_order
     @customer_id BIGINT,
     @fulfillment_method VARCHAR(20),
-    @order_no VARCHAR(40),
+    @order_no VARCHAR(50),
     @items_json NVARCHAR(MAX),
     @ordered_at DATETIME2(0) = NULL
 AS
