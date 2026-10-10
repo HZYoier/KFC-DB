@@ -107,7 +107,7 @@ KFC-DB/
 - [业务流程](docs/业务流程.md) — 业务主线 8 步（含异常路径），建库与设计依据
 - [跨域接口契约](docs/stage1-cross-domain-interface-contract.md) — 三域之间的冻结接口：对象名、参数顺序与类型、返回列、种子常量，以及只读检查器 `sql/contract_interface_check.sql` 的校验口径
 - [第一阶段三人协作实施计划](docs/stage1-three-person-implementation-plan.md) — 对象、接口、角色和验收标准
-- [第二阶段三人协作实施计划](docs/stage2-three-person-implementation-plan.md) — 三个子阶段（ER 重建 / 规范化与迁移 / 应用开发）的分工、交付物与完成标准，含 v0.1 问题清单
+- [第二阶段三人协作实施计划](docs/stage2-three-person-implementation-plan.md) — ER 重建、规范化迁移与应用开发分工；含员工数据库身份、岗位查询接口、原子迁移/恢复、文件属主和修订自查。当前为待实施计划，第一阶段 SQL 仍为 v0.1
 - [主数据数据字典](docs/主数据数据字典.md)、[订单履约数据字典](docs/订单履约数据字典.md)、[库存权限数据字典](docs/库存权限数据字典.md)
 - [第一阶段测试报告](docs/stage1-test-report.md)
 - 成员分工报告：[成员 A](docs/stage1-a-stage-report.md)（主数据与定价）、[成员 B](docs/stage1-b-stage-report.md)（订单与履约）、[成员 C](docs/stage1-c-stage-report.md)（库存、权限与集成）
