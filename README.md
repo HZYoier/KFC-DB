@@ -22,12 +22,13 @@ KFC-DB/
 │   ├── 09a ~ 09d                三域种子数据
 │   ├── 10a / 10b / 10c          三域验收断言
 │   └── contract_interface_check.sql   只读跨域接口契约检查（独立执行）
-├── docs/                        设计与验收文档（14 份）
+├── docs/                        设计与验收文档（15 份）
 │   ├── stage1-阶段报告.md        总报告：设计思路、实验过程、实验总结
 │   ├── stage1-a / b / c-stage-report.md   三份成员分工报告
 │   ├── stage1-test-report.md     完整测试报告：环境、结果、E2E 结论、三次独立复验
 │   ├── stage1-cross-domain-interface-contract.md   A/B/C 之间冻结的接口契约
-│   ├── stage1-three-person-implementation-plan.md  三人协作实施计划与分工总览
+│   ├── stage1-three-person-implementation-plan.md  第一阶段协作实施计划与分工总览
+│   ├── stage2-three-person-implementation-plan.md  第二阶段计划与分工：ER 重建、规范化与迁移、应用开发，含 v0.1 问题清单
 │   ├── 主数据 / 订单履约 / 库存权限数据字典.md      三份字段级数据字典
 │   ├── 业务流程.md               业务主线 8 步（含异常路径）
 │   ├── 数据边界清单.md           进库 / 不进库边界与灰色地带取舍
@@ -106,6 +107,7 @@ KFC-DB/
 - [业务流程](docs/业务流程.md) — 业务主线 8 步（含异常路径），建库与设计依据
 - [跨域接口契约](docs/stage1-cross-domain-interface-contract.md) — 三域之间的冻结接口：对象名、参数顺序与类型、返回列、种子常量，以及只读检查器 `sql/contract_interface_check.sql` 的校验口径
 - [第一阶段三人协作实施计划](docs/stage1-three-person-implementation-plan.md) — 对象、接口、角色和验收标准
+- [第二阶段三人协作实施计划](docs/stage2-three-person-implementation-plan.md) — 三个子阶段（ER 重建 / 规范化与迁移 / 应用开发）的分工、交付物与完成标准，含 v0.1 问题清单
 - [主数据数据字典](docs/主数据数据字典.md)、[订单履约数据字典](docs/订单履约数据字典.md)、[库存权限数据字典](docs/库存权限数据字典.md)
 - [第一阶段测试报告](docs/stage1-test-report.md)
 - 成员分工报告：[成员 A](docs/stage1-a-stage-report.md)（主数据与定价）、[成员 B](docs/stage1-b-stage-report.md)（订单与履约）、[成员 C](docs/stage1-c-stage-report.md)（库存、权限与集成）
