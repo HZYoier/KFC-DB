@@ -1,0 +1,84 @@
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="960" math="0" shadow="0">
+<root>
+  <mxCell id="0" />
+  <mxCell id="1" parent="0" />
+  <mxCell id="E_ING" value="&lt;b&gt;Ingredient&lt;/b&gt;&lt;br&gt;PK ingredient_id&lt;br&gt;ingredient_name&lt;br&gt;unit_name&lt;br&gt;safety_stock_qty&lt;br&gt;status" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+    <mxGeometry x="40" y="40" width="280" height="132" as="geometry" />
+  </mxCell>
+  <mxCell id="E_INV" value="&lt;b&gt;Inventory&lt;/b&gt;&lt;br&gt;PKFK ingredient_id&lt;br&gt;on_hand_qty&lt;br&gt;locked_qty&lt;br&gt;updated_at" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+    <mxGeometry x="40" y="230" width="280" height="112" as="geometry" />
+  </mxCell>
+  <mxCell id="E_MOV" value="&lt;b&gt;InventoryMovement&lt;/b&gt;&lt;br&gt;PK inventory_movement_id&lt;br&gt;FK ingredient_id → Inventory&lt;br&gt;movement_type&lt;br&gt;on_hand_delta&lt;br&gt;locked_delta&lt;br&gt;reference_type&lt;br&gt;reference_id (NULL)&lt;br&gt;moved_at" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+    <mxGeometry x="40" y="420" width="280" height="192" as="geometry" />
+  </mxCell>
+  <mxCell id="E_SUG" value="&lt;b&gt;ReplenishmentSuggestion&lt;/b&gt;&lt;br&gt;PK replenishment_suggestion_id&lt;br&gt;FK ingredient_id → Ingredient&lt;br&gt;current_qty&lt;br&gt;suggested_qty&lt;br&gt;suggestion_status&lt;br&gt;FK created_by_employee_id&lt;br&gt;FK submitted_by_employee_id (NULL)&lt;br&gt;FK approved_by_employee_id (NULL)&lt;br&gt;FK rejected_by_employee_id (NULL)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+    <mxGeometry x="400" y="40" width="280" height="212" as="geometry" />
+  </mxCell>
+  <mxCell id="E_PO" value="&lt;b&gt;PurchaseOrder&lt;/b&gt;&lt;br&gt;PK purchase_order_id&lt;br&gt;UK purchase_order_no&lt;br&gt;FK replenishment_suggestion_id&lt;br&gt;purchase_status&lt;br&gt;FK approved_by_employee_id (NULL)&lt;br&gt;approved_at (NULL)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+    <mxGeometry x="400" y="340" width="280" height="152" as="geometry" />
+  </mxCell>
+  <mxCell id="E_POI" value="&lt;b&gt;PurchaseOrderItem&lt;/b&gt;&lt;br&gt;PKFK purchase_order_id&lt;br&gt;PKFK ingredient_id&lt;br&gt;ordered_qty&lt;br&gt;received_qty" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+    <mxGeometry x="400" y="570" width="280" height="112" as="geometry" />
+  </mxCell>
+  <mxCell id="E_EA" value="&lt;b&gt;EmployeeAccount&lt;/b&gt;&lt;br&gt;PK employee_id&lt;br&gt;UK database_user_name&lt;br&gt;UK login_name&lt;br&gt;employee_name&lt;br&gt;job_code&lt;br&gt;status" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+    <mxGeometry x="780" y="40" width="280" height="152" as="geometry" />
+  </mxCell>
+  <mxCell id="E_BR" value="&lt;b&gt;BusinessRole&lt;/b&gt;&lt;br&gt;PK business_role_id&lt;br&gt;UK role_code&lt;br&gt;role_name&lt;br&gt;status" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+    <mxGeometry x="780" y="300" width="280" height="112" as="geometry" />
+  </mxCell>
+  <mxCell id="E_RP" value="&lt;b&gt;RolePermission&lt;/b&gt;&lt;br&gt;PKFK business_role_id&lt;br&gt;PK permission_code&lt;br&gt;permission_name&lt;br&gt;status" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+    <mxGeometry x="780" y="480" width="280" height="112" as="geometry" />
+  </mxCell>
+  <mxCell id="E_EBR" value="&lt;b&gt;EmployeeBusinessRole&lt;/b&gt;&lt;br&gt;PKFK employee_id&lt;br&gt;PKFK business_role_id&lt;br&gt;FK assigned_by_employee_id&lt;br&gt;assigned_at" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+    <mxGeometry x="1140" y="40" width="280" height="112" as="geometry" />
+  </mxCell>
+  <mxCell id="E_DLV" value="&lt;b&gt;Delivery（B 域）&lt;/b&gt;&lt;br&gt;PK delivery_id&lt;br&gt;FK order_id → SalesOrder（B 域，略）&lt;br&gt;FK rider_employee_id (NULL)&lt;br&gt;delivery_status&lt;br&gt;picked_up_at (NULL)&lt;br&gt;delivered_at (NULL)&lt;br&gt;created_at&lt;br&gt;updated_at" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#f5f5f5;strokeColor=#999999;" vertex="1" parent="1">
+    <mxGeometry x="1140" y="300" width="280" height="192" as="geometry" />
+  </mxCell>
+  <mxCell id="r1" value="1:1 共享标识（PKFK）；原料可暂无库存行" style="html=1;endArrow=ERzeroToOne;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_ING" target="E_INV">
+    <mxGeometry relative="1" as="geometry" />
+  </mxCell>
+  <mxCell id="r2" value="1:N 每笔流水必挂库存行" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_INV" target="E_MOV">
+    <mxGeometry relative="1" as="geometry" />
+  </mxCell>
+  <mxCell id="r3" value="1:N 历史建议；开放至多一条" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_ING" target="E_SUG">
+    <mxGeometry relative="1" as="geometry" />
+  </mxCell>
+  <mxCell id="r4" value="1:N 明细引用原料" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_ING" target="E_POI">
+    <mxGeometry relative="1" as="geometry" />
+  </mxCell>
+  <mxCell id="r5" value="审批生成；业务至多一张" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_SUG" target="E_PO">
+    <mxGeometry relative="1" as="geometry" />
+  </mxCell>
+  <mxCell id="r6" value="结构 1..N；业务恰好 1 条（过程保证）" style="html=1;endArrow=ERoneToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_PO" target="E_POI">
+    <mxGeometry relative="1" as="geometry" />
+  </mxCell>
+  <mxCell id="r7" value="1:N 权限条目；码受白名单 CHECK" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_BR" target="E_RP">
+    <mxGeometry relative="1" as="geometry" />
+  </mxCell>
+  <mxCell id="r8" value="1:N 员工持有（M:N 关联实体）" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_EA" target="E_EBR">
+    <mxGeometry relative="1" as="geometry" />
+  </mxCell>
+  <mxCell id="r9" value="1:N 角色被持有" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_BR" target="E_EBR">
+    <mxGeometry relative="1" as="geometry" />
+  </mxCell>
+  <mxCell id="r10" value="assigned_by（第二外码）" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;dashed=1;" edge="1" parent="1" source="E_EA" target="E_EBR">
+    <mxGeometry relative="1" as="geometry" />
+  </mxCell>
+  <mxCell id="r11" value="created_by 等 4 条员工外码" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_EA" target="E_SUG">
+    <mxGeometry relative="1" as="geometry" />
+  </mxCell>
+  <mxCell id="r12" value="approved_by（可空）" style="html=1;endArrow=ERzeroToMany;startArrow=ERzeroToOne;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_EA" target="E_PO">
+    <mxGeometry relative="1" as="geometry" />
+  </mxCell>
+  <mxCell id="r13" value="rider（可空，认领时写入）" style="html=1;endArrow=ERzeroToMany;startArrow=ERzeroToOne;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_EA" target="E_DLV">
+    <mxGeometry relative="1" as="geometry" />
+  </mxCell>
+  <mxCell id="title" value="C 域（库存 · 补货 · 权限）ER 子图 — v0.1（依据 2026-10-13 活库目录核对；符号图例见 docs/er/legend.md）" style="text;html=1;align=left;verticalAlign=top;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+    <mxGeometry x="40" y="800" width="1200" height="24" as="geometry" />
+  </mxCell>
+  <mxCell id="legend" value="端点符号：| = 恰好 1    o| = 零或 1    |&lt; = 一或多    o&lt; = 零或多&lt;br&gt;灰色矩形 = 跨域实体（仅列参与本图联系所需的键列）；虚线 = 同一对实体间的第二条外码&lt;br&gt;文字标签 = 两端基数 — 实现机制；业务口径与结构口径不同时以标签说明" style="text;html=1;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
+    <mxGeometry x="40" y="832" width="1200" height="72" as="geometry" />
+  </mxCell>
+</root>
+</mxGraphModel>
