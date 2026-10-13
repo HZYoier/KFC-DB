@@ -1,0 +1,108 @@
+# stage2 隔离实验证据：包含数据库用户路径（C 侧）
+# 日期：2026-10-13（重跑并完整捕获；首次实验 2026-10-10）
+# 环境：SQL Server 2025 Express 17.0.1000.7，实例 .\SQLEXPRESS，Windows 身份验证（部署登录为 sysadmin）；
+#       实例为混合模式（2026-10-10 经操作者授权开启并重启，见 open-issues.md OI-04）
+# 脱敏说明：所有含口令的命令行在本文中以 <示位口令> 代替；归档脚本已去除明文口令
+# 退出码：见每步 exit= 行；步骤 3 的 exit=1 为预期（消息 229 拒读基表）
+# 结论摘要：包含用户机制全部在线可用；登录门在实例认证模式（仅 Windows 认证时被拒）；
+#           混合模式下口令直连、USER_NAME()、所有权链、229 反例全部通过；收尾已恢复原状
+========================================================================
+
+==== 前置状态 ====
+
+$ sqlcmd -S .\SQLEXPRESS -E -C -f 65001 -b -W -h -1 -Q "SELECT CAST(SERVERPROPERTY('IsIntegratedSecurityOnly') AS INT), (SELECT value_in_use FROM sys.configurations WHERE name='contained database authentication')"
+0 0
+
+(1 行受影响)
+exit=0
+==== 1) setup：建隔离库与包含用户 ====
+
+$ sqlcmd ... -i exp_contained_auth_setup.sql
+probe|val
+-----|---
+SERVERPROP_IsIntegratedSecurityOnly|0
+probe|name|value|value_in_use|is_dynamic
+-----|----|-----|------------|----------
+cfg_before|contained database authentication|0|0|1
+配置选项 'contained database authentication' 已从 0 更改为 1。请运行 RECONFIGURE 语句进行安装。
+probe|name|value|value_in_use|is_dynamic
+-----|----|-----|------------|----------
+cfg_after_reconfigure|contained database authentication|1|1|1
+probe|name|containment|containment_desc|db_owner
+-----|----|-----------|----------------|--------
+db_before_contained|C_TEST_CONTAINED|0|NONE|HBY\24696
+probe|name|containment|containment_desc|db_owner
+-----|----|-----------|----------------|--------
+db_after_contained|C_TEST_CONTAINED|1|PARTIAL|HBY\24696
+已将数据库上下文更改为 "C_TEST_CONTAINED"。
+probe|name|type_desc|authentication_type_desc
+-----|----|---------|------------------------
+user_state|ctest|SQL_USER|DATABASE
+probe|user_name|suser
+-----|---------|-----
+impersonated_by_sysadmin|ctest|S-1-9-3-2067714130-1197451927-3730523055-2933923678
+exit=0
+==== 2) 包含用户口令直连（USER_NAME + 所有权链过程）====
+
+$ sqlcmd -U ctest -P <示位口令> -d C_TEST_CONTAINED -Q "SELECT USER_NAME()...; EXEC dbo.p_get_t;"
+ctest ctest ctest
+
+(1 行受影响)
+1 hello
+
+(1 行受影响)
+exit=0
+==== 3) 反例：包含用户直读基表（预期 229）====
+
+$ sqlcmd -U ctest -P <示位口令> -d C_TEST_CONTAINED -Q "SELECT * FROM dbo.T"
+消息 229，级别 14，状态 5，服务器 HBY\SQLEXPRESS，第 1 行
+拒绝了对对象 'T' (数据库 'C_TEST_CONTAINED'，架构 'dbo')的 SELECT 权限。
+exit=1
+==== 4) 对照：普通 SQL 登录 ====
+
+$ sqlcmd -E -Q "CREATE LOGIN ctest_login ..."
+exit=0
+
+$ sqlcmd -U ctest_login -P <示位口令> -d master -Q "SELECT SUSER_SNAME()"
+ctest_login
+
+(1 行受影响)
+exit=0
+==== 5) cleanup：删库/删登录/恢复实例选项 ====
+
+$ sqlcmd ... -i exp_contained_auth_cleanup.sql
+已将数据库上下文更改为 "master"。
+配置选项 'contained database authentication' 已从 1 更改为 0。请运行 RECONFIGURE 语句进行安装。
+probe|name|value|value_in_use|is_dynamic
+-----|----|-----|------------|----------
+cfg_restored|contained database authentication|0|0|1
+
+(1 行受影响)
+exit=0
+
+$ sqlcmd -E -Q "DROP LOGIN ctest_login"
+exit=0
+==== 6) 终态核对 ====
+
+$ sqlcmd -E -Q "no leftover dbs/logins; cfg; mixed mode"
+probe|n
+-----|-
+leftover_dbs|0
+
+(1 行受影响)
+probe|n
+-----|-
+leftover_logins|0
+
+(1 行受影响)
+probe|value|value_in_use
+-----|-----|------------
+cfg|0|0
+
+(1 行受影响)
+probe|state
+-----|-----
+auth|混合模式(保留)
+
+(1 行受影响)
+exit=0

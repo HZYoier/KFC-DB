@@ -1,0 +1,44 @@
+# stage2 隔离实验证据：ALTER / ADD SIGNATURE 与迁移事务的回滚行为（C 侧）
+# 日期：2026-10-13（重跑并完整捕获；首次实验 2026-10-10）
+# 环境：同 exp-contained-auth；隔离库 C_TEST_SIG 由脚本自建自清
+# 结论摘要：ALTER 立即丢弃签名（1->0）；ROLLBACK 完整还原定义与签名（无混合态）；提交路径签名保留
+========================================================================
+
+==== 签名与迁移事务实验（隔离库 C_TEST_SIG，自建自清）====
+
+$ sqlcmd -S .\SQLEXPRESS -E -C -f 65001 -i exp_sig_rollback.sql
+已将数据库上下文更改为 "C_TEST_SIG"。
+phase|defn|sig_cnt
+-----|----|-------
+baseline|CREATE PROCEDURE dbo.p_sig AS SELECT N'v1' AS ver;
+|1
+phase|defn|sig_cnt
+-----|----|-------
+A2-in-txn-after-alter|CREATE PROCEDURE dbo.p_sig AS SELECT N'v2' AS ver;
+|0
+phase|defn|sig_cnt
+-----|----|-------
+A2-after-rollback|CREATE PROCEDURE dbo.p_sig AS SELECT N'v1' AS ver;
+|1
+phase|defn|sig_cnt
+-----|----|-------
+A-in-txn-after-resign|CREATE PROCEDURE dbo.p_sig AS SELECT N'v2' AS ver;
+|1
+phase|defn|sig_cnt
+-----|----|-------
+A-after-rollback|CREATE PROCEDURE dbo.p_sig AS SELECT N'v1' AS ver;
+|1
+phase|defn|sig_cnt
+-----|----|-------
+B-after-commit|CREATE PROCEDURE dbo.p_sig AS SELECT N'v3' AS ver;
+|1
+已将数据库上下文更改为 "master"。
+exit=0
+
+==== 终态：无残留库 ====
+probe|n
+-----|-
+leftover_dbs|0
+
+(1 行受影响)
+exit=0
