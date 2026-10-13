@@ -1,2 +1,7 @@
 # Keep SQLCMD evidence byte-for-byte so the published SHA-256 values stay stable.
 result/*.txt -text
+# Stage 2 migration scripts only: enforce CRLF (plan 5.1); stage-1 files untouched.
+sql/stage2/**/*.sql text eol=crlf
+# Stage 2 C-side evidence: keep bytes stable for published SHA-256.
+result/stage2/*.txt -text
+result/stage2/scripts/* -text
