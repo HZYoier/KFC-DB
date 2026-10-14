@@ -8,7 +8,7 @@
 
 | 表 | 一行的业务含义 | 主码 | 候选标识 / 唯一键 | 外码 → 引用 |
 | --- | --- | --- | --- | --- |
-| `Ingredient` | 一种可库存原料（含安全线） | `ingredient_id` | 无声明式候选码 | — |
+| `AuditLog` | 一条操作审计记录（谁、何时、对哪个实体做了什么） | `audit_log_id` | 无声明式候选码（事件行） | `employee_id`（非空）→ `EmployeeAccount` |
 | `Inventory` | 某原料的**当前库存快照**（一行恒等于一种原料；PK 即 FK） | `ingredient_id`（PKFK） | 主码即候选（1:1 共享标识） | `ingredient_id` → `Ingredient` |
 | `InventoryMovement` | 一次库存变动**流水**（一行 = 一种原料的一次变动，不合并） | `inventory_movement_id` | 无（事件行） | `ingredient_id` → `Inventory`；`reference_id` 为多态引用、无外码（I-C02） |
 | `ReplenishmentSuggestion` | 对一种原料的一次补货建议及其审批链（提交 / 审批 / 驳回人） | `replenishment_suggestion_id` | 「每原料至多一张开放建议」过滤唯一（I-C03） | `ingredient_id` → `Ingredient`；`created_by` / `submitted_by` / `approved_by` / `rejected_by` → `EmployeeAccount`（后三可空） |
@@ -19,7 +19,9 @@
 | `EmployeeAccount` | 一名员工的账号与岗位档案 | `employee_id` | `database_user_name` 唯一；`login_name` 唯一 | — |
 | `EmployeeBusinessRole` | 一名员工持有一个业务角色（M:N 的关联实体） | `(employee_id, business_role_id)` 复合 | 复合主码即候选 | `employee_id` → `EmployeeAccount`；`business_role_id` → `BusinessRole`；`assigned_by_employee_id`（第二条员工外码，操作人） |
 
-补充（对应 R5-04 的复合主码讨论）：C 域共 3 个复合主码——`PurchaseOrderItem`、`RolePermission`、`EmployeeBusinessRole`；1 个 PKFK 共享标识——`Inventory`。其余为代理键 + 唯一键候选（`BusinessRole.role_code`、`PurchaseOrder.purchase_order_no`、`EmployeeAccount.database_user_name` / `login_name`）。
+补充（对应 R5-04 的复合主码讨论）：C 域共 3 个复合主码——`PurchaseOrderItem`、`RolePermission`、`EmployeeBusinessRole`；1 个 PKFK 共享标识——`Inventory`。其余为代理键：`BusinessRole`（`role_code` 唯一）、`PurchaseOrder`（`purchase_order_no` 唯一）、`EmployeeAccount`（`database_user_name` / `login_name` 唯一）带唯一候选，`InventoryMovement`、`AuditLog` 为事件行、无候选标识。
+
+更正（2026-10-14）：本节原将 `Ingredient` 列入 C 域 10 表并漏记 `AuditLog`。按建表位置，`Ingredient` 在 `sql/01_master_schema.sql:34`（A 域），`AuditLog` 在 `sql/03_inventory_security_schema.sql:167`（C 域）；本表已换成 `AuditLog`。表中其余对 `Ingredient` 的外码引用（`Inventory`、`ReplenishmentSuggestion`、`PurchaseOrderItem`）是跨域指向，保持不变，在 C 域子图中按灰矩形处理。
 
 ## 2. 保留项（设计合理，写明理由）
 
@@ -88,3 +90,4 @@
 - `OI-01` 教学原文核对（closed，2026-10-13）→ 本文件 R5/R6 条目已按原文定制。
 - `OI-02` 供应商范围（closed）→ 本文件 I-C07。
 - `OI-04` 包含数据库用户替代登录路径（deferred）→ 与 I-C05/I-C11 相关。
+- `OI-06` `Ingredient` / `AuditLog` 域属主更正（closed，2026-10-14）→ 本文件 §1。

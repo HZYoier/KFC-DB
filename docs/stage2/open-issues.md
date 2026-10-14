@@ -13,6 +13,7 @@
 | OI-03 | **2.2 设计冻结日期**（范式 / 重构结论的冰冻线） | 计划 §7.2 | open | 全组 | 2.1 收口时登记 | 待 2.1 收口由三人共同确认后填入本行 |
 | OI-04 | **包含数据库用户替代登录路径**（§6.1 默认路径的潜在替代） | 计划 §6.1 + `c-issues.md` I-C05/I-C11 | deferred | A、C | 2.3 预检前 | 未采纳为默认（保持"SQL 登录名 + 同名映射数据库用户"唯一口径）；如需替换，须 A/C 联合验收 + 修订计划 / 契约 / 部署模板；我方实验证据已归档 `result/stage2/`（含混合模式前置事实） |
 | OI-05 | **`08` 的 DMK 明文口令取舍**（第一阶段遗留礼节项） | 计划 §11 变更记录 | open | 三人 | 阶段交付前 | A 已表态认同 C 立场、建议三人拍板；不影响任何验收 |
+| OI-06 | **`Ingredient` / `AuditLog` 的域属主更正**（影响合图与 `11a` / `11c` 迁移归属） | `c-issues.md` §1 + 计划 §4/§5 | **closed（2026-10-14）** | A 发现，C 域文件已改 | 2.1 收口前 | 按建表位置：`Ingredient` 在 `sql/01_master_schema.sql:34`（A 域），`AuditLog` 在 `sql/03_inventory_security_schema.sql:167`（C 域）。`c-issues.md` §1 已把误列的 `Ingredient` 换成 `AuditLog`，`Ingredient` 的三处跨域外码引用（`Inventory` / `ReplenishmentSuggestion` / `PurchaseOrderItem`）保留、在 C 域子图按灰矩形处理。若不改，合图会出现 `AuditLog` 无落点、`Ingredient` 重复，违反 §4「25 表全部有落点」 |
 
 ## 变更记录
 
@@ -20,3 +21,4 @@
 | --- | --- |
 | 2026-10-13 | 建表：登记 OI-01（closed，教学核对完成）、OI-02（closed，供应商）、OI-03（open，冻结日期）、OI-04（deferred，包含用户路径）、OI-05（open，DMK 取舍） |
 | 2026-10-14 | 订正 OI-05 的落点引用：计划「变更记录」在第 §11 节，原文误写为 §8（§8 是开工前置项） |
+| 2026-10-14 | 登记 OI-06（closed）：`c-issues.md` §1 误列 `Ingredient` 为 C 域、漏 `AuditLog`，已按建表位置换回；`Ingredient` 跨域外码引用保留 |
