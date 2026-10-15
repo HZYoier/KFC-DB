@@ -22,3 +22,4 @@
 | 2026-10-13 | 建表：登记 OI-01（closed，教学核对完成）、OI-02（closed，供应商）、OI-03（open，冻结日期）、OI-04（deferred，包含用户路径）、OI-05（open，DMK 取舍） |
 | 2026-10-14 | 订正 OI-05 的落点引用：计划「变更记录」在第 §11 节，原文误写为 §8（§8 是开工前置项） |
 | 2026-10-14 | 登记 OI-06（closed）：`c-issues.md` §1 误列 `Ingredient` 为 C 域、漏 `AuditLog`，已按建表位置换回；`Ingredient` 跨域外码引用保留 |
+| 2026-10-15 | OI-06 收尾（C）：`docs/er/c-inventory-security.drawio` / `.svg` 已订正——`Ingredient` 转灰矩形（A 域、3 列）、`AuditLog` 补入（7 列），新增 `EmployeeAccount → AuditLog` 1:N 联系（折线走线避开 `Delivery`）；共 12 实体 14 联系，几何避让自查 0 冲突 |
