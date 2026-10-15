@@ -72,11 +72,13 @@
 - 复现证据：`09d` 守卫 `51022`（待审建议内容 = 安全线 − 实扣量）；`10c` T5。
 - 建议：保留——快照语义与订单成交价同理；如需"最新值"由视图 `v_replenishment_dashboard` 联现实时库存（视图已如此）。影响：看板视图。
 
-## 3. 观察与预计变更（非 v0.1 缺陷）
+## 3. 观察与 2.2 拟变更
 
-**I-C09 `job_code` 与 `BusinessRole.role_code` 的关系（留待 2.2 函数依赖分析）**
+> 本节的「拟变更」＝ 已论证、待 2.2 设计冻结后由 `11c` 执行的变更项（原注"非 v0.1 缺陷"仅适用于 I-C09…I-C11）。**I-C12、I-C13 是 2026-10-15 规范化分析的产物**，分析全文见 `docs/stage2/c-normalization.md`。
+
+**I-C09 `job_code` 与 `BusinessRole.role_code` 的关系（2.2 函数依赖分析，2026-10-15 收口：非冗余）**
 - 观察：两者取值同域（7 个岗位码）但分层存储（行政岗位 vs 数据库业务角色），一致性由过程校验而非约束。
-- 建议：`2.2` 的 `docs/stage2/c-normalization.md` 按 FD 给出结论；当前初判为"语义不同层、非冗余"，不做结构改动。影响：`06` 角色同步过程。
+- 结论：**语义不同层、非冗余，不做结构改动**——`job_code` 在 `EmployeeAccount` 内不决定任何非主属性；跨表不存在 `job_code → 角色集合` 的业务依赖（计划 §6.1 明确承认多业务角色员工；样例 `(i, i)` 一对一只是种子构造，不能证明依赖）。全文：`c-normalization.md` §5.1。影响：`06` 角色同步过程。
 
 **I-C10 白名单 CHECK 的扩展是 2.2 计划变更（非缺陷）**
 - `CK_RolePermission_permission_code` 白名单（46 项）将随 v1.0 新增对象在 `11c` 中扩展（分工已由 B 复核确认：白名单 / 种子归 `11c`，授权 / 签名核对归 `12_permissions.sql`）。
@@ -84,6 +86,20 @@
 
 **I-C11 员工登录映射是部署约定（保留结构）**
 - `login_name` / `database_user_name` 仅为档案字段，无声明式约束保证与服务器登录同名映射；由 2.3 的 `provision_employee.template.ps1` 与部署预检负责。影响：2.3 部署模板。
+
+**I-C12 `RolePermission` 的部分函数依赖（2NF）——2.2 拟拆分（2026-10-15 规范化分析）**
+- 业务规则：`permission_name` 是权限码的展示名，随码唯一（`permission_code → permission_name`）；而 `RolePermission` 的唯一候选码是 `(business_role_id, permission_code)`——`permission_name` 部分依赖于候选码真子集，违反 2NF；插入 / 修改 / 删除异常各附数据例。
+- 当前对象：`RolePermission`（`sql/03` 建表，4 列）；白名单 `CK_RolePermission_permission_code` 在 `06`。
+- 复现证据：`docs/stage2/c-normalization.md` §3.4（异常数据例）与 §4（拆分方案、无损连接与依赖保持论证、迁移影响）。
+- 建议：2.2 拆分为 `Permission(permission_code, permission_name)` 与 `RolePermission(business_role_id, permission_code, status)`，白名单 `CHECK` 迁至 `Permission`；只动本域、无跨域调用者。
+- 影响对象：`11c`、`13c`、`baseline_c.sql`（名称保真基线）、数据字典、ER 总图、`I-C10` 的白名单落点表述。
+
+**I-C13 `PurchaseOrder` 候选码未在约束层声明——2.2 拟补唯一约束（2026-10-15 规范化分析）**
+- 业务规则：一张建议单对应一张采购单（字典 §4），`replenishment_suggestion_id` 是业务候选码；v0.1 由"仅 `SUBMITTED` 可审批 + 无第二条生成路径"的过程状态机保证，约束层无兜底。
+- 当前对象：`PurchaseOrder.replenishment_suggestion_id`（非空、无唯一约束 / 唯一索引）。
+- 复现证据：`docs/库存权限数据字典.md` §4 设计要点（如实记录"约束层没有兜底"）；`c-normalization.md` §3.8 / §5.6。
+- 建议：2.2 补 `UQ_PurchaseOrder_replenishment_suggestion_id`——只声明既有业务事实、不动行数据；`13c` 加负例（同建议单第二张采购单被 `2601/2627` 拒绝）。
+- 影响对象：`11c`、`13c`、`baseline_c.sql`（迁移前 1:1 现场比对）。
 
 ## 4. 跨域条目索引（状态见 `open-issues.md`）
 
