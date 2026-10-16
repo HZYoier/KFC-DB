@@ -75,7 +75,7 @@
         <mxCell id="r6" edge="1" parent="1" source="E_ING" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="E_BOM" value="1:N 原料被用料引用">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r7" edge="1" parent="1" source="E_ML" style="html=1;endArrow=ERzeroToOne;startArrow=ERzeroToMany;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="E_CUST" value="0:1 顾客等级可空 — 建档取默认等级，等级停用置空（过程保证）">
+        <mxCell id="r7" edge="1" parent="1" source="E_ML" style="html=1;endArrow=ERzeroToMany;startArrow=ERzeroToOne;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="E_CUST" value="0:1 顾客等级可空 — 建档取默认等级，等级停用置空（过程保证）">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="r8" edge="1" parent="1" source="E_PROMO" style="html=1;endArrow=ERoneToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.434;entryX=0;entryY=0.452;edgeStyle=orthogonalEdgeStyle;" target="E_PPR" value="1:N 活动必须有规则 — 业务必需 / 过程保证">
