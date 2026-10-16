@@ -1,0 +1,151 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="Vs_0qrAtvdgulQV7uuin" name="第 1 页">
+    <mxGraphModel dx="763" dy="537" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="E_ML" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;MemberLevel&lt;/b&gt;&lt;br&gt;PK member_level_id&lt;br&gt;level_name&lt;br&gt;point_multiplier&lt;br&gt;threshold_points&lt;br&gt;status" vertex="1">
+          <mxGeometry height="132" width="280" x="40" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="E_CAT" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;Category&lt;/b&gt;&lt;br&gt;PK category_id&lt;br&gt;category_name&lt;br&gt;status" vertex="1">
+          <mxGeometry height="72" width="280" x="40" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="E_ING" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;Ingredient&lt;/b&gt;&lt;br&gt;PK ingredient_id&lt;br&gt;ingredient_name&lt;br&gt;unit_name&lt;br&gt;safety_stock_qty&lt;br&gt;status" vertex="1">
+          <mxGeometry height="112" width="280" x="40" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="E_INV" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#f5f5f5;strokeColor=#999999;" value="&lt;b&gt;Inventory（C 域）&lt;/b&gt;&lt;br&gt;PKFK ingredient_id → Ingredient&lt;br&gt;on_hand_qty&lt;br&gt;locked_qty&lt;br&gt;updated_at" vertex="1">
+          <mxGeometry height="112" width="280" x="40" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="E_SUG" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#f5f5f5;strokeColor=#999999;" value="&lt;b&gt;ReplenishmentSuggestion（C 域）&lt;/b&gt;&lt;br&gt;PK replenishment_suggestion_id&lt;br&gt;FK ingredient_id → Ingredient&lt;br&gt;suggestion_status" vertex="1">
+          <mxGeometry height="92" width="280" x="40" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="E_POI" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#f5f5f5;strokeColor=#999999;" value="&lt;b&gt;PurchaseOrderItem（C 域）&lt;/b&gt;&lt;br&gt;PKFK purchase_order_id → PurchaseOrder（C 域，略）&lt;br&gt;PKFK ingredient_id → Ingredient&lt;br&gt;ordered_qty&lt;br&gt;received_qty" vertex="1">
+          <mxGeometry height="112" width="280" x="40" y="840" as="geometry" />
+        </mxCell>
+        <mxCell id="E_CUST" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;Customer&lt;/b&gt;&lt;br&gt;PK customer_id&lt;br&gt;UK mobile&lt;br&gt;customer_type&lt;br&gt;FK member_level_id (NULL) → MemberLevel&lt;br&gt;current_points&lt;br&gt;status" vertex="1">
+          <mxGeometry height="152" width="280" x="400" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="E_PC" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;ProductCategory&lt;/b&gt;&lt;br&gt;PKFK product_id → Product&lt;br&gt;PKFK category_id → Category&lt;br&gt;is_primary" vertex="1">
+          <mxGeometry height="92" width="280" x="400" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="E_BOM" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;ProductBom&lt;/b&gt;&lt;br&gt;PKFK product_id → Product&lt;br&gt;PKFK ingredient_id → Ingredient&lt;br&gt;usage_qty" vertex="1">
+          <mxGeometry height="92" width="280" x="400" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="E_PROMO" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;Promotion&lt;/b&gt;&lt;br&gt;PK promotion_id&lt;br&gt;promotion_name&lt;br&gt;promotion_type&lt;br&gt;start_at&lt;br&gt;end_at&lt;br&gt;status" vertex="1">
+          <mxGeometry height="152" width="280" x="400" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="E_PROD" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;Product&lt;/b&gt;&lt;br&gt;PK product_id&lt;br&gt;product_name&lt;br&gt;base_price&lt;br&gt;product_type&lt;br&gt;status" vertex="1">
+          <mxGeometry height="132" width="280" x="760" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="E_CC" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;ComboComponent&lt;/b&gt;&lt;br&gt;PKFK combo_product_id → Product&lt;br&gt;PKFK child_product_id → Product&lt;br&gt;quantity" vertex="1">
+          <mxGeometry height="92" width="280" x="760" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="E_PPR" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;PromotionProductRule&lt;/b&gt;&lt;br&gt;PK promotion_rule_id&lt;br&gt;FK promotion_id → Promotion&lt;br&gt;FK product_id → Product&lt;br&gt;weekday_no&lt;br&gt;start_time&lt;br&gt;end_time&lt;br&gt;promo_price&lt;br&gt;priority" vertex="1">
+          <mxGeometry height="192" width="280" x="760" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="E_SO" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#f5f5f5;strokeColor=#999999;" value="&lt;b&gt;SalesOrder（B 域）&lt;/b&gt;&lt;br&gt;PK order_id&lt;br&gt;FK customer_id → Customer&lt;br&gt;order_status" vertex="1">
+          <mxGeometry height="92" width="280" x="1160" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="E_PL" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#f5f5f5;strokeColor=#999999;" value="&lt;b&gt;PointLedger（B 域）&lt;/b&gt;&lt;br&gt;PK point_ledger_id&lt;br&gt;FK customer_id → Customer&lt;br&gt;point_delta&lt;br&gt;ledger_status" vertex="1">
+          <mxGeometry height="112" width="280" x="1160" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="E_SOI" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#f5f5f5;strokeColor=#999999;" value="&lt;b&gt;SalesOrderItem（B 域）&lt;/b&gt;&lt;br&gt;PK order_item_id&lt;br&gt;FK order_id → SalesOrder（B 域，略）&lt;br&gt;FK product_id → Product&lt;br&gt;item_role&lt;br&gt;quantity&lt;br&gt;FK promotion_id (NULL) → Promotion" vertex="1">
+          <mxGeometry height="172" width="280" x="1160" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="r1" edge="1" parent="1" source="E_CAT" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="E_PC" value="1:N 商品—分类归属（M:N 的关联实体）— 外码非空">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r2" edge="1" parent="1" source="E_PROD" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="E_PC" value="1:N 单品必须 ≥1、套餐可为 0 — 业务必需 / 无结构保证">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r3" edge="1" parent="1" source="E_PROD" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.35;exitY=1;entryX=0.35;entryY=0;edgeStyle=orthogonalEdgeStyle;" target="E_CC" value="1:N 套餐组成行">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r4" edge="1" parent="1" source="E_PROD" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;dashed=1;exitX=0.85;exitY=1;entryX=0.85;entryY=0;edgeStyle=orthogonalEdgeStyle;" target="E_CC" value="1:N 同一对实体间的第二条外码：子项被引用">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r5" edge="1" parent="1" source="E_PROD" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=0;exitY=0.682;entryX=1;entryY=0.609;edgeStyle=orthogonalEdgeStyle;" target="E_BOM" value="1:N 单品用料；套餐不配 BOM 行">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="290" />
+              <mxPoint x="720" y="396" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r6" edge="1" parent="1" source="E_ING" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="E_BOM" value="1:N 原料被用料引用">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r7" edge="1" parent="1" source="E_ML" style="html=1;endArrow=ERzeroToOne;startArrow=ERzeroToMany;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="E_CUST" value="0:1 顾客等级可空 — 建档取默认等级，等级停用置空（过程保证）">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r8" edge="1" parent="1" source="E_PROMO" style="html=1;endArrow=ERoneToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.434;entryX=0;entryY=0.452;edgeStyle=orthogonalEdgeStyle;" target="E_PPR" value="1:N 活动必须有规则 — 业务必需 / 过程保证">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="566" />
+              <mxPoint x="720" y="846" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r9" edge="1" parent="1" source="E_PROD" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.682;entryX=1;entryY=0.452;edgeStyle=orthogonalEdgeStyle;" target="E_PPR" value="1:N 规则适用商品">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1065" y="290" />
+              <mxPoint x="1065" y="846" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r10" edge="1" parent="1" source="E_CUST" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="E_SO" value="1:N 历史订单（B 域）">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r11" edge="1" parent="1" source="E_CUST" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.72;entryX=0;entryY=0.411;edgeStyle=orthogonalEdgeStyle;" target="E_PL" value="1:N 积分流水（B 域）">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1140" y="149" />
+              <mxPoint x="1140" y="246" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r12" edge="1" parent="1" source="E_CUST" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.92;entryX=0;entryY=0.442;edgeStyle=orthogonalEdgeStyle;" target="E_SOI" value="1:N 订单明细引用顾客（B 域）">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1090" y="180" />
+              <mxPoint x="1090" y="436" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r13" edge="1" parent="1" source="E_ING" style="html=1;endArrow=ERzeroToOne;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="E_INV" value="1:1 共享标识（PKFK）；原料可暂无库存行（C 域）">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r14" edge="1" parent="1" source="E_ING" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.714;entryX=1;entryY=0.5;edgeStyle=orthogonalEdgeStyle;" target="E_SUG" value="1:N 历史补货建议（C 域）">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="350" y="440" />
+              <mxPoint x="350" y="746" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r15" edge="1" parent="1" source="E_ING" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.607;entryX=1;entryY=0.5;edgeStyle=orthogonalEdgeStyle;" target="E_POI" value="1:N 采购明细引用原料（C 域）">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="370" y="428" />
+              <mxPoint x="370" y="896" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r16" edge="1" parent="1" source="E_PROMO" style="html=1;endArrow=ERzeroToMany;startArrow=ERzeroToOne;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.737;entryX=0;entryY=0.523;edgeStyle=orthogonalEdgeStyle;" target="E_SOI" value="0:1 命中促销写入明细快照、可空（B 域）">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="612" />
+              <mxPoint x="700" y="1010" />
+              <mxPoint x="1115" y="1010" />
+              <mxPoint x="1115" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=11;" value="端点符号：| = 恰好 1    o| = 零或 1    |&lt; = 一或多    o&lt; = 零或多&lt;br&gt;灰色矩形 = 跨域实体（仅列键列与少量判别列）；虚线 = 同一对实体间的第二条外码&lt;br&gt;文字标签 = 两端基数 — 实现机制；业务必需但结构不保证的参与约束（如“单品至少一个分类”“活动必须有规则”）以标签说明" vertex="1">
+          <mxGeometry height="72" width="1400" x="40" y="1060" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
