@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram id="Vs_0qrAtvdgulQV7uuin" name="第 1 页">
-    <mxGraphModel dx="763" dy="537" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1200" math="0" shadow="0">
+    <mxGraphModel dx="763" dy="537" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2440" pageHeight="1200" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -44,18 +44,18 @@
           <mxGeometry height="192" width="280" x="1360" y="760" as="geometry" />
         </mxCell>
         <mxCell id="E_SO" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#f5f5f5;strokeColor=#999999;" value="&lt;b&gt;SalesOrder（B 域）&lt;/b&gt;&lt;br&gt;PK order_id&lt;br&gt;FK customer_id → Customer&lt;br&gt;order_status" vertex="1">
-          <mxGeometry height="92" width="280" x="1760" y="40" as="geometry" />
+          <mxGeometry height="92" width="280" x="2000" y="40" as="geometry" />
         </mxCell>
         <mxCell id="E_PL" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#f5f5f5;strokeColor=#999999;" value="&lt;b&gt;PointLedger（B 域）&lt;/b&gt;&lt;br&gt;PK point_ledger_id&lt;br&gt;FK customer_id → Customer&lt;br&gt;point_delta&lt;br&gt;ledger_status" vertex="1">
-          <mxGeometry height="112" width="280" x="1760" y="200" as="geometry" />
+          <mxGeometry height="112" width="280" x="2000" y="200" as="geometry" />
         </mxCell>
         <mxCell id="E_SOI" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fontSize=12;fillColor=#f5f5f5;strokeColor=#999999;" value="&lt;b&gt;SalesOrderItem（B 域）&lt;/b&gt;&lt;br&gt;PK order_item_id&lt;br&gt;FK order_id → SalesOrder（B 域，略）&lt;br&gt;FK product_id → Product&lt;br&gt;item_role&lt;br&gt;quantity&lt;br&gt;FK promotion_id (NULL) → Promotion" vertex="1">
-          <mxGeometry height="172" width="280" x="1760" y="360" as="geometry" />
+          <mxGeometry height="172" width="280" x="2000" y="360" as="geometry" />
         </mxCell>
         <mxCell id="r1" edge="1" parent="1" source="E_CAT" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="E_PC" value="1:N 商品—分类归属（M:N 的关联实体）— 外码非空">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r2" edge="1" parent="1" source="E_PROD" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="E_PC" value="1:N 单品必须 ≥1、套餐可为 0 — 业务必需 / 无结构保证">
+        <mxCell id="r2" edge="1" parent="1" source="E_PROD" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="E_PC" value="1:N 建档即写一条主分类 — 过程保证，声明式不可表达">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="r3" edge="1" parent="1" source="E_PROD" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=0.35;exitY=1;entryX=0.35;entryY=0;edgeStyle=orthogonalEdgeStyle;" target="E_CC" value="1:N 套餐组成行">
@@ -82,7 +82,7 @@
         <mxCell id="r7" edge="1" parent="1" source="E_ML" style="html=1;endArrow=ERzeroToMany;startArrow=ERzeroToOne;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" target="E_CUST" value="0:1 顾客等级可空 — 建档取默认等级，等级停用置空（过程保证）">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="r8" edge="1" parent="1" source="E_PROMO" style="html=1;endArrow=ERoneToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.434;entryX=0;entryY=0.452;edgeStyle=orthogonalEdgeStyle;" target="E_PPR" value="1:N 活动必须有规则 — 业务必需 / 过程保证">
+        <mxCell id="r8" edge="1" parent="1" source="E_PROMO" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.434;entryX=0;entryY=0.452;edgeStyle=orthogonalEdgeStyle;" target="E_PPR" value="1:N 活动必须有规则 — 业务必需 / 无实现机制（2.2 待补校验）">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1180" y="566" />
@@ -104,16 +104,16 @@
         <mxCell id="r11" edge="1" parent="1" source="E_CUST" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.72;entryX=0;entryY=0.411;edgeStyle=orthogonalEdgeStyle;" target="E_PL" value="1:N 积分流水（B 域）">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1740" y="149" />
-              <mxPoint x="1740" y="246" />
+              <mxPoint x="1940" y="149" />
+              <mxPoint x="1940" y="246" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="r12" edge="1" parent="1" source="E_CUST" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.92;entryX=0;entryY=0.442;edgeStyle=orthogonalEdgeStyle;" target="E_SOI" value="1:N 订单明细引用顾客（B 域）">
+        <mxCell id="r12" edge="1" parent="1" source="E_PROD" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=1;entryX=0;entryY=0.442;edgeStyle=orthogonalEdgeStyle;" target="E_SOI" value="1:N 订单明细引用商品（B 域）">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1690" y="180" />
-              <mxPoint x="1690" y="436" />
+              <mxPoint x="1740" y="332" />
+              <mxPoint x="1740" y="436" />
             </Array>
           </mxGeometry>
         </mxCell>
@@ -141,8 +141,8 @@
             <Array as="points">
               <mxPoint x="1020" y="612" />
               <mxPoint x="1020" y="1010" />
-              <mxPoint x="1715" y="1010" />
-              <mxPoint x="1715" y="450" />
+              <mxPoint x="1865" y="1010" />
+              <mxPoint x="1865" y="450" />
             </Array>
           </mxGeometry>
         </mxCell>
