@@ -26,3 +26,4 @@
 | 2026-10-15 | OI-06 收尾（C）：`docs/er/c-inventory-security.drawio` / `.svg` 已订正——`Ingredient` 转灰矩形（A 域、3 列）、`AuditLog` 补入（7 列），新增 `EmployeeAccount → AuditLog` 1:N 联系（折线走线避开 `Delivery`）；共 12 实体 14 联系，几何避让自查 0 冲突 |
 | 2026-10-16 | 登记 OI-07（open，A 发现）：`legend.md` §2 端点符号措辞与实际画法相反；A 图 r7（`MemberLevel` — `Customer`）按字面画反的端点在本次一并改回 |
 | 2026-10-16 | 存档 A 域主数据与定价 ER 子图：`docs/er/a-master.drawio` / `.svg`（16 实体 16 联系、0 处几何冲突），提交 `810465d` |
+| 2026-10-16 | A 域子图版面调整：6 条联系标签（r1/r2/r5/r6/r7/r14）宽度超过 80px 列间距，压住了相邻实体的属性行；加宽 col1↔col2 走廊 80→400、col2↔col3 80→360（col3/col4 随之右移，col3↔col4 保持 120），18 个拐点同步平移；r3/r4 两条标签原先互相压 11px，改为上下错开 ±18。**标签文字与实体内容一字未改**，`.svg` 重导为 2022×1113，实测 16/16 标签不压框、0 条折线穿框 |
