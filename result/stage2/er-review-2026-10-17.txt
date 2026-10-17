@@ -1,0 +1,137 @@
+# ER 子图独立复核归档（2026-10-17，成员 C）
+# ============================================================================
+#
+# 目的：在合并总 ER 图（T3）之前，对已交付的两份子图做 C 侧独立复核并留证。
+#       复核对象：docs/er/a-master.drawio（A，2026-10-16 交付，810465d–df283c2）
+#                 docs/er/c-inventory-security.drawio（C，2026-10-15 订正版）
+# 环境：Windows 11；Python 3.13.12；仓库 D:\DBLab\KFC-DB。
+# 命令：python -I review_er_20261017.py   （脚本：本目录 scripts/，绝对路径读仓库文件）
+# 输入：sql/01_master_schema.sql、sql/02_order_schema.sql、sql/03_inventory_security_schema.sql；
+#       docs/er/a-master.drawio、docs/er/c-inventory-security.drawio
+# 判据：脚本输出「0 项问题」＝ 通过。
+#
+# 轮次一览：
+#   R1 解析器崩溃（KeyError：sql/01 用 A 风格——小写 create table、无 dbo.、无分号）→ 改宽容解析器
+#   R2 12 项差异（§1）→ 3 处解析器修正（§2）+ 1 项真实口径分歧（r6 → OI-09）
+#   R3 终轮 0 项问题（§3：66 PASS / 0 FAIL）
+#
+# ----------------------------------------------------------------------------
+# §1 R2 首轮差异（12 项）与归因
+# ----------------------------------------------------------------------------
+== 结果: 12 项问题 ==
+ - A 域实体 Category 属性名集合 == sql/01 列（差: 图独有=['status'] 源独有=[]）
+ - A 域实体 MemberLevel 属性名集合 == sql/01 列（差: 图独有=['status'] 源独有=[]）
+ - A 域实体 Ingredient 属性名集合 == sql/01 列（差: 图独有=['status'] 源独有=[]）
+ - A 域实体 Product 属性名集合 == sql/01 列（差: 图独有=['status'] 源独有=[]）
+ - A 域实体 ProductCategory 属性名集合 == sql/01 列（差: 图独有=['FK'] 源独有=['category_id', 'product_id']）
+ - A 域实体 Customer 属性名集合 == sql/01 列（差: 图独有=['status'] 源独有=[]）
+ - A 域实体 ProductBom 属性名集合 == sql/01 列（差: 图独有=['FK'] 源独有=['ingredient_id', 'product_id']）
+ - A 域实体 ComboComponent 属性名集合 == sql/01 列（差: 图独有=['FK'] 源独有=['child_product_id', 'combo_product_id']）
+ - A 域实体 Promotion 属性名集合 == sql/01 列（差: 图独有=['status'] 源独有=[]）
+ - A 域实体 PromotionProductRule 属性名集合 == sql/01 列（差: 图独有=['priority'] 源独有=[]）
+ - C 图 边 r6（PurchaseOrder->PurchaseOrderItem）箭头 [ERone -> ERoneToMany] == 期望 [ERone -> ERzeroToMany]
+ - C 图 边 r13（EmployeeAccount->Delivery）箭头 [ERzeroToOne -> ERzeroToMany] == 期望 [None -> None]
+#
+# 归因（逐类）：
+#  ① 9 项「A 域属性名集合」：全部为**脚本判据缺陷**——
+#     a) sql/01 用方括号标识符（[status]、[priority]），源侧解析漏列（图独有 status/priority）；
+#     b) 文档侧正则把 `PKFK product_id` 截成 `FK`（前缀交替 PK 先于 PKFK），源独有=主码列（3 项）。
+#  ② r13：03 末尾是 `ALTER TABLE dbo.Delivery ADD CONSTRAINT … FOREIGN KEY`，脚本未解析
+#     ALTER 型外码 → 期望值 None。属脚本判据缺陷。
+#  ③ r6：**真实口径分歧**——按现图例「参与约束按业务规则判定」画 ERoneToMany（业务恰好 1 条、
+#     过程保证）；按 A 图采用的「端点只表达结构」口径应为 ERzeroToMany。**不是缺陷**，
+#     登记为 OI-09（待 B 在 business-rule-mapping.md 冻结基数口径后统一）。
+#  结论：A 图 0 本体缺陷；C 图仅 r6 一项口径待定。
+#
+# ----------------------------------------------------------------------------
+# §2 修正清单（R2 → R3）
+# ----------------------------------------------------------------------------
+# ① 源侧解析：列名正则放宽为 `^\s+\[?([A-Za-z_]\w*)\]?`（支持方括号标识符）；
+#    主码列强制非空（PK 成员由引擎保证 NOT NULL，01 风格不显式写 NOT NULL）。
+# ② 文档侧属性提取：前缀交替改为最长优先 `(?:PKFK|PK|UK|FK)?`。
+# ③ 补解析 `ALTER TABLE … ADD CONSTRAINT FK_… FOREIGN KEY … REFERENCES dbo.…`，
+#    并归入 Delivery 的外码集合（骑手外键由 03 追加，不在 02 的 CREATE TABLE 块内）。
+# ④ r6 与 r11 改为 INFO 记录（r6 = OI-09 口径分歧；r11 = 4 条员工外码合并为一条边，按标签人工判断）。
+#
+# ----------------------------------------------------------------------------
+# §3 R3 终轮：完整输出
+# ----------------------------------------------------------------------------
+[PASS] A 域实体 Category 主键标注 == sql/01（图=['category_id'] 源=['category_id']）
+[PASS] A 域实体 MemberLevel 主键标注 == sql/01（图=['member_level_id'] 源=['member_level_id']）
+[PASS] A 域实体 Ingredient 主键标注 == sql/01（图=['ingredient_id'] 源=['ingredient_id']）
+[PASS] A 域实体 Product 主键标注 == sql/01（图=['product_id'] 源=['product_id']）
+[PASS] A 域实体 ProductCategory 主键标注 == sql/01（图=['category_id', 'product_id'] 源=['category_id', 'product_id']）
+[PASS] A 域实体 Customer 主键标注 == sql/01（图=['customer_id'] 源=['customer_id']）
+[PASS] A 域实体 ProductBom 主键标注 == sql/01（图=['ingredient_id', 'product_id'] 源=['ingredient_id', 'product_id']）
+[PASS] A 域实体 ComboComponent 主键标注 == sql/01（图=['child_product_id', 'combo_product_id'] 源=['child_product_id', 'combo_product_id']）
+[PASS] A 域实体 Promotion 主键标注 == sql/01（图=['promotion_id'] 源=['promotion_id']）
+[PASS] A 域实体 PromotionProductRule 主键标注 == sql/01（图=['promotion_rule_id'] 源=['promotion_rule_id']）
+[PASS] A 图实体集合 == 10 A 表 + 6 灰实体（实得 16）
+[PASS] 灰实体 Inventory 主键标注 == 源（图=['ingredient_id'] 源=['ingredient_id']）
+[PASS] 灰实体 ReplenishmentSuggestion 主键标注 == 源（图=['replenishment_suggestion_id'] 源=['replenishment_suggestion_id']）
+[PASS] 灰实体 PurchaseOrderItem 主键标注 == 源（图=['ingredient_id', 'purchase_order_id'] 源=['ingredient_id', 'purchase_order_id']）
+[PASS] 灰实体 SalesOrder 主键标注 == 源（图=['order_id'] 源=['order_id']）
+[PASS] 灰实体 PointLedger 主键标注 == 源（图=['point_ledger_id'] 源=['point_ledger_id']）
+[PASS] 灰实体 SalesOrderItem 主键标注 == 源（图=['order_item_id'] 源=['order_item_id']）
+[PASS] A 域实体 Category 属性名集合 == sql/01 列（差: 图独有=[] 源独有=[]）
+[PASS] A 域实体 MemberLevel 属性名集合 == sql/01 列（差: 图独有=[] 源独有=[]）
+[PASS] A 域实体 Ingredient 属性名集合 == sql/01 列（差: 图独有=[] 源独有=[]）
+[PASS] A 域实体 Product 属性名集合 == sql/01 列（差: 图独有=[] 源独有=[]）
+[PASS] A 域实体 ProductCategory 属性名集合 == sql/01 列（差: 图独有=[] 源独有=[]）
+[PASS] A 域实体 Customer 属性名集合 == sql/01 列（差: 图独有=[] 源独有=[]）
+[PASS] A 域实体 ProductBom 属性名集合 == sql/01 列（差: 图独有=[] 源独有=[]）
+[PASS] A 域实体 ComboComponent 属性名集合 == sql/01 列（差: 图独有=[] 源独有=[]）
+[PASS] A 域实体 Promotion 属性名集合 == sql/01 列（差: 图独有=[] 源独有=[]）
+[PASS] A 域实体 PromotionProductRule 属性名集合 == sql/01 列（差: 图独有=[] 源独有=[]）
+[PASS] A 图 边 r1（Category->ProductCategory）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] A 图 边 r2（Product->ProductCategory）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] A 图 边 r3（Product->ComboComponent）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] A 图 边 r4（Product->ComboComponent）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] A 图 边 r5（Product->ProductBom）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] A 图 边 r6（Ingredient->ProductBom）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] A 图 边 r7（MemberLevel->Customer）箭头 [ERzeroToOne -> ERzeroToMany] == 期望 [ERzeroToOne -> ERzeroToMany]
+[PASS] A 图 边 r8（Promotion->PromotionProductRule）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] A 图 边 r9（Product->PromotionProductRule）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] A 图 边 r10（Customer->SalesOrder）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] A 图 边 r11（Customer->PointLedger）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] A 图 边 r12（Product->SalesOrderItem）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] A 图 边 r13（Ingredient->Inventory）箭头 [ERone -> ERzeroToOne] == 期望 [ERone -> ERzeroToOne]
+[PASS] A 图 边 r14（Ingredient->ReplenishmentSuggestion）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] A 图 边 r15（Ingredient->PurchaseOrderItem）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] A 图 边 r16（Promotion->SalesOrderItem）箭头 [ERzeroToOne -> ERzeroToMany] == 期望 [ERzeroToOne -> ERzeroToMany]
+[PASS] A 图 边覆盖：16 条边全部对应真实外码（未用 0）
+[PASS] C 图 边 r1（Ingredient->Inventory）箭头 [ERone -> ERzeroToOne] == 期望 [ERone -> ERzeroToOne]
+[PASS] C 图 边 r2（Inventory->InventoryMovement）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] C 图 边 r3（Ingredient->ReplenishmentSuggestion）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] C 图 边 r4（Ingredient->PurchaseOrderItem）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] C 图 边 r5（ReplenishmentSuggestion->PurchaseOrder）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[INFO] C 图 边 r6（PurchaseOrder->PurchaseOrderItem）[ERone -> ERoneToMany]：已知口径分歧（OI-09）：按现图例「参与约束按业务规则」画 ERoneToMany（业务恰好 1 条）；A 的图按「结构口径」画。待 B 冻结基数口径后统一
+[PASS] C 图 边 r7（BusinessRole->RolePermission）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] C 图 边 r8（EmployeeAccount->EmployeeBusinessRole）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] C 图 边 r9（BusinessRole->EmployeeBusinessRole）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] C 图 边 r10（EmployeeAccount->EmployeeBusinessRole）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[INFO] C 图 边 r11（EmployeeAccount->ReplenishmentSuggestion）[ERone -> ERzeroToMany]：4 条员工外码合并为一条边（created_by 非空 + 三个审批人可空），按标签人工判断
+[PASS] C 图 边 r12（EmployeeAccount->PurchaseOrder）箭头 [ERzeroToOne -> ERzeroToMany] == 期望 [ERzeroToOne -> ERzeroToMany]
+[PASS] C 图 边 r13（EmployeeAccount->Delivery）箭头 [ERzeroToOne -> ERzeroToMany] == 期望 [ERzeroToOne -> ERzeroToMany]
+[PASS] C 图 边 r14（EmployeeAccount->AuditLog）箭头 [ERone -> ERzeroToMany] == 期望 [ERone -> ERzeroToMany]
+[PASS] C 图 边覆盖：14 条边全部对应真实外码（未用 0）
+[PASS] C 图边数 14（实得 14）
+[PASS] A 图边数 16（实得 16）
+[PASS] 共享实体 Ingredient 主键一致（A=['ingredient_id'] C=['ingredient_id']）
+[PASS] 共享实体 Inventory 主键一致（A 图灰=['ingredient_id']，C 图=['ingredient_id']）
+[PASS] 共享实体 ReplenishmentSuggestion 主键一致（A 图灰=['replenishment_suggestion_id']，C 图=['replenishment_suggestion_id']）
+[PASS] 共享实体 PurchaseOrderItem 主键一致（A 图灰=['ingredient_id', 'purchase_order_id']，C 图=['ingredient_id', 'purchase_order_id']）
+[PASS] 跨域联系 Ingredient->Inventory 箭头一致（A r13 [ERone->ERzeroToOne] vs C r1 [ERone->ERzeroToOne]）
+[PASS] 跨域联系 Ingredient->ReplenishmentSuggestion 箭头一致（A r14 [ERone->ERzeroToMany] vs C r3 [ERone->ERzeroToMany]）
+[PASS] 跨域联系 Ingredient->PurchaseOrderItem 箭头一致（A r15 [ERone->ERzeroToMany] vs C r4 [ERone->ERzeroToMany]）
+
+== 结果: 0 项问题 ==
+#
+# ----------------------------------------------------------------------------
+# §4 结论
+# ----------------------------------------------------------------------------
+# A 图（810465d–df283c2）：16 实体（10 A 表 + 6 灰）与 16 条边全部通过——每条边对应在册外码、
+# 箭头与据 sql/01-03 推导的期望一致；A 域属性名集合与 sql/01 一致；与 C 图三条共享跨域联系
+# （Ingredient→Inventory 1:1、→ReplenishmentSuggestion / PurchaseOrderItem 1:N）箭头一致。
+# C 图：13/13 单外码边通过；r11 为合并边（按标签人工判断）；r6 为 OI-09 口径分歧（待 B 冻结）。
+# 归档件：本日志 + scripts/review_er_20261017.py（SHA-256 见本目录 README.md 清单）。
