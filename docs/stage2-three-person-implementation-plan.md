@@ -266,7 +266,7 @@ A/B/C 首个联合验收交付：一个真实员工登录 → 上下文正确 �
 | ai_log：AI 辅助过程、输出内容、人工修改及验证结论 | `docs/AI使用记录.md`（按日期段追加，本轮不新增文件） | 各自记账 |
 | 小组分工说明 | `docs/stage2/team-division.md`，由本节与 §7.1 抽取一页 | C |
 
-表中 `app/`、`sql/stage2/`、`tests/stage2/`、`result/stage2/` 与 `docs/stage2/` 下多数文件都是**计划落点，尚未建立**（现有只有 `a-issues.md`、`c-issues.md`、`c-normalization.md`、`open-issues.md`、`source-requirements.md` 与 `application-contract.md` 草案），不是现状。
+表中 `app/`、`sql/stage2/`、`tests/stage2/` 与 `docs/stage2/` 下多数文件都是**计划落点，尚未建立**（现有只有 `a-issues.md`、`a-normalization.md` 草案、`c-issues.md`、`c-normalization.md`、`open-issues.md`、`source-requirements.md` 与 `application-contract.md` 草案；`result/stage2/` 已有 C 的迁移前置实验与两份对账证据、A 的范式对账证据），不是现状。
 
 两件事必须在第 7 周内处理完，否则第 8 周返工：① 顾客端三个过程的数据库契约要随 2.2 一起冻结（§6.2 末三行）——顾客账户没有 `EmployeeAccount` 映射，员工版过程对它一律拒绝，不能到写页面时再补；② 技术栈已改为 Flask，第 5—6 周的对象契约不用重写，但 `application-contract.md` 里「语言层签名」一栏要按 §6.3 的 Python 写法填，别留 .NET 字样。
 

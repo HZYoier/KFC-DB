@@ -72,22 +72,27 @@ A 域外键 9 条，全部落在域内（见上表）。A 域不向外域发外�
 **I-A08 `Customer.current_points` 是否属于派生冗余（留待 2.2）**
 - 观察：`Customer.current_points` 物化存放顾客累计积分，而积分流水在 B 的 `PointLedger`；两者的一致性由 A 的 `sp_apply_customer_points` 维护，没有约束直接保证。
 - 建议：2.2 在 `docs/stage2/a-normalization.md` 按函数依赖判断——若 `current_points` 可由流水汇总推出，则与 `SalesOrder.total_amount` 是同类冗余议题，两者口径应一致（都保留并说明维护机制，或都改为派生）。影响：`sp_apply_customer_points`、B 的积分两段式、视图。
+- **结论（2026-10-21，`a-normalization.md` §4.1，草案）**：完全可派生——`current_points = SUM(PointLedger.point_delta WHERE ledger_status='EFFECTIVE')`，三条路径（PENDING 不计、EFFECTIVE 只加一次、VOIDED 只从 PENDING 转来）保证同事务原子。**保留物化**，与 `SalesOrder.total_amount` 同口径；2.2 在 `13a` 加一致性断言，字典写明唯一维护入口，不删列改实时汇总。
 
 **I-A09 `MemberLevel` 与升级规则的函数依赖（留待 2.2）**
 - 观察：`MemberLevel.threshold_points` 决定升级门槛，实际等级由顾客累计积分落在哪个门槛区间决定；本域只存等级与门槛的静态映射。
 - 建议：2.2 分析 `member_level_id`、`threshold_points` 与积分的依赖关系，判断是否存在传递依赖，并说明“等级由积分规则派生”这一口径。影响：`sp_apply_customer_points`、会员等级维护过程。
+- **结论（2026-10-21，`a-normalization.md` §4.2，草案）**：**不存在传递依赖**——`current_points → member_level_id` 不成立，两条反例：等级停用把受影响顾客置空（`04:1326`–`1332`）、加档 / 调门槛不回溯（`04:86`–`95`）。`threshold_points` 的唯一性是等级解析正确的前提，已由两个过程 `THROW 51005` 强制但未声明 → **2.2 补 `UQ_MemberLevel_threshold_points`**；“不回溯”作为预期行为写进字典，防止 2.2 被当 bug 改掉。
 
 **I-A10 三个复合主码表的 2NF / 3NF 判定（留待 2.2）**
 - 观察：`ProductCategory`、`ProductBom`、`ComboComponent` 均为全码（所有列都在主码内或直接依赖全码），结构上无部分依赖。
 - 建议：2.2 逐表写出候选码与函数依赖，明确它们是“全码、无部分依赖”，把“没有异常”也写成有依据的结论，而不是省略。影响：dictionaries、ER 子图。
+- **结论（2026-10-21，`a-normalization.md` §3.5–§3.8、§4.3，草案）**：三表均为全码，2NF/3NF 通过。两表（`ProductCategory`、`ProductBom`）的部分依赖方向各有种子反例；`ComboComponent.child_product_id ↛ quantity` 在种子里无重复、但按 R6-13 不能据此认定 FD，已写明“样例无重复不等于依赖成立”。**无需结构变更**。
 
 **I-A11 “商品→类别→类别名”示例需按 FD 判断（留待 2.2）**
 - 观察：教学原文用“商品编号→类别编号→类别名称”举例传递依赖，但本项目 `ProductCategory` 是 M:N 关联表，一个商品可属多分类，`product_id` 并不单值决定 `category_id`。
 - 建议：2.2 明确本项目不构成该传递依赖（或另建独立示例关系演示），不为了凑示例而把 `ProductCategory` 强拆。影响：`a-normalization.md`、总图。
+- **结论（2026-10-21，`a-normalization.md` §4.4，草案）**：反例在种子——商品 3 同属分类 2 与 1（`09a:71`），`product_id ↛ category_id`，该传递依赖在本项目**不成立**。演示用的独立示例关系（扁平表 + 无损分解）放 2.2 `refactoring-design.md`，**不进 v1.0 结构**。
 
-**I-A12 七张表无声明式候选码（留待 2.2 判定是否需要）**
-- 观察：`Category`、`MemberLevel`、`Ingredient`、`Product`、`Promotion`、`PromotionProductRule` 仅有代理主码，名称列（如 `ingredient_name`、`product_name`）无唯一约束，同名行可并存。
+**I-A12 六张表无声明式候选码（留待 2.2 判定是否需要）**
+- 观察：`Category`、`MemberLevel`、`Ingredient`、`Product`、`Promotion`、`PromotionProductRule` 仅有代理主码，名称列（如 `ingredient_name`、`product_name`）无唯一约束，同名行可并存。**（2026-10-21 订正：原写“七张表”有误——`Customer` 有 `UQ_Customer_Mobile`，不在此列；正文一直只列 6 张，以正文为准。）**
 - 建议：2.2 判断这些名称在业务上是否应唯一；若应唯一，是补唯一约束还是明确接受同名（如不同门店/规格），给出结论而非默认。影响：主数据字典、可能的迁移。
+- **结论（2026-10-21，`a-normalization.md` §4.6，草案）**：补 5 个声明——`UQ_MemberLevel_threshold_points`（必做，§4.2）、`UQ_Category_category_name`、`UQ_Product_product_name`、`UQ_Ingredient_name_unit`、`UQ_MemberLevel_level_name`（建议）；**不补** `Promotion.promotion_name`（同名跨期合法）与规则窗口（同窗多档价是设计意图）。`09a` 种子在这些键上均无重复，迁移不会因存量数据失败。
 
 ## 4. 跨域条目与接口索引
 
@@ -99,6 +104,7 @@ A 域外键 9 条，全部落在域内（见上表）。A 域不向外域发外�
 ## 5. 下一步（本文件之外）
 
 - 与本文同步产出 `docs/er/a-master.drawio` / `.svg`：以上表行即子图的实体与键列来源，符号照 `docs/er/legend.md`。
+- 依赖与范式分析单独成文：**`docs/stage2/a-normalization.md`（2026-10-21 草案）**，本文 §3 的 I-A08–I-A12 结论见其 §4；结构对账证据 `result/stage2/a-normalization-check-2026-10-21.txt`（终轮 0 差异）。
 - 本域联系条目提交给 B 汇总进 `docs/stage2/business-rule-mapping.md`（两端最小 / 最大基数 + 保证机制）：条目见 **§6**，共 16 条，与 `a-master.drawio` 的 r1–r16 一一对应。
 - `docs/stage2/naming.md` 与 `design-validation.md` 待 C 合并总图后再定稿。
 
