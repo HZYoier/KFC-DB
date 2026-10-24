@@ -1,15 +1,15 @@
 # 第二阶段重构方案：B 分析稿与全组汇总框架
 
-> 主笔 B；2026-10-14；R6-05/06/09。本文已完成 B 域方案；A/C 域结论尚待其范式材料，**不是全组 v1.0 冻结设计**。
+> 主笔 B；2026-10-14建立，2026-10-24同步远端范式材料；R6-05/06/09。A/C材料已到，本文补全三域方案汇总，但**不是全组 v1.0 冻结设计**；A稿仍标明人工逐表复核未完成，未伪造共同批准。
 > [实施计划](../stage2-three-person-implementation-plan.md)与[开放问题表](open-issues.md)优先；不修改第一阶段 SQL。
 
 ## 1. 输入、决定与状态
 
 | 域 | 现有输入 | 当前可用结论 | 仍缺的冻结输入 |
 | --- | --- | --- | --- |
-| A | a-issues.md、01/04/07a、主数据字典 | 主数据/价格快照与跨域函数保持现状 | a-normalization、拟改对象与最终接口 |
+| A | a-issues.md、a-normalization.md、01/04/07a、主数据字典 | 保留10表，提议补五项唯一声明、保留顾客累计分/等级快照 | 人工复核、期初积分对账修订、最终接口 |
 | B | b-issues、b-normalization、业务映射和事务规范 | 推荐保留五表、键/快照、总额与积分事件值；补不变量回归 | I-B08 教学与输入规则决议；全组审查确认 |
-| C | c-issues、C 子图、权限/库存源码、隔离实验 | 库存/权限保持域边界，包含用户替代路径 deferred | c-normalization、基线辅助表列定义、迁移顺序/签名执行验证 |
+| C | c-issues、c-normalization、C子图、权限/库存源码、隔离实验 | 拟拆Permission目录、补采购建议唯一；包含用户路径deferred | 基线辅助表列定义、迁移顺序/签名执行验证、白名单落位细则 |
 
 所有“推荐”只有在 OI-03 对应的冻结审查通过后转为实施项；未齐部分明确列缺口，不造签字或验收。
 
@@ -69,3 +69,37 @@ B 新错误码由 C 登记；B 不改 12_permissions、Common、Auth、全组问
 ## 6. 可交接与不可宣称
 
 B 的问题、子图、35 条外键映射和分析材料可供 A 命名/验证、C 合图/需求审查使用。本文不代表已经提供新的数据库过程、不代表 v1.0 迁移通过，也不代表 2.3 应用已开发。
+
+## 7. 三域范式方案汇总（2026-10-24）
+
+来源为[A分析](a-normalization.md)、[B分析](b-normalization.md)、[C分析](c-normalization.md)，只汇总属主提案，不把材料到货等同冻结。v0.1仍为25表；若C拆分获批，v1.0业务表预计26张，辅助表另算，不能继续拿25作新结构固定分母。
+
+| 项 | 目标关系/约束 | 理由与证明 | 迁移归属与负例 |
+| --- | --- | --- | --- |
+| A：MemberLevel | UQ(threshold_points)，建议UQ(level_name) | 前者把过程保证的门槛唯一声明化；不是拆表 | 11a；输出同门槛/同名冲突，禁止静默去重；13a验证2601/2627 |
+| A：Category/Product | 各UQ(name)提案 | 名称业务唯一需确认；没有DDL声明不等于理论FD必不存在 | 11a；先检重名及排序规则影响，保留ID和外键 |
+| A：Ingredient | UQ(ingredient_name,unit_name) | 单位是组合键的一部分，不能只以原料名去重 | 11a；相同名不同单位仍合法，B/C继续用ingredient_id |
+| B：五表 | 保留键、价格/数量快照、总额、积分事件值 | 历史快照不随当前配置；积分公式保留反规范化见§2与B分析 | 11b未来升级本域接口；13b守卫和逐值对账 |
+| C：权限目录 | Permission(permission_code PK,permission_name)；RolePermission(business_role_id,permission_code,status)，原复合PK保留，新增目录FK | 原code→name是对复合码的部分依赖；交集code为Permission码，分解无损；原FD可由投影闭包推出 | 11c；同码多名拒绝，旧授权经连接重建逐行一致，13c验断链/重复 |
+| C：PurchaseOrder | UQ(replenishment_suggestion_id) | 业务每建议最多一采购单；补声明而非搬数据 | 11c；重复建议键输出具体单据，不以保留一行修冲突 |
+
+权限目录的46码/52授权是当前种子示例，不是v1.0常量；新增员工查询和顾客过程后数量由冻结清单计算。名称保真基线必须捕获旧RolePermission.permission_name，迁移后用Permission连接回旧关系比较，不能只看授权总数。
+目前C草稿称“白名单CHECK迁至Permission、增目录行即扩白名单”；如果仍保留固定枚举CHECK，仅INSERT新目录码并不能通过它。C须明确11c同时扩展CHECK，或经共同决定以目录/FK替代固定枚举；12_permissions只核对GRANT/签名，不替11c改约束。该细则未定前不盲写B的新过程授权。
+
+### 7.1 顾客积分：必须带期初而非从零汇总
+
+A分析§4.1拟直接断言 current_points=SUM(EFFECTIVE.point_delta)，但09a顾客2/3分别预置500/1500，未为这些期初分生成B流水；09b仅为其后订单生成积分。故“完全由本库流水推出”对现有数据不成立，不能用此断言拒绝合法迁移或把顾客余额清零。
+采用只读对账关系：opening_offset(customer)=baseline_current_points−SUM(baseline_EFFECTIVE.point_delta)。采集时保存余额、已生效流水和offset，迁移后要求offset及逐笔事实保持；迁移后新业务的余额增量等于本期新生效流水增量。该offset是基线事实，不是擅自新增业务列或虚构期初流水。
+若只考虑09a刚完成时点，三顾客期初为0/500/1500；任意现有数据库必须实测采集，不能把这三个数硬套到所有顾客。A需要据此修订13a/基线方案；B不修改A文件。保留累计积分列与保留订单总额分别成立，不靠“必须同取舍”证明。
+
+### 7.2 迁移顺序与冻结清单
+
+仍沿用预检→11a→11b→11c→12→事务内不变量→版本→COMMIT的默认顺序。A新增唯一不删除B/C引用ID；B新顾客/员工查询消费A函数与现表；C最后拆目录、补唯一、扩新权限，12统一授权/签名。若新增依赖使顺序不可满足，先冻结分域finalize，不修改第一阶段源码救运行错误。
+共同冻结前需完成：OI-03日期；OI-09的C图例跟进；OI-10的B决策并入A契约以及履约/只读边界确认；§2全部域接口；A期初积分修订；C目录白名单落位、辅助表协议和签名执行验证。详见[B契约决策](b-contract-decisions.md)。这些是具体交接项，不是泛称“还在等A/C”。
+
+## 8. R6-05独立教学示例：传递依赖与无损分解
+
+仅作纸面关系推演，不创建SQL对象、不属于真实商品多分类模型。假设DEMO_ProductFlat(product_id,product_name,category_id,category_name)，人为规定每商品恰有一个分类；FD为product_id→product_name,category_id，category_id→category_name。
+例：(1,汉堡,10,主食)、(2,鸡肉卷,10,主食)。无法只登记一个没有商品的分类是插入异常；将一行“主食”改“正餐”但漏另一行是修改异常；删除最后一件分类10商品导致分类名称一起丢失是删除异常。
+分解DEMO_Product(product_id PK,product_name,category_id)与DEMO_Category(category_id PK,category_name)：公共属性category_id是后者超码，故二元分解无损；两条FD分别落在分表，product_id→category_name由传递可推出，故依赖保持。两商品连接回分类恰还原两行，没有伪元组。
+此示例靠明确FD而非两行巧合证明。真实ProductCategory是M:N，product_id并不决定唯一category_id，不能据此教学示例合并/强拆真实表。v1.0不创建DEMO_*业务表。

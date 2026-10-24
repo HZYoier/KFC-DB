@@ -61,7 +61,7 @@ sp_pay_order
     @third_party_txn_no VARCHAR(100)
 ```
 
-@third_party_txn_no 可传 NULL，但没有默认值，必须显式绑定 DBNull。paid_amount 绑定 DECIMAL(10,2)，不用 double；payment_method 当前只验证非空白，不能宣称已有 CASH/扫码的数据库枚举白名单。重复支付通常先命中 52201，52204 是额外一致性守卫。
+@third_party_txn_no 可传 NULL，但没有默认值，Flask/pyodbc必须显式传Python None。paid_amount 使用Python Decimal并显式绑定 DECIMAL(10,2)，不用float；payment_method 当前只验证非空白，不能宣称已有 CASH/扫码的数据库枚举白名单。重复支付通常先命中 52201，52204 是额外一致性守卫。
 
 | 当前 SQL 错误码 | 原始消息（源码） |
 | --- | --- |
@@ -191,6 +191,8 @@ v_kitchen_queue 给 CHEF；v_pickup_board 给 WAITER；店长按已有授权使�
 商品、顾客检索/注册调用 A 的计划接口，B 不复制定价或创建会员规则；身份来自 C 上下文，B 不实现登录或自行 EXECUTE AS。
 
 ## 4. 冻结交接检查表
+
+2026-10-24同步：共同契约已由A创建（仍是草案），本文件作为其§2的B素材而非替代契约。顾客端OI-10的B三项决定、权限/履约边界见[B决策材料](b-contract-decisions.md)。前端不接收本文列出的原始SQL消息；这些仅供后端诊断，实际响应遵守计划§6.3的九类错误与安全文案。
 
 - A：核对 SQL 类型与语言参数、结果集数量/列顺序/NULL、Common 调用样例；状态查询按号定位提案是否接受。
 - C：核对每对象岗位、员工停用拒绝、GRANT/白名单/种子、统一新错误编号；拒绝扩大到全表查询。

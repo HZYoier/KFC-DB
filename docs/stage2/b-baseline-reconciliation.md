@@ -115,9 +115,10 @@ C负责数据库辅助表、CAPTURING→COMPLETED/FAILED→VOID、应用锁和�
 | BB-08 | 终态时间 | PICKED_UP/COMPLETED有completed_at；CANCELLED有cancelled_at；送达有delivered_at；原时间逐字段保留 |
 | BB-09 | 唯一与引用 | Payment/Delivery/PointLedger.order_id至多一；外键存在且启用/可信，保留主码及过滤自取码唯一语义 |
 | BB-10 | C订单库存关联 | 将本批订单键清单交C核对LOCK/RELEASE/CONSUME与现有/锁定量；不把reference_id当已有FK |
-| BB-11 | A顾客累计/等级 | 与A基线对照迁移前后保持；不能直接以本库EFFECTIVE之和替代顾客全历史余额 |
+| BB-11 | A顾客累计/等级 | 与A基线对照迁移前后保持；保存opening_offset=baseline_current_points−baseline_EFFECTIVE积分和，迁移后保持offset与逐笔事实；不能直接以本库流水和替代全余额 |
 
 BB-03只比较历史已存组件数量，不用当前ComboComponent重算旧单；有效商品类型/配置曾由下单过程校验，当前配置变化可能合理。构造新单测试时才按该次下单配置验证乘法关系。
+2026-10-24确认：09a给顾客2/3分别设置500/1500期初积分，不产生B积分流水；因此上述offset是已知必须处理的事实，不只是未来可能性。任意现场按采集时余额与已生效流水计算，不能硬套种子常数。纠正A稿拟用的无期初SUM断言见[汇总说明](refactoring-design.md) §7.1。
 BB-06面向当前真实业务入口可达状态，Payment虽有PENDING/VOIDED枚举但当前支付过程只产生SUCCESS/REFUNDED；遇到额外状态先记录来源，不静默改成“合理”状态。
 所有不变量须捕获前也验证：旧数据本来不一致则阻断迁移、报告键和来源，不把“迁移前后都错”记为通过。业务范围外的DBA直写不能由迁移自动修复。
 

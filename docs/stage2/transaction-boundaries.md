@@ -28,10 +28,10 @@ PAYMENT_TIMEOUT 是受控调用原因，不表示已实现自动计时任务。
 ## 3. 连接、身份和嵌套事务
 
 - 应用一次业务按钮默认调用一个过程，不跨顾客支付等待、后厨制作或骑手配送维持事务。
-- Common 使用同一员工身份、同一连接；显式绑定类型/长度/精度。数据库自行按 USER_NAME() 校验活跃岗位，员工 ID 参数必须与解析身份一致。
+- Flask员工请求通过 `app/common/db.py` / `tx.py` 使用同一真实员工身份、同一连接；显式绑定类型/长度/精度，走pyodbc占位。数据库自行按 USER_NAME() 校验活跃岗位，员工 ID 参数必须与解析身份一致。顾客请求不创建员工上下文，走独立cust_app与专用过程。
 - B 过程入口保存 @@TRANCOUNT：0 时自行 BEGIN/COMMIT；已有事务时 SAVE TRANSACTION，不提交调用方事务。
 - 捕获异常：自持事务整体回滚；嵌套且 XACT_STATE()=1 时回滚保存点；=-1 时不能回滚保存点，必须把异常传给外层整体回滚。应用 helper 不得捕获后继续提交，也不能只看异常文本。
-- 一个 helper 只服务确有原子需求的多过程调用，不能把整个“下单→支付→制作→配送”包成一次事务；异常保留 SQL 编号、原消息和异常链，不记录凭据。
+- 一个 helper 只服务确有原子需求的多过程调用，不能把整个“下单→支付→制作→配送”包成一次事务；SQL编号、原消息和异常链仅供后端日志，前端只收共同 `{code,message,request_id}` 和安全文案，不泄露数据库细节或凭据。
 
 ## 4. 并发与重试
 
@@ -49,10 +49,12 @@ PAYMENT_TIMEOUT 是受控调用原因，不表示已实现自动计时任务。
 | order_no | VARCHAR(50) | 空白、超长、重复；不静默截断 |
 | fulfillment_method / payment_method / reason | VARCHAR(20) | 白名单与状态匹配 |
 | paid_amount | DECIMAL(10,2) | precision=10、scale=2；不经浮点转换，越界拒绝 |
-| third_party_txn_no | VARCHAR(100)，可空 | 显式 DBNull，禁止写空字符串冒充 NULL |
+| third_party_txn_no | VARCHAR(100)，可空 | Python显式传None（SQL NULL），禁止空字符串冒充NULL；无默认值不能省略 |
 | ordered_at | DATETIME2(0)，可空 | 正常应用不提供历史时间；仅受控 test_* 可传 |
 
 A 定 Common 的实际语言签名；B 提供这些用例、按接口适配，不自行创建第二套连接工厂。C 定登录和授权。新查询过程签名/错误码尚待契约冻结，不在本文件擅自命名编码。
+
+2026-10-24技术栈同步：唯一接口为A的 `open_connection(session)`、`query_procedure(session,name,typed_parameters)`、`execute_procedure(session,name,typed_parameters)`、`run_in_transaction(session,callback)`；B目标目录为 `app/orders/{routes,service,dao}.py`，路由不写SQL、DAO不另开连接底座，错误统一交 `app/common/errors.py` 与Flask全局处理。当前底座尚未交付，不创建自己的Common或凭据存储。每请求结束关闭连接，关闭驱动池是A的职责；`pyodbc.pooling = False` 应在首次连接前设置，不应当作连接串参数，依据[pyodbc官方源码说明](https://github.com/mkleehammer/pyodbc/blob/master/src/pyodbcmodule.cpp)。具体初始化由A确认。跨请求真实身份恢复问题见[B决策材料](b-contract-decisions.md) §5。
 
 ## 6. 后续 13b / 应用测试矩阵
 
