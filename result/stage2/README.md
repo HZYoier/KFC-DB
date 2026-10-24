@@ -1,6 +1,6 @@
-# stage2 隔离实验证据（C 侧）
+# stage2 证据（C 侧）
 
-执行日期：2026-10-13（重跑捕获；实验首做于 2026-10-10，本次为归档要求下的完整复现）
+隔离实验执行日期：2026-10-13（重跑捕获；实验首做于 2026-10-10，本次为归档要求下的完整复现）；文档对账证据增补于 2026-10-15；ER 子图复核证据增补于 2026-10-17。
 
 实例：`.\SQLEXPRESS`（SQL Server 2025 Express 17.0.1000.7；混合模式；Windows 身份验证部署登录）
 
@@ -25,6 +25,10 @@
 - `stage2-exp-signature-rollback-2026-10-13.txt`：签名实验六阶段输出与退出码。
 - `scripts/exp_contained_auth_setup.sql` / `exp_contained_auth_cleanup.sql` / `exp_sig_rollback.sql`：实验脚本（脱敏版）。
 - `scripts/elevate_login_mode.cmd`：实例认证模式变更的提权脚本（2026-10-10，经操作者明确授权执行）。
+- （2026-10-15 增补）`c-normalization-check-2026-10-15.txt`：`docs/stage2/c-normalization.md` §7 的对账日志（R1 首轮 4 项差异 → 修正 → R4 终轮 0 差异；含脚本两处判据缺陷的处置记录）。
+- （2026-10-15 增补）`scripts/check_c_norm.py`：对账脚本（文档 §2 属性与键清单 ↔ `sql/03` / `06` / `09c` / ER 子图；Python 3.13，`python -I` 运行，可从任意工作目录复跑）。
+- （2026-10-17 增补）`er-review-2026-10-17.txt`：A/C 两张 ER 子图的 C 侧独立复核日志（R2 首轮 12 项差异的归因 → 3 处解析器修正 → R3 终轮 0 项问题；A 图 16/16 边通过）。
+- （2026-10-17 增补）`scripts/review_er_20261017.py`：复核脚本（实体 / 键 / 边 / 箭头 vs 据 `sql/01-03` 推导的期望；Python 3.13，`python -I` 运行）。
 
 ## SHA-256
 
@@ -35,4 +39,8 @@
 9B063D826B3EFC03B599C6B8F9714E8616013C826ACD82C1B9EE9E989706A21F  scripts/exp_contained_auth_cleanup.sql
 94D864BF7B037A56B8450B5A346D16C7485285B0BADDE5716985066AD60C431E  scripts/exp_sig_rollback.sql
 B6C3A419164B39EC201998EB2BA732B2AF28EBC6BA628790A5CAD61C43E51299  scripts/elevate_login_mode.cmd
+D8933489870A076F7FBBBF5F684B9138F7687058CA55D2208DEFE42C931B8579  c-normalization-check-2026-10-15.txt
+4695DB886C7373E881B7EB5DF6DD821147156BE93A1ED6FC7D95278B570B9031  scripts/check_c_norm.py
+142D7F016282485BA2CC41B30F5C7406ECD8CD6A09717697B556F0C9B8B44FEB  er-review-2026-10-17.txt
+31A09A4BE418AF19B7182CB11EC0846EA9A0D6E25AC08FE8886F4B98FAE327B3  scripts/review_er_20261017.py
 ```

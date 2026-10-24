@@ -1,0 +1,124 @@
+# c-normalization 对账归档（2026-10-15，成员 C）
+# ============================================================================
+#
+# 目的：为 docs/stage2/c-normalization.md §7「验证记录」提供可复跑的对账证据——
+#       该文件 §2 的属性与键清单、§1 的统计量、交叉引用与 ER 子图的核对。
+# 环境：Windows 11；Python 3.13.12；仓库 D:\DBLab\KFC-DB。
+# 命令：python -I check_c_norm.py   （脚本：本目录 scripts/check_c_norm.py，
+#       以绝对路径读取仓库文件，可从任意工作目录复跑）
+# 输入：docs/stage2/c-normalization.md；sql/03_inventory_security_schema.sql；
+#       sql/06_inventory_constraints_crud.sql；sql/09c_inventory_opening_seed_data.sql；
+#       docs/stage2/c-issues.md；docs/stage2/source-requirements.md；
+#       docs/er/c-inventory-security.drawio
+# 判据：脚本输出「0 差异（全部通过）」＝ 通过。
+#
+# 轮次一览（脚本修正与文档修订交替进行）：
+#   R1 首轮：4 项差异（§1）→ 修正（§2）
+#   R2 修正脚本外键正则、登记 c-issues 后复跑：0 差异（此时尚未加入 B3/E 检查项）
+#   R3 扩充检查项（B3/E）后复跑：1 项差异——B3 判据缺陷（§3）→ 修正
+#   R4 修正后复跑（终轮）：0 差异，完整输出见 §4
+#
+# ----------------------------------------------------------------------------
+# §1 R1 首轮差异（摘录：差异项与总体计数；其余检查项与终轮一致）
+# ----------------------------------------------------------------------------
+== 结果: 4 项差异 ==
+ - A4 16 条 C 域外键 / 4 个 UQ 约束 / 1 个过滤唯一索引（实得 15/4/1）
+ - A10.PurchaseOrder 结构约束名差异: 源码独有=[] 文档独有=['FK_PurchaseOrder_ReplenishmentSuggestion']
+ - A11.PurchaseOrder FK 目标表差异: 源码=['EmployeeAccount'] 文档=['EmployeeAccount', 'ReplenishmentSuggestion']
+ - C2 文档引用的 I-C 编号均存在（缺: ['12', '13']）
+#
+# 归因：
+#  - A4/A10/A11：脚本对跨行书写的 FOREIGN KEY 定义漏识别——sql/03 中
+#    「FOREIGN KEY (replenishment_suggestion_id)」与「REFERENCES dbo.ReplenishmentSuggestion(...)」
+#    分两行，脚本此前的单行正则漏掉这一条，连带把 C 域外键数误算为 15、并把 PurchaseOrder
+#    的 FK 目标集合算错。属脚本缺陷；文档（16 条）无误。
+#  - C2：I-C12 / I-C13 为本次新增条目，该轮运行先于 c-issues.md 登记；登记后消解
+#    （I-C12 / I-C13 随本轮提交，见 c-issues.md §3）。
+#
+# ----------------------------------------------------------------------------
+# §2 修正清单（R1 → R2 之间）
+# ----------------------------------------------------------------------------
+# ① 脚本：外键识别正则由单行空白改为跨行空白（FOREIGN KEY 与 REFERENCES 之间允许换行）；
+#    同处修正 Delivery 骑手外键的同一问题。
+# ② 文档（人工复读发现，均按源码重算）：
+#    - §2「可空列」计数 9 → 8（1+3+2+2；与数据字典 §0 口径一致）；
+#    - §1「主键兼外键」改为「1:1 共享标识（Inventory.ingredient_id，主键整体即外键）」；
+#    - §4.5 检索范围表述收紧：permission_name 仅出现于 sql/03 与 sql/09c（06 的白名单
+#      CHECK 只约束 permission_code）。
+# ③ c-issues.md：I-C09 收口（FD 结论：非冗余、不改结构）；新增 I-C12（RolePermission 2NF
+#    拆分）与 I-C13（PurchaseOrder 候选码补声明）。
+#
+# ----------------------------------------------------------------------------
+# §3 R3 过渡轮：新增检查项的判据缺陷（1 项差异）
+# ----------------------------------------------------------------------------
+== 结果: 1 项差异 ==
+ - B3 15 条 CHECK 全部位于批次 1（首个 GO 之前）（实得 0）
+#
+# 归因：sql/06 的首个 GO 是开头「USE KFC_DB;」之后的那一个，不是批次 1 的边界；
+# 判据改为「批次 1 注释至其后首个 GO」的窗口后通过。仍是脚本判据缺陷；文档无误。
+#
+# ----------------------------------------------------------------------------
+# §4 R4 终轮：完整输出
+# ----------------------------------------------------------------------------
+[PASS] A1 源码表集合 == 10 张 C 域表（实得 ['AuditLog', 'BusinessRole', 'EmployeeAccount', 'EmployeeBusinessRole', 'Inventory', 'InventoryMovement', 'PurchaseOrder', 'PurchaseOrderItem', 'ReplenishmentSuggestion', 'RolePermission']）
+源码统计: 表=10 列=56 主键=10 复合主键=['EmployeeBusinessRole', 'PurchaseOrderItem', 'RolePermission'] UQ约束=4 过滤唯一索引=1 C域外键=16 PKFK列=['employee_id', 'business_role_id', 'business_role_id', 'ingredient_id', 'purchase_order_id', 'ingredient_id'] Delivery外键=FK_Delivery_RiderEmployee
+[PASS] A2 总列数 56（实得 56）
+[PASS] A3 复合主键 3 张（实得 ['EmployeeBusinessRole', 'PurchaseOrderItem', 'RolePermission']）
+[PASS] A4 16 条 C 域外键 / 4 个 UQ 约束 / 1 个过滤唯一索引（实得 16/4/1）
+[PASS] A5 文档 §2 含全部 10 表（实得 ['AuditLog', 'BusinessRole', 'EmployeeAccount', 'EmployeeBusinessRole', 'Inventory', 'InventoryMovement', 'PurchaseOrder', 'PurchaseOrderItem', 'ReplenishmentSuggestion', 'RolePermission']）
+[PASS] A6.EmployeeAccount 列集合一致（6 列）
+[PASS] A10.EmployeeAccount 结构约束名一致（3 项）
+[PASS] A6.BusinessRole 列集合一致（4 列）
+[PASS] A10.BusinessRole 结构约束名一致（2 项）
+[PASS] A6.EmployeeBusinessRole 列集合一致（4 列）
+[PASS] A10.EmployeeBusinessRole 结构约束名一致（4 项）
+[PASS] A6.RolePermission 列集合一致（4 列）
+[PASS] A10.RolePermission 结构约束名一致（2 项）
+[PASS] A6.Inventory 列集合一致（4 列）
+[PASS] A10.Inventory 结构约束名一致（2 项）
+[PASS] A6.InventoryMovement 列集合一致（8 列）
+[PASS] A10.InventoryMovement 结构约束名一致（2 项）
+[PASS] A6.ReplenishmentSuggestion 列集合一致（9 列）
+[PASS] A10.ReplenishmentSuggestion 结构约束名一致（7 项）
+[PASS] A6.PurchaseOrder 列集合一致（6 列）
+[PASS] A10.PurchaseOrder 结构约束名一致（4 项）
+[PASS] A6.PurchaseOrderItem 列集合一致（4 列）
+[PASS] A10.PurchaseOrderItem 结构约束名一致（4 项）
+[PASS] A6.AuditLog 列集合一致（7 列）
+[PASS] A10.AuditLog 结构约束名一致（2 项）
+[PASS] B1 06 命名 CHECK 共 15 条（实得 15）
+[PASS] B2 文档声明 15 条 CHECK 与源码一致
+[PASS] B3 15 条 CHECK 全部位于批次 1（批次 1 注释至其后首个 GO）（实得 15）
+[PASS] E1 源码可空列共 8（实得 8）
+[PASS] E1b 文档两处 8 个可空列口径一致
+[PASS] E2 09c 授权映射 52 行（实得 52）
+[PASS] E3 权限码 46 个（实得 46）
+[PASS] E4 每码名称唯一（多名: {}）
+[PASS] E5 白名单 46 项（实得 46）
+[PASS] E5b 种子码集合 == 白名单集合（差: 种独有=[] 白独有=[]）
+[PASS] E6 permission_name 仅出现于 03/09c（实得 {'03_inventory_security_schema.sql': 1, '09c_inventory_opening_seed_data.sql': 4}）
+[PASS] C1 文档引用的 R6 编号均存在（缺: []）
+[PASS] C2 文档引用的 I-C 编号均存在（缺: []）
+[PASS] C3 文档引用的 CK 约束名均在 06（缺: []）
+[PASS] D1 子图含全部 10 张 C 域实体（实得 ['AuditLog', 'BusinessRole', 'EmployeeAccount', 'EmployeeBusinessRole', 'Inventory', 'InventoryMovement', 'PurchaseOrder', 'PurchaseOrderItem', 'ReplenishmentSuggestion', 'RolePermission']）
+子图实体总数 = 12：['AuditLog', 'BusinessRole', 'Delivery（B 域）', 'EmployeeAccount', 'EmployeeBusinessRole', 'Ingredient（A 域）', 'Inventory', 'InventoryMovement', 'PurchaseOrder', 'PurchaseOrderItem', 'ReplenishmentSuggestion', 'RolePermission']
+[PASS] D2.EmployeeAccount 子图主键标注一致（['employee_id']）
+[PASS] D2.BusinessRole 子图主键标注一致（['business_role_id']）
+[PASS] D2.EmployeeBusinessRole 子图主键标注一致（['business_role_id', 'employee_id']）
+[PASS] D2.RolePermission 子图主键标注一致（['business_role_id', 'permission_code']）
+[PASS] D2.Inventory 子图主键标注一致（['ingredient_id']）
+[PASS] D2.InventoryMovement 子图主键标注一致（['inventory_movement_id']）
+[PASS] D2.ReplenishmentSuggestion 子图主键标注一致（['replenishment_suggestion_id']）
+[PASS] D2.PurchaseOrder 子图主键标注一致（['purchase_order_id']）
+[PASS] D2.PurchaseOrderItem 子图主键标注一致（['ingredient_id', 'purchase_order_id']）
+[PASS] D2.AuditLog 子图主键标注一致（['audit_log_id']）
+
+== 结果: 0 差异（全部通过）==
+#
+# ----------------------------------------------------------------------------
+# §5 结论
+# ----------------------------------------------------------------------------
+# 四轮迭代后 0 差异（50 项 PASS / 0 FAIL，见 §4）。文档因对账发生的修订仅为 §2 所列
+# 三处笔误与表述收紧；全部结构事实、统计量与交叉引用均源自 sql/03、sql/06、sql/09c
+# 种子与 ER 子图源码。归档件：本日志 + scripts/check_c_norm.py（SHA-256 见本目录
+# README.md 的清单）。
