@@ -6,7 +6,7 @@
 --       Q-C3 待审批补货建议）
 -- 依赖：00_create_database.sql、01_master_schema.sql、02_order_schema.sql、
 --       03_inventory_security_schema.sql
--- 依据：docs/stage1-three-person-implementation-plan.md §5 C-2
+-- 依据：docs/stage1/stage1-three-person-implementation-plan.md §5 C-2
 -- 说明：CREATE VIEW 必须是批次第一条语句（否则 Msg 111），故每个视图前用
 --       “独立 SET 批次 + GO”；视图一律只读，不改任何基表；列名全部显式列出，
 --       不使用 SELECT *；对视图的 GRANT SELECT 在 08_roles_permissions.sql 下发。

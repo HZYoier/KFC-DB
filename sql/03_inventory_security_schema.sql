@@ -4,7 +4,7 @@
 -- 用途：创建 C 域安全表与库存/补货/审计表；为 B 的 Delivery 补骑手外键
 -- 依赖：00_create_database.sql、01_master_schema.sql（Ingredient）、
 --       02_order_schema.sql（Delivery）
--- 依据：docs/stage1-three-person-implementation-plan.md §2.1、§5 C-1
+-- 依据：docs/stage1/stage1-three-person-implementation-plan.md §2.1、§5 C-1
 -- 说明：表名、主键与关键字段冻结于 §2.1，字段可新增但不得删除或改主键类型；
 --       值域与数值 CHECK 约束统一在 06_inventory_constraints_crud.sql 建立。
 --       除最后一条 Delivery 骑手外键外，本文件其余语句均不依赖 B 的脚本。

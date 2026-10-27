@@ -6,7 +6,7 @@
 
 ### 1.1 经营场景与业务流程
 
-系统以一家 KFC 门店的经营链路为原型，从后台准备一直走到补货闭环，业务主线共 8 步，完整叙述见[业务流程](业务流程.md)。这里按"每一步往库里写什么"重新梳理一遍，因为表结构基本上是被这条链推出来的。
+系统以一家 KFC 门店的经营链路为原型，从后台准备一直走到补货闭环，业务主线共 8 步，完整叙述见[业务流程](../业务流程.md)。这里按"每一步往库里写什么"重新梳理一遍，因为表结构基本上是被这条链推出来的。
 
 店长在后台录入商品名称、分类和标准基价，为每个商品绑定物料清单 BOM（一个香辣鸡腿堡需要一片面包、一块鸡腿肉、一片生菜），再配置促销规则，比如疯狂星期四是每周四 9.9 元一口价。这一步写进 `Product`、`Category`、`ProductCategory`、`ProductBom`、`Promotion` 和 `PromotionProductRule`。
 
@@ -18,7 +18,7 @@
 
 ### 1.2 哪些信息进入数据库、哪些不进入
 
-判据只有一条：需要追溯、统计或审计的进，其余不进。完整清单见[数据边界清单](数据边界清单.md)，这里说明归类的理由。
+判据只有一条：需要追溯、统计或审计的进，其余不进。完整清单见[数据边界清单](../数据边界清单.md)，这里说明归类的理由。
 
 进入数据库的是核心业务事实，分六个域：商品与配方（商品、分类、套餐组成、BOM、原料及安全库存线），促销与定价（促销活动加促销商品规则），顾客与会员（顾客主档、会员等级、积分倍率、等级门槛），订单与履约（订单主表与明细、支付记录、积分流水、配送记录），库存与补货（库存表、库存变动流水、补货建议单、采购单与收货记录），以及账号权限（员工账号、业务角色、角色权限映射、审计日志）。这些要么是价格引擎与下单的前提，要么是锁库存扣库存的依据，要么本身就需要留痕。
 
@@ -108,7 +108,7 @@ sqlcmd -S localhost -E -N o -C -f 65001 -b -i "sql/run_all.sql"
 
 `run_all.sql` 按固定顺序串联 18 个文件：`00 → 01 → 02 → 03 → 04 → 06 → 05 → 07a → 07b → 07c → 08 → 09a → 09c → 09b → 09d → 10a → 10b → 10c`。顺序不能随意调换，`04`（A 的过程）会调用 `06`（C 的审计过程）里的 `sp_write_audit_log`，所以 `06` 必须排在 `04` 前面；三个建表脚本都带指向 A 的表的外键，所以 `01` 必须最前。`04` 在 `06` 之前会打印 11 条"取决于缺少的对象"，这是冻结顺序下的已知编译告警，不是错误——SQL Server 建过程时不检查被调对象是否存在。
 
-整跑一遍即得到空库部署的现场：先是 `KFC_DB 创建完成，兼容级别 = 170`，随后依次建表、建过程、建视图、授角色权限、灌种子、跑三域验收，全程无 SQL 错误。这一过程的操作截图见 [`result/stage1-a-create-database-2026-10-04.png`](../result/stage1-a-create-database-2026-10-04.png)，对应的完整日志是 [`result/stage1-full-test-a-2026-10-04.txt`](../result/stage1-full-test-a-2026-10-04.txt)。
+整跑一遍即得到空库部署的现场：先是 `KFC_DB 创建完成，兼容级别 = 170`，随后依次建表、建过程、建视图、授角色权限、灌种子、跑三域验收，全程无 SQL 错误。这一过程的操作截图见 [`result/stage1-a-create-database-2026-10-04.png`](../../result/stage1-a-create-database-2026-10-04.png)，对应的完整日志是 [`result/stage1-full-test-a-2026-10-04.txt`](../../result/stage1-full-test-a-2026-10-04.txt)。
 
 `00_create_database.sql` 检测到同名库会主动 `THROW 50000` 停下，不覆盖已有数据，所以"重建"必须由人先删库；这一步是刻意的，避免把已经验收过的数据无声冲掉。
 
@@ -183,16 +183,16 @@ sqlcmd -S localhost -E -N o -C -f 65001 -b -i "sql/run_all.sql"
 
 | 证据 | 位置 |
 | --- | --- |
-| 空库整链原始日志（成员 A 环境，2026-10-03） | [`result/stage1-full-test-a-2026-10-03.txt`](../result/stage1-full-test-a-2026-10-03.txt) |
-| 空库整链原始日志（成员 A 环境，2026-10-04 重建留证） | [`result/stage1-full-test-a-2026-10-04.txt`](../result/stage1-full-test-a-2026-10-04.txt) |
-| 成功建库截图 | [`result/stage1-a-create-database-2026-10-04.png`](../result/stage1-a-create-database-2026-10-04.png) |
-| 空库整链原始日志（成员 B 环境，2026-10-01） | [`result/stage1-full-test-2026-10-01.txt`](../result/stage1-full-test-2026-10-01.txt) |
-| 空库整链原始日志（成员 C 环境，2026-10-01） | [`result/stage1-full-test-c-2026-10-01.txt`](../result/stage1-full-test-c-2026-10-01.txt) |
-| 跨域接口契约检查 | [`result/stage1-contract-check-2026-10-03.txt`](../result/stage1-contract-check-2026-10-03.txt) |
-| 收货链不变量与边界断言（成员 C） | [`result/stage1-receiving-invariants-c-2026-10-01.txt`](../result/stage1-receiving-invariants-c-2026-10-01.txt)、[`result/stage1-receiving-boundaries-c-2026-10-01.txt`](../result/stage1-receiving-boundaries-c-2026-10-01.txt) |
-| 域内夹具链回归汇总（成员 C） | [`result/stage1-regression-c-2026-10-01.txt`](../result/stage1-regression-c-2026-10-01.txt) |
-| SSMS 操作截图 19 张 | [`result/`](../result/README.md) 下 `stage1-a-*-2026-10-04.png`，逐张说明见[成员 A 阶段报告](stage1-a-stage-report.md) §6.1 |
+| 空库整链原始日志（成员 A 环境，2026-10-03） | [`result/stage1-full-test-a-2026-10-03.txt`](../../result/stage1-full-test-a-2026-10-03.txt) |
+| 空库整链原始日志（成员 A 环境，2026-10-04 重建留证） | [`result/stage1-full-test-a-2026-10-04.txt`](../../result/stage1-full-test-a-2026-10-04.txt) |
+| 成功建库截图 | [`result/stage1-a-create-database-2026-10-04.png`](../../result/stage1-a-create-database-2026-10-04.png) |
+| 空库整链原始日志（成员 B 环境，2026-10-01） | [`result/stage1-full-test-2026-10-01.txt`](../../result/stage1-full-test-2026-10-01.txt) |
+| 空库整链原始日志（成员 C 环境，2026-10-01） | [`result/stage1-full-test-c-2026-10-01.txt`](../../result/stage1-full-test-c-2026-10-01.txt) |
+| 跨域接口契约检查 | [`result/stage1-contract-check-2026-10-03.txt`](../../result/stage1-contract-check-2026-10-03.txt) |
+| 收货链不变量与边界断言（成员 C） | [`result/stage1-receiving-invariants-c-2026-10-01.txt`](../../result/stage1-receiving-invariants-c-2026-10-01.txt)、[`result/stage1-receiving-boundaries-c-2026-10-01.txt`](../../result/stage1-receiving-boundaries-c-2026-10-01.txt) |
+| 域内夹具链回归汇总（成员 C） | [`result/stage1-regression-c-2026-10-01.txt`](../../result/stage1-regression-c-2026-10-01.txt) |
+| SSMS 操作截图 19 张 | [`result/`](../../result/README.md) 下 `stage1-a-*-2026-10-04.png`，逐张说明见[成员 A 阶段报告](stage1-a-stage-report.md) §6.1 |
 | 验收数字与复验记录 | [第一阶段测试报告](stage1-test-report.md) |
-| 字段级说明 | [主数据数据字典](主数据数据字典.md)、[订单履约数据字典](订单履约数据字典.md)、[库存权限数据字典](库存权限数据字典.md) |
+| 字段级说明 | [主数据数据字典](../主数据数据字典.md)、[订单履约数据字典](../订单履约数据字典.md)、[库存权限数据字典](../库存权限数据字典.md) |
 
 `result/` 下的文件都在该目录的 `README.md` 里登记了 SHA-256，可以逐字节核对。

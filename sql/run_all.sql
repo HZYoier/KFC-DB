@@ -9,7 +9,7 @@
 --       （表现为 exit=0、无任何输出、语句根本没执行），比报错更危险。
 -- SSMS：打开本文件并启用 SQLCMD Mode 后执行。
 -- 注意：官方 VS Code mssql 扩展不支持 SQLCMD 的 :r，不能直接执行本文件。
--- 顺序依据：docs/stage1-three-person-implementation-plan.md 第 1 节
+-- 顺序依据：docs/stage1/stage1-three-person-implementation-plan.md 第 1 节
 -- 备注：若客户端按“脚本所在目录”解析 :r 相对路径而报找不到文件，
 --       把下面每行路径的 sql/ 前缀去掉即可（脚本文件仍放在 sql/ 目录内）。
 -- ============================================================================

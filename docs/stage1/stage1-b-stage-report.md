@@ -89,7 +89,7 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/run_all.sql"
 | SQL 错误行 | 0 |
 | 跨域契约检查 | PASS |
 
-> 上表为当前代码的结果。2026-10-01 的验收基线为 `10c` 17 条、46 条 `PASS`；2026-10-03 `10c` 增加 T14 后为 18 条、47 条，详见 `docs/stage1-test-report.md` 第 10 节。
+> 上表为当前代码的结果。2026-10-01 的验收基线为 `10c` 17 条、46 条 `PASS`；2026-10-03 `10c` 增加 T14 后为 18 条、47 条，详见 `docs/stage1/stage1-test-report.md` 第 10 节。
 
 部署后的 B 域对象清点为 5 张表、8 个业务过程、4 个视图、3 条具名查询和 3 笔集成种子订单。三笔订单的金额、支付、积分、配送和库存流水均可追溯。
 
@@ -97,4 +97,4 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/run_all.sql"
 
 成员 B 的第一阶段目标已经完成。订单域不仅能独立表达订单、支付、配送和积分历史，也能在同一事务中正确使用 A 的定价/积分规则与 C 的库存接口；成功路径、失败回滚、状态边界和岗位越权均有可重复执行的证据。
 
-原始证据见 [`result/stage1-full-test-2026-10-01.txt`](../result/stage1-full-test-2026-10-01.txt)，结果图见 [`result/stage1-full-test-summary-2026-10-01.png`](../result/stage1-full-test-summary-2026-10-01.png)。
+原始证据见 [`result/stage1-full-test-2026-10-01.txt`](../../result/stage1-full-test-2026-10-01.txt)，结果图见 [`result/stage1-full-test-summary-2026-10-01.png`](../../result/stage1-full-test-summary-2026-10-01.png)。

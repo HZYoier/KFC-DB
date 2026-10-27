@@ -10,8 +10,8 @@
 --       sp_receive_inventory）、08（role_* 与 test_* 用户）、09a（A 域主数据）、
 --       09b（B 的三笔种子订单，本文件只读校核、不新增不修改）、
 --       09c（C 域种子：角色、员工、权限与期初库存——低库存起点来自它的压线设计）。
--- 依据：docs/stage1-three-person-implementation-plan.md §5 C-3 line 321、
---       docs/stage1-cross-domain-interface-contract.md §3.5（收货过程签名）、§3.3（实扣后生成建议）。
+-- 依据：docs/stage1/stage1-three-person-implementation-plan.md §5 C-3 line 321、
+--       docs/stage1/stage1-cross-domain-interface-contract.md §3.5（收货过程签名）、§3.3（实扣后生成建议）。
 -- 说明：① 本文件不直接 INSERT / UPDATE / DELETE 任何表，全部动作经业务过程完成；
 --       ② 期望值尽量从数据推导（消耗量取自实扣流水、建议量取自安全线），避免写死；
 --       ③ 幂等守卫：若已存在采购单（说明本文件已执行过）则拒绝重跑（THROW 51023）；

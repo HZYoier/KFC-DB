@@ -6,7 +6,7 @@
 >
 > 冻结前，本文任何条目都**不是**实现承诺，也不代表对象已存在——`sql/` 里目前没有任何顾客端过程。
 >
-> 范围：只管第二阶段新增或变更的对象。第一阶段已冻结的 `fn_get_effective_product_price`、`sp_apply_customer_points` 仍以 `docs/stage1-cross-domain-interface-contract.md` 为准，本文不重复、也不修改它们。
+> 范围：只管第二阶段新增或变更的对象。第一阶段已冻结的 `fn_get_effective_product_price`、`sp_apply_customer_points` 仍以 `docs/stage1/stage1-cross-domain-interface-contract.md` 为准，本文不重复、也不修改它们。
 >
 > 当前进度：§1 登记 OI-10 的顾客端三个过程（B 的三项待决已合入，余四条联合边界见 §1.6）；§2 已合入 B 的写接口签名与新查询提案，并**已按源码逐条核对**（结果见 §2.3），剩 C 侧授权核对与 Common 调用样例。
 

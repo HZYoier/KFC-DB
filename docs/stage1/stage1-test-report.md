@@ -82,7 +82,7 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/run_all.sql"
 
 第一阶段的功能与验收目标已经达成：数据库可从空库部署，CRUD/状态过程、查询视图、关系约束、岗位权限和核心经营闭环均有执行证据。
 
-证据位于 [`result/`](../result/README.md)：完整日志、契约检查、对象清点和 PNG 结果图均随仓库交付。
+证据位于 [`result/`](../../result/README.md)：完整日志、契约检查、对象清点和 PNG 结果图均随仓库交付。
 
 ## 9. 独立复验（成员 C）
 

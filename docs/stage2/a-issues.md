@@ -97,7 +97,7 @@ A 域外键 9 条，全部落在域内（见上表）。A 域不向外域发外�
 ## 4. 跨域条目与接口索引
 
 - 外域对 A 的入边外码 7 条，见 §1 末段；在 A 域子图按跨域灰矩形处理，实体名与键列与 B、C 的子图保持一致（`legend.md` §3.2）。
-- A 对外提供的两个跨域接口对象：`fn_get_effective_product_price`（读，定价唯一入口）与 `sp_apply_customer_points`（写，只动 `Customer`、不碰 B 的 `PointLedger`）。它们是接口不是表，不进 ER 图，冻结口径见 `docs/stage1-cross-domain-interface-contract.md`。
+- A 对外提供的两个跨域接口对象：`fn_get_effective_product_price`（读，定价唯一入口）与 `sp_apply_customer_points`（写，只动 `Customer`、不碰 B 的 `PointLedger`）。它们是接口不是表，不进 ER 图，冻结口径见 `docs/stage1/stage1-cross-domain-interface-contract.md`。
 - 与 C 的域属主更正相关：`OI-06`（`Ingredient` 属 A、`AuditLog` 属 C），已 closed 2026-10-14。
 - 供应商范围：`OI-02`（closed）——供应商落在 C 域采购侧，与 A 域无关，此处仅备案。
 

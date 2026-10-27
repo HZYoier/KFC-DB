@@ -5,8 +5,8 @@
 --       库存人工调整与补货闭环过程；订单库存接口过程（锁库/释放/实扣/采购收货）；
 --       员工业务角色同步过程（分配/撤销/停用）
 -- 依赖：01_master_schema.sql、02_order_schema.sql、03_inventory_security_schema.sql
--- 依据：docs/stage1-three-person-implementation-plan.md §2.3、§2.4、§5 C-1、
---       docs/stage1-cross-domain-interface-contract.md §3.4、§3.5
+-- 依据：docs/stage1/stage1-three-person-implementation-plan.md §2.3、§2.4、§5 C-1、
+--       docs/stage1/stage1-cross-domain-interface-contract.md §3.4、§3.5
 -- 进度：批次 1 C 域命名 CHECK；批次 2 sp_write_audit_log；批次 3 库存调整与补货闭环；
 --       批次 4 锁库/释放/实扣；批次 5 员工业务角色同步（分配/撤销/停用）；
 --       批次 6 采购收货 sp_receive_inventory。

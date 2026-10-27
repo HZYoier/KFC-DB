@@ -8,8 +8,8 @@
 --       取餐员可查取餐板但查不到含金额视图、EXECUTE AS 下的正反权限）。
 -- 依赖：01/02/03（表）、04（A 域过程）、05（B 域过程）、06（C 域 15 个过程）、07c（视图）、
 --       08（角色与授权）、09a/09c/09b/09d（四份种子：本文件的所有前置状态由它们建立）。
--- 依据：docs/stage1-three-person-implementation-plan.md §6.2、§5 C-3 line 322、§7；
---       docs/stage1-cross-domain-interface-contract.md §7.4（断言写法六条约定）。
+-- 依据：docs/stage1/stage1-three-person-implementation-plan.md §6.2、§5 C-3 line 322、§7；
+--       docs/stage1/stage1-cross-domain-interface-contract.md §7.4（断言写法六条约定）。
 -- 写法（对齐契约 §7.4 与上文经验）：
 --   ① 每条断言自成一批、事务包裹、结束一律 ROLLBACK，绝不把夹具或状态留给下一条；
 --   ② "故意抛错"只经既有约束或过程守卫注入（不引入测试开关参数）；

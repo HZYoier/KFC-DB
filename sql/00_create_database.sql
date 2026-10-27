@@ -3,7 +3,7 @@
 -- 负责人：C（库存、补货、员工权限、审计与总集成）
 -- 用途：创建 KFC_DB；已存在时明确报错停止；校验兼容级别不低于 130；切换到 KFC_DB
 -- 依赖：无，必须是全量部署的第一个脚本
--- 依据：docs/stage1-three-person-implementation-plan.md 第 1 节与全局约束
+-- 依据：docs/stage1/stage1-three-person-implementation-plan.md 第 1 节与全局约束
 -- 说明：不使用 DROP DATABASE；对象已存在时明确报错并停止，避免覆盖已验收数据
 -- ============================================================================
 

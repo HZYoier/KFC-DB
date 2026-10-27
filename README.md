@@ -22,18 +22,19 @@ KFC-DB/
 │   ├── 09a ~ 09d                三域种子数据
 │   ├── 10a / 10b / 10c          三域验收断言
 │   └── contract_interface_check.sql   只读跨域接口契约检查（独立执行）
-├── docs/                        设计与验收文档（43 份：顶层 15 + stage2/ 21 + er/ 7）
-│   ├── stage1-阶段报告.md        总报告：设计思路、实验过程、实验总结
-│   ├── stage1-a / b / c-stage-report.md   三份成员分工报告
-│   ├── stage1-test-report.md     完整测试报告：环境、结果、E2E 结论、三次独立复验
-│   ├── stage1-cross-domain-interface-contract.md   A/B/C 之间冻结的接口契约
-│   ├── stage1-three-person-implementation-plan.md  第一阶段协作实施计划与分工总览
+├── docs/                        设计与验收文档（43 份：顶层 8 + stage1/ 7 + stage2/ 21 + er/ 7）
 │   ├── stage2-three-person-implementation-plan.md  第二阶段计划与分工：ER 重建、规范化与迁移、应用开发，含 v0.1 问题清单
 │   ├── 主数据 / 订单履约 / 库存权限数据字典.md      三份字段级数据字典
 │   ├── 业务流程.md               业务主线 8 步（含异常路径）
 │   ├── 数据边界清单.md           进库 / 不进库边界与灰色地带取舍
 │   ├── 角色与职能清单.md         7 个业务角色的职责与映射
 │   ├── AI使用记录.md             AI 协作过程记录
+│   ├── stage1/                  第一阶段交付文档（7 份）
+│   │   ├── stage1-阶段报告.md        总报告：设计思路、实验过程、实验总结
+│   │   ├── stage1-a / b / c-stage-report.md   三份成员分工报告
+│   │   ├── stage1-test-report.md     完整测试报告：环境、结果、E2E 结论、三次独立复验
+│   │   ├── stage1-cross-domain-interface-contract.md   A/B/C 之间冻结的接口契约
+│   │   └── stage1-three-person-implementation-plan.md  第一阶段协作实施计划与分工总览
 │   ├── stage2/                  第二阶段过程文档（21 份）
 │   │   ├── source-requirements.md   教学要求核对：65 项逐条编号与落点
 │   │   ├── open-issues.md           跨域开放问题：状态与决议的唯一入口
@@ -75,7 +76,7 @@ KFC-DB/
 | 骑手 | `role_rider` | 配送确认 |
 | 服务员 | `role_waiter` | 只读 |
 
-完整清单（含顾客侧角色与系统自动行为）见[角色与职能清单](docs/角色与职能清单.md)；权限的划分口径与正反例见[第一阶段阶段报告](docs/stage1-阶段报告.md) §1.6。
+完整清单（含顾客侧角色与系统自动行为）见[角色与职能清单](docs/角色与职能清单.md)；权限的划分口径与正反例见[第一阶段阶段报告](docs/stage1/stage1-阶段报告.md) §1.6。
 
 ## 环境
 
@@ -178,21 +179,21 @@ v0.1 的 25 张表还原为 **25 个实体、35 条物理外键**，按域拆成
    sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/contract_interface_check.sql"
    ```
 
-完整执行证据见 [`result/`](result/)，实验过程与结论见 [第一阶段测试报告](docs/stage1-test-report.md) 和 [成员 B 阶段报告](docs/stage1-b-stage-report.md)。
+完整执行证据见 [`result/`](result/)，实验过程与结论见 [第一阶段测试报告](docs/stage1/stage1-test-report.md) 和 [成员 B 阶段报告](docs/stage1/stage1-b-stage-report.md)。
 
 ## 文档索引
 
-- [**第一阶段阶段报告**](docs/stage1-阶段报告.md) — 总报告：经营场景与数据边界、表设计（主码 / 候选码 / 外码）、角色与权限正反例、部署与验收
+- [**第一阶段阶段报告**](docs/stage1/stage1-阶段报告.md) — 总报告：经营场景与数据边界、表设计（主码 / 候选码 / 外码）、角色与权限正反例、部署与验收
 - [角色与职能清单](docs/角色与职能清单.md) — 后台/作业/顾客侧角色 + 系统自动行为，供后续 role.sql / 权限设计
 - [数据边界清单](docs/数据边界清单.md) — 进/不进库边界与灰色地带取舍
 - [业务流程](docs/业务流程.md) — 业务主线 8 步（含异常路径），建库与设计依据
-- [跨域接口契约](docs/stage1-cross-domain-interface-contract.md) — 三域之间的冻结接口：对象名、参数顺序与类型、返回列、种子常量，以及只读检查器 `sql/contract_interface_check.sql` 的校验口径
-- [第一阶段三人协作实施计划](docs/stage1-three-person-implementation-plan.md) — 对象、接口、角色和验收标准
+- [跨域接口契约](docs/stage1/stage1-cross-domain-interface-contract.md) — 三域之间的冻结接口：对象名、参数顺序与类型、返回列、种子常量，以及只读检查器 `sql/contract_interface_check.sql` 的校验口径
+- [第一阶段三人协作实施计划](docs/stage1/stage1-three-person-implementation-plan.md) — 对象、接口、角色和验收标准
 - [第二阶段三人协作实施计划](docs/stage2-three-person-implementation-plan.md) — ER 重建、规范化迁移与应用开发分工；含员工数据库身份、岗位查询接口、原子迁移/恢复、文件属主和修订自查。当前为待实施计划，第一阶段 SQL 仍为 v0.1
 - 第二阶段过程文档：[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（顾客端三个过程，草案未冻结）、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-11 的状态与决议唯一入口）、[业务规则映射](docs/stage2/business-rule-mapping.md)（35 条外键的基数与实现机制）、[重构方案](docs/stage2/refactoring-design.md)、[事务边界](docs/stage2/transaction-boundaries.md)
 - 三域分析：[A 域](docs/stage2/a-issues.md)问题清单 / [规范化](docs/stage2/a-normalization.md)、[B 域](docs/stage2/b-issues.md)问题清单 / [规范化](docs/stage2/b-normalization.md)、[C 域](docs/stage2/c-issues.md)问题清单 / [规范化](docs/stage2/c-normalization.md)、[命名口径](docs/stage2/naming.md)
 - [ER 图](docs/er/) — [图例](docs/er/legend.md)与三域子图（[主数据](docs/er/a-master.svg)、[订单](docs/er/b-order.svg)、[库存权限](docs/er/c-inventory-security.svg)）；合并总图待交
 - [主数据数据字典](docs/主数据数据字典.md)、[订单履约数据字典](docs/订单履约数据字典.md)、[库存权限数据字典](docs/库存权限数据字典.md)
-- [第一阶段测试报告](docs/stage1-test-report.md)
-- 成员分工报告：[成员 A](docs/stage1-a-stage-report.md)（主数据与定价）、[成员 B](docs/stage1-b-stage-report.md)（订单与履约）、[成员 C](docs/stage1-c-stage-report.md)（库存、权限与集成）
+- [第一阶段测试报告](docs/stage1/stage1-test-report.md)
+- 成员分工报告：[成员 A](docs/stage1/stage1-a-stage-report.md)（主数据与定价）、[成员 B](docs/stage1/stage1-b-stage-report.md)（订单与履约）、[成员 C](docs/stage1/stage1-c-stage-report.md)（库存、权限与集成）
 - [AI使用记录](docs/AI使用记录.md)
