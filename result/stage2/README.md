@@ -1,6 +1,6 @@
 # stage2 证据（C 侧）
 
-隔离实验执行日期：2026-10-13（重跑捕获；实验首做于 2026-10-10，本次为归档要求下的完整复现）；文档对账证据增补于 2026-10-15；ER 子图复核证据增补于 2026-10-17。
+隔离实验执行日期：2026-10-13（重跑捕获；实验首做于 2026-10-10，本次为归档要求下的完整复现）；文档对账证据增补于 2026-10-15；ER 子图复核证据增补于 2026-10-17；合并总图对账、B 图复核与契约授权核对增补于 2026-10-27。
 
 实例：`.\SQLEXPRESS`（SQL Server 2025 Express 17.0.1000.7；混合模式；Windows 身份验证部署登录）
 
@@ -30,6 +30,17 @@
 - （2026-10-17 增补）`er-review-2026-10-17.txt`：A/C 两张 ER 子图的 C 侧独立复核日志（R2 首轮 12 项差异的归因 → 3 处解析器修正 → R3 终轮 0 项问题；A 图 16/16 边通过）。
 - （2026-10-17 增补）`scripts/review_er_20261017.py`：复核脚本（实体 / 键 / 边 / 箭头 vs 据 `sql/01-03` 推导的期望；Python 3.13，`python -I` 运行）。
 
+- （2026-10-27 增补）`stage2-model-check-2026-10-27.txt`：合并总图 `docs/er/stage2-model.drawio/.svg` 的结构/几何对账（H20 三段式：生成过程 5 项缺陷归因 → 修正 → 终轮 103 PASS；含 `naming.md` N-01 的源码反例与 OI-12 依据）。
+- （2026-10-27 增补）`scripts/gen_stage2_model.py`：总图生成器（从 `sql/01–03` + `03`/`05` 唯一约束同源生成 drawio 与 svg；手工版面、显式正交路由、标签自动避让）。
+- （2026-10-27 增补）`scripts/check_stage2_model.py`：总图校验器（25 实体/35 外键 ↔ 源码、BR-01–BR-35 ↔ `business-rule-mapping.md`、SVG 线段采样 0 穿盒、35 标签 0 压框/0 互叠、字节；Python 3.13，`python -I` 可从本目录复跑）。
+- （2026-10-27 增补）`b-er-review-2026-10-27.txt`：B 域 ER 子图独立复核（10 判据 0 失败；53 列/10 边/箭头/BR 编号全对账，1 条 pickup_code 过滤唯一 note）。
+- （2026-10-27 增补）`scripts/review_b_er_20261027.py`：B 子图复核脚本（只读，不改 B 文件）。
+- （2026-10-27 增补）`c-contract-auth-check-2026-10-27.txt`：`application-contract.md` §2 的 C 侧授权核对（8 过程守卫/GRANT/白名单/种子/错误码 + 视图边界 + 查询提案未实现；55 PASS；含 52502 分段补注建议）。
+- （2026-10-27 增补）`scripts/check_contract_auth_20261027.py`：契约授权核对脚本（只读 A/B 文件）。
+
+- （2026-10-27 增补）`c-er-oi09-followup-2026-10-27.txt`：C 子图 r6 按 OI-09 冻结口径（结构基数）重生成的几何/字节证据（12 实体 / 14 联系、0 穿盒、r6 = `ERzeroToMany`）。
+- （2026-10-27 增补）`scripts/gen_c_er.py` / `check_c_er_collide.py`：C 子图生成器与几何自查脚本（可从本目录复跑）。
+
 ## SHA-256
 
 ```text
@@ -43,4 +54,14 @@ D8933489870A076F7FBBBF5F684B9138F7687058CA55D2208DEFE42C931B8579  c-normalizatio
 4695DB886C7373E881B7EB5DF6DD821147156BE93A1ED6FC7D95278B570B9031  scripts/check_c_norm.py
 142D7F016282485BA2CC41B30F5C7406ECD8CD6A09717697B556F0C9B8B44FEB  er-review-2026-10-17.txt
 31A09A4BE418AF19B7182CB11EC0846EA9A0D6E25AC08FE8886F4B98FAE327B3  scripts/review_er_20261017.py
+7F4BB0049E9E05A84F0BB313616E9F3831EEE335AC32E4437FB4B78A3219CF9E  stage2-model-check-2026-10-27.txt
+7AC703172CAA763E691BA672F9FE76C8D82C18006F19DCCD7C734385E16A47F8  b-er-review-2026-10-27.txt
+ED766C58F5FCF53E60C2399B4E50E00FC858AC4F38CE71EC57556965810CA4B1  c-contract-auth-check-2026-10-27.txt
+FD0ABF69C42A324AD3AF17988046DF2C259DE6889B72AE4282C13DDD439E8829  scripts/gen_stage2_model.py
+243F828B5CCB7FE0246D9E9422AB3E41C2F57FCB6FB0C4AC6CB5C45E05536845  scripts/check_stage2_model.py
+5CB0B9DB14C457CD12D5051853E35BC90A4CBA8F088E6AA4E9545AB43245D2FE  scripts/review_b_er_20261027.py
+B63C349044115A63E0458E3539F731C8D05FBDFF239EF2F64A63B14CD0B1B18C  scripts/check_contract_auth_20261027.py
+C74A2BE06C7B5C49D4667EFF6B0D2FF0E229069196A2A21482732D38ED4EDD7C  c-er-oi09-followup-2026-10-27.txt
+3B8CF7CBD6DB7E9A748A6CFC37DF9716713AAC362443BDA935431E8D9E6E044E  scripts/gen_c_er.py
+71D4946CFE2151946FE828F36C5B9D0ECF0B3A33EE59DE88626D2C25F5B6DCF6  scripts/check_c_er_collide.py
 ```

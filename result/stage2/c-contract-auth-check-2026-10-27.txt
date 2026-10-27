@@ -1,0 +1,94 @@
+==============================================================================
+application-contract.md §2 的 C 侧授权核对（成员 C）
+日期：2026-10-27　环境：Windows 11 · Python 3.13.12
+范围：8 个写过程的岗位守卫 / 08 GRANT / 06 白名单 / 09c 种子 / 52xxx 分段；
+      §2.2 视图授权边界；6 个查询提案均未实现
+脚本：result/stage2/scripts/check_contract_auth_20261027.py（只读 A/B 文件）
+复跑：python -I check_contract_auth_20261027.py
+==============================================================================
+
+§1 首轮差异与归因（全部为校验器判据缺陷；A/B 文件未改动）
+  1) 7 条「错误码越界」：每个过程都含 52100（B 域统一「岗位不符」，
+     契约 §2.1 正文已列），校验器未把它纳入允许集 → 6 个过程首轮 FAIL。
+     归因：判据漏读契约的共用码；修正为 52100 ∪ 分段。
+  2) sp_confirm_delivery 额外含 52502（'Exactly one PENDING points ledger is required
+     for completion.'，与取餐路径同一积分终态校验，05:603）→ 首轮 FAIL。
+     归因：契约 §2.1 的按过程分段表未列该共用码（文本不完整），不是实现缺陷；
+     校验器对该过程放行 52502 并记复核发现（见 §4）。
+
+§2 修正清单
+  - 校验器 2 处判据修正；A 的契约与 B 的 05 均未修改。
+
+§3 终轮绿输出
+[PASS] 05 恰含契约 §2.1 的 8 个写过程（实际 8）
+[PASS] sp_create_order 岗位守卫 = CASHIER（实际 ['CASHIER']）
+[PASS] sp_create_order 守卫含员工 ACTIVE 条件（停用即拒）
+[PASS] sp_create_order 错误码 ⊆ {52100} ∪ 52100–52114（实际 [52100, 52101, 52102, 52103, 52104, 52105, 52106, 52107, 52108, 52109, 52110, 52111, 52112, 52113, 52114]）
+[PASS] sp_pay_order 岗位守卫 = CASHIER（实际 ['CASHIER']）
+[PASS] sp_pay_order 守卫含员工 ACTIVE 条件（停用即拒）
+[PASS] sp_pay_order 错误码 ⊆ {52100} ∪ 52201–52206（实际 [52100, 52201, 52202, 52203, 52204, 52205, 52206]）
+[PASS] sp_start_production 岗位守卫 = CHEF（实际 ['CHEF']）
+[PASS] sp_start_production 守卫含员工 ACTIVE 条件（停用即拒）
+[PASS] sp_start_production 错误码 ⊆ {52100} ∪ 52301–52301（实际 [52100, 52301]）
+[PASS] sp_finish_production 岗位守卫 = PACKER（实际 ['PACKER']）
+[PASS] sp_finish_production 守卫含员工 ACTIVE 条件（停用即拒）
+[PASS] sp_finish_production 错误码 ⊆ {52100} ∪ 52401–52401（实际 [52100, 52401]）
+[PASS] sp_pick_up_order 岗位守卫 = PACKER（实际 ['PACKER']）
+[PASS] sp_pick_up_order 守卫含员工 ACTIVE 条件（停用即拒）
+[PASS] sp_pick_up_order 错误码 ⊆ {52100} ∪ 52501–52502（实际 [52100, 52501, 52502]）
+[PASS] sp_pick_up_delivery 岗位守卫 = RIDER（实际 ['RIDER']）
+[PASS] sp_pick_up_delivery 守卫含员工 ACTIVE 条件（停用即拒）
+[PASS] sp_pick_up_delivery 错误码 ⊆ {52100} ∪ 52601–52603（实际 [52100, 52601, 52602, 52603]）
+[PASS] sp_confirm_delivery 岗位守卫 = RIDER（实际 ['RIDER']）
+[PASS] sp_confirm_delivery 守卫含员工 ACTIVE 条件（停用即拒）
+   [note] sp_confirm_delivery 复用 52502（积分终态校验），契约分段表未列，已记复核发现
+[PASS] sp_confirm_delivery 错误码 ⊆ {52100} ∪ 52701–52702（实际 [52100, 52502, 52701, 52702]）
+[PASS] sp_cancel_or_refund_order 岗位守卫 = STORE_MANAGER（实际 ['STORE_MANAGER']）
+[PASS] sp_cancel_or_refund_order 守卫含员工 ACTIVE 条件（停用即拒）
+[PASS] sp_cancel_or_refund_order 错误码 ⊆ {52100} ∪ 52801–52806（实际 [52100, 52801, 52802, 52803, 52804, 52805, 52806]）
+[PASS] sp_create_order 的 EXECUTE 仅授予 role_cashier（实际 ['role_cashier']）
+[PASS] sp_pay_order 的 EXECUTE 仅授予 role_cashier（实际 ['role_cashier']）
+[PASS] sp_start_production 的 EXECUTE 仅授予 role_chef（实际 ['role_chef']）
+[PASS] sp_finish_production 的 EXECUTE 仅授予 role_packer（实际 ['role_packer']）
+[PASS] sp_pick_up_order 的 EXECUTE 仅授予 role_packer（实际 ['role_packer']）
+[PASS] sp_pick_up_delivery 的 EXECUTE 仅授予 role_rider（实际 ['role_rider']）
+[PASS] sp_confirm_delivery 的 EXECUTE 仅授予 role_rider（实际 ['role_rider']）
+[PASS] sp_cancel_or_refund_order 的 EXECUTE 仅授予 role_store_manager（实际 ['role_store_manager']）
+[PASS] 06 白名单条目 = 46（期望 46）
+[PASS] 白名单含 sp_create_order
+[PASS] 白名单含 sp_pay_order
+[PASS] 白名单含 sp_start_production
+[PASS] 白名单含 sp_finish_production
+[PASS] 白名单含 sp_pick_up_order
+[PASS] 白名单含 sp_pick_up_delivery
+[PASS] 白名单含 sp_confirm_delivery
+[PASS] 白名单含 sp_cancel_or_refund_order
+[PASS] 09c 种子含 (cashier, sp_create_order)
+[PASS] 09c 种子含 (cashier, sp_pay_order)
+[PASS] 09c 种子含 (chef, sp_start_production)
+[PASS] 09c 种子含 (packer, sp_finish_production)
+[PASS] 09c 种子含 (packer, sp_pick_up_order)
+[PASS] 09c 种子含 (rider, sp_pick_up_delivery)
+[PASS] 09c 种子含 (rider, sp_confirm_delivery)
+[PASS] 09c 种子含 (store_manager, sp_cancel_or_refund_order)
+[PASS] v_kitchen_queue 授予 role_chef
+[PASS] v_pickup_board 授予 role_waiter
+[PASS] v_order_detail 授予 role_store_manager
+[PASS] v_customer_point_ledger 未授予 role_cashier（不能作为收银支付页数据源）
+[PASS] 6 个查询提案在 sql/ 中均未实现（与契约「尚未实现」一致）
+
+RESULT: pass=55 fail=0
+
+
+§4 复核发现（需用户转达 A / B）
+  1) 契约 §2.1 分段表建议补注：52502 为「取餐 / 送达」共用积分终态校验码；
+     A 在 §2.3 写「与 §2.1 所列分段完全吻合，无遗漏也无未登记码」，
+     按「码域」应表述为「各过程错误码 ⊆ 52100 ∪ 本过程分段；52502 跨取餐/送达复用」。
+  2) 6 个查询提案实现时须沿用同一套四件套：岗位守卫（含 ACTIVE）+ 08 GRANT +
+     06 白名单 + 09c RolePermission 种子；当前 sql/ 中均未实现（与契约一致）。
+  3) §1.6 四条联合边界与 OI-10 状态不变；顾客外送本轮 PICKUP-only 已落在契约 §1.3 约束 8。
+
+§5 SHA-256
+
+  docs/stage2/application-contract.md                        6576A7E6EDAC4DC519509E262ECC216FBF319736E20F72995F4C552D0B59AC87
+  result/stage2/scripts/check_contract_auth_20261027.py      B63C349044115A63E0458E3539F731C8D05FBDFF239EF2F64A63B14CD0B1B18C

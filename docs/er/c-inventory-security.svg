@@ -31,7 +31,7 @@
 <line x1="540.0" y1="324.0" x2="532.0" y2="340.0" stroke="#333" stroke-width="1.2"/>
 <line x1="540.0" y1="252.0" x2="540.0" y2="340.0" stroke="#333" stroke-width="1.2" />
 <line x1="548.0" y1="492.0" x2="532.0" y2="492.0" stroke="#333" stroke-width="1.2"/>
-<line x1="532.0" y1="554.0" x2="548.0" y2="554.0" stroke="#333" stroke-width="1.2"/>
+<circle cx="540.0" cy="548.0" r="4.5" fill="#fff" stroke="#333" stroke-width="1.2"/>
 <line x1="540.0" y1="554.0" x2="548.0" y2="570.0" stroke="#333" stroke-width="1.2"/>
 <line x1="540.0" y1="554.0" x2="540.0" y2="570.0" stroke="#333" stroke-width="1.2"/>
 <line x1="540.0" y1="554.0" x2="532.0" y2="570.0" stroke="#333" stroke-width="1.2"/>
@@ -198,7 +198,7 @@
 <rect x="495.4" y="288.0" width="89.2" height="16" fill="#ffffff" opacity="0.92"/>
 <text x="540.0" y="300.0" font-size="11" fill="#444" text-anchor="middle">审批生成；业务至多一张</text>
 <rect x="455.8" y="523.0" width="168.4" height="16" fill="#ffffff" opacity="0.92"/>
-<text x="540.0" y="535.0" font-size="11" fill="#444" text-anchor="middle">结构 1..N；业务恰好 1 条（过程保证）</text>
+<text x="540.0" y="535.0" font-size="11" fill="#444" text-anchor="middle">结构 0..N；业务恰好 1 条（过程保证）</text>
 <rect x="843.0" y="438.0" width="154.0" height="16" fill="#ffffff" opacity="0.92"/>
 <text x="920.0" y="450.0" font-size="11" fill="#444" text-anchor="middle">1:N 权限条目；码受白名单 CHECK</text>
 <rect x="1030.2" y="98.0" width="139.6" height="16" fill="#ffffff" opacity="0.92"/>
@@ -215,8 +215,8 @@
 <text x="1115.0" y="250.0" font-size="11" fill="#444" text-anchor="middle">rider（可空，认领时写入）</text>
 <rect x="1418.2" y="412.0" width="67.6" height="16" fill="#ffffff" opacity="0.92"/>
 <text x="1452.0" y="424.0" font-size="11" fill="#444" text-anchor="middle">1:N 审计条目</text>
-<text x="40" y="815" font-size="13" font-weight="bold" fill="#1a1a1a">C 域（库存 · 补货 · 权限）ER 子图 — v0.1（依据 2026-10-13 活库目录核对；2026-10-15 域属主订正：Ingredient 归 A、AuditLog 归 C，OI-06；符号图例见 docs/er/legend.md）</text>
+<text x="40" y="815" font-size="13" font-weight="bold" fill="#1a1a1a">C 域（库存 · 补货 · 权限）ER 子图 — v0.1（依据 2026-10-13 活库目录核对；2026-10-15 域属主订正：Ingredient 归 A、AuditLog 归 C，OI-06；2026-10-27 OI-09 结构口径：r6 从端改 0..N；符号图例见 docs/er/legend.md）</text>
 <text x="40" y="842" font-size="11" fill="#444">端点符号：| = 恰好 1    o| = 零或 1    |&lt; = 一或多    o&lt; = 零或多</text>
 <text x="40" y="859" font-size="11" fill="#444">灰色矩形 = 跨域实体（仅列键列与少量判别列）；虚线 = 同一对实体间的第二条外码</text>
-<text x="40" y="876" font-size="11" fill="#444">文字标签 = 两端基数 — 实现机制；业务口径与结构口径不同时以标签说明</text>
+<text x="40" y="876" font-size="11" fill="#444">文字标签 = 两端基数（结构口径）— 实现机制/业务说明；业务附加见标签与 business-rule-mapping.md</text>
 </svg>

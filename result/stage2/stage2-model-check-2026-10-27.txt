@@ -1,0 +1,208 @@
+==============================================================================
+第二阶段合并总 ER 图 — 结构 / 几何对账证据（成员 C）
+日期：2026-10-27　环境：Windows 11 · Python 3.13.12 · 仓库 D:\DBLab\KFC-DB
+产物：docs/er/stage2-model.drawio、docs/er/stage2-model.svg
+脚本：result/stage2/scripts/gen_stage2_model.py / check_stage2_model.py
+复跑：在本目录执行 python -I check_stage2_model.py（会先同源重生成再全量核对）
+判据：25 实体 / 35 条物理外键与 sql/01–03（+03/05 唯一约束）逐项一致；
+      边 ↔ BR-01–BR-35 与 business-rule-mapping.md 逐条一致；
+      SVG 实际线段采样 0 穿盒、35 标签 0 压框 / 0 互叠；两个 XML 良构；
+      全 CRLF、无 BOM、末尾换行。
+==============================================================================
+
+§1 首轮差异与归因（生成器在产出前被自身断言拦下的缺陷；交付物对账差异 = 0）
+  1) 实体重叠判定 IndexError：比较式误用 a[5]（矩组只有 4 个边界值）。
+     归因：生成器自身 bug；修正为四边相交判定，未产出文件。
+  2) 路由方向不一致：多条路由按几何顺序写成「子→父」，触发 BAD EXIT。
+     归因：生成器约定不统一；加自动归一化（首点在子端 / 末点在父端则反转），
+     并保留「两端锚点必须落在所属实体盒边界」的双向校验。
+  3) 长标签无槽位（NO LABEL SLOT: BR-11）：带业务后缀的标签在 100px 短边上放不下。
+     归因：标签方案不适配密集布局；标签统一只放 BR 编号，
+     业务附加条件（BR-11/13/15/16/17/25/30/32）集中写入图例第 3 行。
+  4) A 域复合主码列未回填 NOT NULL：ProductCategory / ProductBom / ComboComponent
+     的主码列在 01 中未写 NOT NULL，解析后 nullable=True，
+     导致 BR-01/02/04/05/06/07 的父端箭头被误判为 0..1。
+     归因：解析器只按显式 NOT NULL 判空；修正：主码列一律回填非空（主码语义）。
+  5) 过滤唯一索引被当作全量唯一：BR-01（UQ_ProductCategory_is_primary）与
+     BR-25（UQ_ReplenishmentSuggestion_ingredient_id）的从端被误压成 0..1。
+     归因：唯一性判据未区分全量唯一与过滤唯一；修正：FILTERED 集合不参与
+     「从端 0..1」判定；同口径写入 legend.md §2。
+
+§2 修正清单
+  - 生成器：重叠判定、方向归一化、标签方案、主码非空回填、过滤唯一排除（5 处）。
+  - 图例：legend.md §2 补「全量唯一 → 从端 0..1；过滤唯一不压父端最大基数」，
+    并把 OI-09 结构口径正式落文。
+  - 交付物：修复后重生成 drawio/svg；结构对账首轮即 0 差异（25/25、35/35）。
+
+§3 终轮绿输出
+----- 生成器输出 -----
+written: D:\DBLab\KFC-DB\docs\er\stage2-model.drawio | bytes: 30422
+written: D:\DBLab\KFC-DB\docs\er\stage2-model.svg | bytes: 47903
+entities: 25 | edges: 35
+  BR-01  FK_ProductCategory_Product                     Product                -> ProductCategory        ERone -> ERzeroToMany
+  BR-02  FK_ProductCategory_Category                    Category               -> ProductCategory        ERone -> ERzeroToMany
+  BR-03  FK_Customer_MemberLevel                        MemberLevel            -> Customer               ERzeroToOne -> ERzeroToMany
+  BR-04  FK_ProductBom_Product                          Product                -> ProductBom             ERone -> ERzeroToMany
+  BR-05  FK_ProductBom_Ingredient                       Ingredient             -> ProductBom             ERone -> ERzeroToMany
+  BR-06  FK_ComboComponent_ComboProduct                 Product                -> ComboComponent         ERone -> ERzeroToMany
+  BR-07  FK_ComboComponent_ChildProduct                 Product                -> ComboComponent         ERone -> ERzeroToMany (dashed)
+  BR-08  FK_PromotionProductRule_Promotion              Promotion              -> PromotionProductRule   ERone -> ERzeroToMany
+  BR-09  FK_PromotionProductRule_Product                Product                -> PromotionProductRule   ERone -> ERzeroToMany
+  BR-10  FK_SalesOrder_Customer                         Customer               -> SalesOrder             ERone -> ERzeroToMany
+  BR-11  FK_SalesOrderItem_SalesOrder                   SalesOrder             -> SalesOrderItem         ERone -> ERzeroToMany
+  BR-12  FK_SalesOrderItem_Product                      Product                -> SalesOrderItem         ERone -> ERzeroToMany
+  BR-13  FK_SalesOrderItem_Parent                       SalesOrderItem         -> SalesOrderItem         ERzeroToOne -> ERzeroToMany
+  BR-14  FK_SalesOrderItem_Promotion                    Promotion              -> SalesOrderItem         ERzeroToOne -> ERzeroToMany
+  BR-15  FK_Payment_SalesOrder                          SalesOrder             -> Payment                ERone -> ERzeroToOne
+  BR-16  FK_Delivery_SalesOrder                         SalesOrder             -> Delivery               ERone -> ERzeroToOne
+  BR-17  FK_PointLedger_SalesOrder                      SalesOrder             -> PointLedger            ERone -> ERzeroToOne
+  BR-18  FK_PointLedger_Customer                        Customer               -> PointLedger            ERone -> ERzeroToMany
+  BR-19  FK_EmployeeBusinessRole_Employee               EmployeeAccount        -> EmployeeBusinessRole   ERone -> ERzeroToMany
+  BR-20  FK_EmployeeBusinessRole_BusinessRole           BusinessRole           -> EmployeeBusinessRole   ERone -> ERzeroToMany
+  BR-21  FK_EmployeeBusinessRole_AssignedByEmployee     EmployeeAccount        -> EmployeeBusinessRole   ERone -> ERzeroToMany (dashed)
+  BR-22  FK_RolePermission_BusinessRole                 BusinessRole           -> RolePermission         ERone -> ERzeroToMany
+  BR-23  FK_Inventory_Ingredient                        Ingredient             -> Inventory              ERone -> ERzeroToOne
+  BR-24  FK_InventoryMovement_Inventory                 Inventory              -> InventoryMovement      ERone -> ERzeroToMany
+  BR-25  FK_ReplenishmentSuggestion_Ingredient          Ingredient             -> ReplenishmentSuggestion ERone -> ERzeroToMany
+  BR-26  FK_ReplenishmentSuggestion_CreatedByEmployee   EmployeeAccount        -> ReplenishmentSuggestion ERone -> ERzeroToMany
+  BR-27  FK_ReplenishmentSuggestion_SubmittedByEmployee EmployeeAccount        -> ReplenishmentSuggestion ERzeroToOne -> ERzeroToMany
+  BR-28  FK_ReplenishmentSuggestion_ApprovedByEmployee  EmployeeAccount        -> ReplenishmentSuggestion ERzeroToOne -> ERzeroToMany
+  BR-29  FK_ReplenishmentSuggestion_RejectedByEmployee  EmployeeAccount        -> ReplenishmentSuggestion ERzeroToOne -> ERzeroToMany
+  BR-30  FK_PurchaseOrder_ReplenishmentSuggestion       ReplenishmentSuggestion -> PurchaseOrder          ERone -> ERzeroToMany
+  BR-31  FK_PurchaseOrder_ApprovedByEmployee            EmployeeAccount        -> PurchaseOrder          ERzeroToOne -> ERzeroToMany
+  BR-32  FK_PurchaseOrderItem_PurchaseOrder             PurchaseOrder          -> PurchaseOrderItem      ERone -> ERzeroToMany
+  BR-33  FK_PurchaseOrderItem_Ingredient                Ingredient             -> PurchaseOrderItem      ERone -> ERzeroToMany
+  BR-34  FK_AuditLog_Employee                           EmployeeAccount        -> AuditLog               ERone -> ERzeroToMany
+  BR-35  FK_Delivery_RiderEmployee                      EmployeeAccount        -> Delivery               ERzeroToOne -> ERzeroToMany
+
+----- 校验器输出（103 判据）-----
+[PASS] drawio 实体数 = 25（期望 25）
+[PASS] drawio 实体名集合与 sql 源码 25 表一致
+[PASS] Category 属性行逐项一致（3 列）
+[PASS] MemberLevel 属性行逐项一致（5 列）
+[PASS] Ingredient 属性行逐项一致（5 列）
+[PASS] Product 属性行逐项一致（5 列）
+[PASS] ProductCategory 属性行逐项一致（3 列）
+[PASS] Customer 属性行逐项一致（6 列）
+[PASS] ProductBom 属性行逐项一致（3 列）
+[PASS] ComboComponent 属性行逐项一致（3 列）
+[PASS] Promotion 属性行逐项一致（6 列）
+[PASS] PromotionProductRule 属性行逐项一致（8 列）
+[PASS] SalesOrder 属性行逐项一致（15 列）
+[PASS] SalesOrderItem 属性行逐项一致（10 列）
+[PASS] Payment 属性行逐项一致（11 列）
+[PASS] Delivery 属性行逐项一致（8 列）
+[PASS] PointLedger 属性行逐项一致（9 列）
+[PASS] EmployeeAccount 属性行逐项一致（6 列）
+[PASS] BusinessRole 属性行逐项一致（4 列）
+[PASS] EmployeeBusinessRole 属性行逐项一致（4 列）
+[PASS] RolePermission 属性行逐项一致（4 列）
+[PASS] Inventory 属性行逐项一致（4 列）
+[PASS] InventoryMovement 属性行逐项一致（8 列）
+[PASS] ReplenishmentSuggestion 属性行逐项一致（9 列）
+[PASS] PurchaseOrder 属性行逐项一致（6 列）
+[PASS] PurchaseOrderItem 属性行逐项一致（4 列）
+[PASS] AuditLog 属性行逐项一致（7 列）
+[PASS] drawio 边数 = 35（期望 35）
+[PASS] drawio 边 id 集合 = 35 个外键名（逐名去重，无遗漏/无多余）
+[PASS] 35 条边的起止箭头与父/子端点由 DDL 结构推导值逐条一致
+[PASS] drawio 折点序列与路由模型逐点一致（35/35）
+[PASS] business-rule-mapping 表行数 = 35（期望 35）
+[PASS] mapping 外键名集合与 sql 源码 35 个外键一致
+[PASS] BR 端基数与 DDL 推导逐条一致（父端 1/0..1、子端 0..N/0..1）
+[PASS] SVG 实体矩形数 = 25（期望 25）
+[PASS] SVG 线段采样无穿越实体盒（线段数 206，穿盒 0）
+[PASS] SVG 联系标签背景框数 = 35（期望 35）
+[PASS] 标签不压实体盒（压框 0）
+[PASS] 标签互不重叠（重叠对 0）
+[PASS] SVG 含实体名 Category
+[PASS] SVG 含实体名 MemberLevel
+[PASS] SVG 含实体名 Ingredient
+[PASS] SVG 含实体名 Product
+[PASS] SVG 含实体名 ProductCategory
+[PASS] SVG 含实体名 Customer
+[PASS] SVG 含实体名 ProductBom
+[PASS] SVG 含实体名 ComboComponent
+[PASS] SVG 含实体名 Promotion
+[PASS] SVG 含实体名 PromotionProductRule
+[PASS] SVG 含实体名 SalesOrder
+[PASS] SVG 含实体名 SalesOrderItem
+[PASS] SVG 含实体名 Payment
+[PASS] SVG 含实体名 Delivery
+[PASS] SVG 含实体名 PointLedger
+[PASS] SVG 含实体名 EmployeeAccount
+[PASS] SVG 含实体名 BusinessRole
+[PASS] SVG 含实体名 EmployeeBusinessRole
+[PASS] SVG 含实体名 RolePermission
+[PASS] SVG 含实体名 Inventory
+[PASS] SVG 含实体名 InventoryMovement
+[PASS] SVG 含实体名 ReplenishmentSuggestion
+[PASS] SVG 含实体名 PurchaseOrder
+[PASS] SVG 含实体名 PurchaseOrderItem
+[PASS] SVG 含实体名 AuditLog
+[PASS] SVG 含联系标签 BR-01
+[PASS] SVG 含联系标签 BR-02
+[PASS] SVG 含联系标签 BR-03
+[PASS] SVG 含联系标签 BR-04
+[PASS] SVG 含联系标签 BR-05
+[PASS] SVG 含联系标签 BR-06
+[PASS] SVG 含联系标签 BR-07
+[PASS] SVG 含联系标签 BR-08
+[PASS] SVG 含联系标签 BR-09
+[PASS] SVG 含联系标签 BR-10
+[PASS] SVG 含联系标签 BR-11
+[PASS] SVG 含联系标签 BR-12
+[PASS] SVG 含联系标签 BR-13
+[PASS] SVG 含联系标签 BR-14
+[PASS] SVG 含联系标签 BR-15
+[PASS] SVG 含联系标签 BR-16
+[PASS] SVG 含联系标签 BR-17
+[PASS] SVG 含联系标签 BR-18
+[PASS] SVG 含联系标签 BR-19
+[PASS] SVG 含联系标签 BR-20
+[PASS] SVG 含联系标签 BR-21
+[PASS] SVG 含联系标签 BR-22
+[PASS] SVG 含联系标签 BR-23
+[PASS] SVG 含联系标签 BR-24
+[PASS] SVG 含联系标签 BR-25
+[PASS] SVG 含联系标签 BR-26
+[PASS] SVG 含联系标签 BR-27
+[PASS] SVG 含联系标签 BR-28
+[PASS] SVG 含联系标签 BR-29
+[PASS] SVG 含联系标签 BR-30
+[PASS] SVG 含联系标签 BR-31
+[PASS] SVG 含联系标签 BR-32
+[PASS] SVG 含联系标签 BR-33
+[PASS] SVG 含联系标签 BR-34
+[PASS] SVG 含联系标签 BR-35
+[PASS] drawio 无 BOM
+[PASS] drawio 全 CRLF 且末尾换行（行数 192）
+[PASS] svg 无 BOM
+[PASS] svg 全 CRLF 且末尾换行（行数 559）
+
+RESULT: pass=103 fail=0
+
+
+§4 附带核对：naming.md N-01（A 的文件，只读复核；已登记 OI-12）
+  naming.md 形状表写「外键：26 具名 + 9 匿名（见 N-01）」，N-01 称
+  「A 域 9 条外键匿名（foreign key(...) references ... 未写 CONSTRAINT）」。
+  源码核对（sql/01_master_schema.sql）：
+    60: constraint FK_ProductCategory_Product      61: foreign key(product_id) references Product
+    62: constraint FK_ProductCategory_Category     63: foreign key(category_id) references Category
+    80: constraint FK_Customer_MemberLevel         81: foreign key(member_level_id) references MemberLevel
+    91: constraint FK_ProductBom_Product           92: foreign key(product_id) references Product
+    93: constraint FK_ProductBom_Ingredient        94: foreign key(ingredient_id) references Ingredient
+   104: constraint FK_ComboComponent_ComboProduct 105: foreign key(combo_product_id) references Product
+   106: constraint FK_ComboComponent_ChildProduct 107: foreign key(child_product_id) references Product
+   132: constraint FK_PromotionProductRule_Promotion 133: foreign key(promotion_id) references Promotion
+   134: constraint FK_PromotionProductRule_Product  135: foreign key(product_id) references Product
+  结论：9/9 均具名；CONSTRAINT 名与 FOREIGN KEY 分两行书写，单行扫描会漏判。
+  → 形状总表应为「35 具名 + 0 匿名」；N-01 的「迁移时补名」动作可撤销；
+    naming.md §8「逐名验证待 C 合并总图落地后重跑」的依据即本日志（35/35 具名外键全覆盖）。
+
+§5 SHA-256
+
+  docs/er/stage2-model.drawio                                5AF35FB60CDD63BCFAA3AB0B37657BFF11AA7760F585B6FE7C80FD3AB7763161
+  docs/er/stage2-model.svg                                   1AF0EF44A71F2F83C1B2AE4F3912E6D8E0BA5BBB5FB85BBA34B40CC8758A5A53
+  result/stage2/scripts/gen_stage2_model.py                  FD0ABF69C42A324AD3AF17988046DF2C259DE6889B72AE4282C13DDD439E8829
+  result/stage2/scripts/check_stage2_model.py                243F828B5CCB7FE0246D9E9422AB3E41C2F57FCB6FB0C4AC6CB5C45E05536845

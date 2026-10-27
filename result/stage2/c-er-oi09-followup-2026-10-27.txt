@@ -1,0 +1,41 @@
+================================================================================
+C 域 ER 子图 OI-09 跟进（r6 端点改结构口径）— 证据（成员 C）
+日期：2026-10-27　环境：Windows 11 · Python 3.13
+产物：docs/er/c-inventory-security.drawio / .svg（12 实体 / 14 联系）
+脚本：result/stage2/scripts/gen_c_er.py / check_c_er_collide.py（可从归档目录复跑）
+判据：r6 从端 ERzeroToMany、标签「结构 0..N；业务恰好 1 条（过程保证）」；
+      14 条联系逐段采样 0 穿盒；两组 XML 良构、全 CRLF、无 BOM。
+================================================================================
+
+§1 首轮差异与归因
+  本轮差异不是缺陷，而是 OI-09 的口径裁决落地：B 于 2026-10-24 在
+  business-rule-mapping.md §1 冻结「乌鸦脚图统一画 DDL 结构基数，额外业务最低数/条件
+  以文字标签标注」。C 图 r6（PurchaseOrder → PurchaseOrderItem）是唯一按业务口径
+  （ERoneToMany，业务恰好 1 条）画出的端点；按冻结口径改为 ERzeroToMany，
+  业务条件保留在标签。其余 13 条联系与全部实体内容不变。
+
+§2 修正清单
+  - gen_c_er.py：r6 endArrow ERoneToMany → ERzeroToMany；r6 标签
+    「结构 1..N；业务恰好 1 条（过程保证）」→「结构 0..N；业务恰好 1 条（过程保证）」；
+    TITLE 追加 OI-09 说明；LEGEND 第 3 行改为「两端基数（结构口径）— 实现机制/业务说明」。
+  - 同源重生成 c-inventory-security.drawio / .svg；未改动图例之外的其他文件。
+
+§3 终轮绿输出
+----- 几何自查（14 条联系逐段采样 400 点 vs 实体盒）-----
+written: D:\DBLab\KFC-DB\docs\er\c-inventory-security.drawio | bytes: 11322
+written: D:\DBLab\KFC-DB\docs\er\c-inventory-security.svg | bytes: 19743
+实体数: 12 | 联系数: 14
+---
+几何冲突总数: 0
+
+----- 字节 / XML / r6 断言 -----
+c-inventory-security.drawio | XML ok | BOM: False | CRLF: 90 LF: 90 | ends CRLF: True
+c-inventory-security.svg | XML ok | BOM: False | CRLF: 222 LF: 222 | ends CRLF: True
+r6 arrows: ERone -> ERzeroToMany
+r6 label: 结构 0..N；业务恰好 1 条（过程保证）
+
+§4 SHA-256
+  docs/er/c-inventory-security.drawio                 A7659F2A21203E24A8396601D53DCD0212B4BCCF3ECB18E29D416324CBA7636C
+  docs/er/c-inventory-security.svg                    29B6067276145E4C81CECDD98727BC738B6FDFE6526187BD511B2B2DC729D6C0
+  result/stage2/scripts/gen_c_er.py                   3B8CF7CBD6DB7E9A748A6CFC37DF9716713AAC362443BDA935431E8D9E6E044E
+  result/stage2/scripts/check_c_er_collide.py         71D4946CFE2151946FE828F36C5B9D0ECF0B3A33EE59DE88626D2C25F5B6DCF6

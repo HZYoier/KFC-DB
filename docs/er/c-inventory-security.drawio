@@ -53,7 +53,7 @@
   <mxCell id="r5" value="审批生成；业务至多一张" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_SUG" target="E_PO">
     <mxGeometry relative="1" as="geometry" />
   </mxCell>
-  <mxCell id="r6" value="结构 1..N；业务恰好 1 条（过程保证）" style="html=1;endArrow=ERoneToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_PO" target="E_POI">
+  <mxCell id="r6" value="结构 0..N；业务恰好 1 条（过程保证）" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_PO" target="E_POI">
     <mxGeometry relative="1" as="geometry" />
   </mxCell>
   <mxCell id="r7" value="1:N 权限条目；码受白名单 CHECK" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="E_BR" target="E_RP">
@@ -80,10 +80,10 @@
   <mxCell id="r14" value="1:N 审计条目" style="html=1;endArrow=ERzeroToMany;startArrow=ERone;endFill=0;startFill=0;fontSize=11;labelBackgroundColor=#ffffff;exitX=1;exitY=0.79;entryX=1;entryY=0.5;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="E_EA" target="E_AL">
     <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1470" y="160" /><mxPoint x="1470" y="666" /></Array></mxGeometry>
   </mxCell>
-  <mxCell id="title" value="C 域（库存 · 补货 · 权限）ER 子图 — v0.1（依据 2026-10-13 活库目录核对；2026-10-15 域属主订正：Ingredient 归 A、AuditLog 归 C，OI-06；符号图例见 docs/er/legend.md）" style="text;html=1;align=left;verticalAlign=top;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+  <mxCell id="title" value="C 域（库存 · 补货 · 权限）ER 子图 — v0.1（依据 2026-10-13 活库目录核对；2026-10-15 域属主订正：Ingredient 归 A、AuditLog 归 C，OI-06；2026-10-27 OI-09 结构口径：r6 从端改 0..N；符号图例见 docs/er/legend.md）" style="text;html=1;align=left;verticalAlign=top;fontSize=13;fontStyle=1;" vertex="1" parent="1">
     <mxGeometry x="40" y="800" width="1200" height="24" as="geometry" />
   </mxCell>
-  <mxCell id="legend" value="端点符号：| = 恰好 1    o| = 零或 1    |&lt; = 一或多    o&lt; = 零或多&lt;br&gt;灰色矩形 = 跨域实体（仅列键列与少量判别列）；虚线 = 同一对实体间的第二条外码&lt;br&gt;文字标签 = 两端基数 — 实现机制；业务口径与结构口径不同时以标签说明" style="text;html=1;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
+  <mxCell id="legend" value="端点符号：| = 恰好 1    o| = 零或 1    |&lt; = 一或多    o&lt; = 零或多&lt;br&gt;灰色矩形 = 跨域实体（仅列键列与少量判别列）；虚线 = 同一对实体间的第二条外码&lt;br&gt;文字标签 = 两端基数（结构口径）— 实现机制/业务说明；业务附加见标签与 business-rule-mapping.md" style="text;html=1;align=left;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
     <mxGeometry x="40" y="832" width="1200" height="72" as="geometry" />
   </mxCell>
 </root>
