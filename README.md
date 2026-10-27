@@ -4,7 +4,7 @@
 
 ## 项目范围
 
-覆盖门店从后台准备到补货闭环的完整经营链路，按业务主线分层建设：商品/BOM/促销等主数据、订单与支付、积分两段式、防超卖库存、补货建议与采购入库，以及后续的经营分析视角。**第一阶段关系数据库交付已完成**：可从空库一次部署表、约束、过程、视图、种子和岗位权限，并执行 A/B/C 三域验收。**第二阶段正在进行**：ER 模型重建（2.1）已交主数据域与库存权限域的子图和问题清单，迁移（2.2）与应用开发（2.3）尚未开工；本文件「数据库设计」一节随 2.1 收口补全。
+覆盖门店从后台准备到补货闭环的完整经营链路，按业务主线分层建设：商品/BOM/促销等主数据、订单与支付、积分两段式、防超卖库存、补货建议与采购入库，以及后续的经营分析视角。**第一阶段关系数据库交付已完成**：可从空库一次部署表、约束、过程、视图、种子和岗位权限，并执行 A/B/C 三域验收。**第二阶段正在进行**：ER 模型重建（2.1）三域子图与问题清单均已交付，合并总图待 C 收口；迁移（2.2）与应用开发（2.3）尚未开工。本文件「数据库设计」一节中库存权限域与合并总图两处，待 C 交付后补全。
 
 ## 目录结构
 
@@ -22,7 +22,7 @@ KFC-DB/
 │   ├── 09a ~ 09d                三域种子数据
 │   ├── 10a / 10b / 10c          三域验收断言
 │   └── contract_interface_check.sql   只读跨域接口契约检查（独立执行）
-├── docs/                        设计与验收文档（27 份：顶层 15 + stage2/ 7 + er/ 5）
+├── docs/                        设计与验收文档（42 份：顶层 15 + stage2/ 20 + er/ 7）
 │   ├── stage1-阶段报告.md        总报告：设计思路、实验过程、实验总结
 │   ├── stage1-a / b / c-stage-report.md   三份成员分工报告
 │   ├── stage1-test-report.md     完整测试报告：环境、结果、E2E 结论、三次独立复验
@@ -34,18 +34,19 @@ KFC-DB/
 │   ├── 数据边界清单.md           进库 / 不进库边界与灰色地带取舍
 │   ├── 角色与职能清单.md         7 个业务角色的职责与映射
 │   ├── AI使用记录.md             AI 协作过程记录
-│   ├── stage2/                  第二阶段过程文档（7 份）
+│   ├── stage2/                  第二阶段过程文档（20 份）
 │   │   ├── source-requirements.md   教学要求核对：65 项逐条编号与落点
 │   │   ├── open-issues.md           跨域开放问题：状态与决议的唯一入口
 │   │   ├── application-contract.md  第二阶段跨域接口契约（草案，未冻结）
-│   │   ├── a-issues.md / c-issues.md    域内问题清单（A 主数据 / C 库存权限）
-│   │   ├── a-normalization.md       A 域函数依赖、范式与异常分析
-│   │   └── c-normalization.md       C 域同上
-│   └── er/                      ER 图源文件与图例（5 份）
+│   │   ├── a-* / b-* / c-*.md       三域问题清单、规范化分析、阶段报告与交接
+│   │   ├── business-rule-mapping.md 联系两端基数与实现机制的映射（B 主笔）
+│   │   └── refactoring-design.md、transaction-boundaries.md  重构方案与事务边界
+│   └── er/                      ER 图源文件与图例（7 份）
 │       ├── legend.md                端点符号与画法口径
 │       ├── a-master.drawio / .svg   主数据与定价域子图（16 实体 16 联系）
+│       ├── b-order.drawio / .svg    订单与履约域子图（9 实体 10 联系）
 │       └── c-inventory-security.drawio / .svg   库存权限域子图（12 实体 14 联系）
-└── result/                      执行证据（44 个：顶层 31 + stage2/ 13）
+└── result/                      执行证据（47 个：顶层 31 + stage2/ 16）
     ├── README.md                证据清单：逐文件说明与全部 SHA-256
     ├── stage1-full-test-*.txt   三台机器各自从空库整跑的完整原始输出
     ├── stage1-contract-check-*.txt      跨域接口契约检查输出
@@ -101,7 +102,7 @@ v0.1 的 25 张表还原为 **25 个实体、35 条物理外键**，按域拆成
 | 子图 | 实体 | 联系 | 文件 |
 | --- | --- | --- | --- |
 | 主数据与定价（A） | 16（10 本域 + 6 跨域灰实体） | 16 | [a-master.drawio](docs/er/a-master.drawio) / [.svg](docs/er/a-master.svg) |
-| 订单与履约（B） | 【待 B】 | 【待 B】 | 【待 B 交子图】 |
+| 订单与履约（B） | 9（5 本域 + 4 跨域灰实体） | 10 | [b-order.drawio](docs/er/b-order.drawio) / [.svg](docs/er/b-order.svg) |
 | 库存权限（C） | 12（10 本域 + 2 跨域灰实体） | 14 | [c-inventory-security.drawio](docs/er/c-inventory-security.drawio) / [.svg](docs/er/c-inventory-security.svg) |
 | 合并总图（C） | 25 | 35 | 【待 C 合图，2.1 收口前】 |
 
@@ -112,12 +113,12 @@ v0.1 的 25 张表还原为 **25 个实体、35 条物理外键**，按域拆成
 主数据域 10 张表的候选码与逐表函数依赖见 [a-normalization](docs/stage2/a-normalization.md) §2–§3。两处需要单独说明：
 
 - **`MemberLevel.threshold_points` 是业务候选码，但只有过程在保证**：现有过程用 `WITH (UPDLOCK, HOLDLOCK)` 查重后抛 `51005`，没有声明式唯一约束。2.2 补 `UQ_MemberLevel_threshold_points`。
-- **`Customer.current_points` 可由 `PointLedger` 完全推出**（PENDING 不计、EFFECTIVE 计一次、VOIDED 只能由 PENDING 转入），属跨表物化派生值。保留物化的口径与 `SalesOrder.total_amount` 相同：读多写少、只允许经过程写入，`08` 对该列已有列级 `DENY`。
+- **`Customer.current_points` 是「期初余额 + `PointLedger` 增量」**（PENDING 不计、EFFECTIVE 计一次、VOIDED 只能由 PENDING 转入），不是从零开始的流水加总——种子给两位顾客写了 500 / 1500 期初而没有对应流水。保留物化的口径与 `SalesOrder.total_amount` 相同：读多写少、只允许经过程写入，`08` 对该列已有列级 `DENY`。
 
 | 域 | 候选码现状 | 结论 | 证据 |
 | --- | --- | --- | --- |
 | 主数据 | 10 个主键（3 个复合）、1 个 `UNIQUE`、1 个过滤唯一索引；6 张表无声明式候选码（4 张业务唯一未声明、2 张无自然键） | 2.2 补 5 个唯一约束；`Promotion` / `PromotionProductRule` 不补 | [a-normalization](docs/stage2/a-normalization.md) §4.6 |
-| 订单 | 【待 B】 | 【待 B】 | 【待 B】 |
+| 订单 | 5 个单列主码；4 个非空唯一约束，另有可空的取餐码过滤唯一；14 个 `CHECK`；`SalesOrder.order_no` 也是候选码，`Payment` / `Delivery` / `PointLedger` 各有 `(order_id)` 候选码 | 见 [b-normalization](docs/stage2/b-normalization.md)：`(order_id, product_id)` 不唯一，不构成候选码 | [b-normalization](docs/stage2/b-normalization.md) |
 | 库存权限 | 【待 C】 | 【待 C】 | 【待 C】 |
 
 ### 更新异常分析
@@ -131,27 +132,29 @@ v0.1 的 25 张表还原为 **25 个实体、35 条物理外键**，按域拆成
 | 套餐子项数量恒为 1 | 套餐 5 的子项数量为 1 / 1 / 2 | 数量是 `ComboComponent` 的事实 |
 | 同一时段只能有一条促销规则 | 规则 1、2 同窗不同优先级 | 窗口不唯一，规则行才是事实 |
 
-订单域与库存权限域的异常分析：【待 B】/【待 C】。
+订单域的三类异常集中在「派生值没跟着改」：手工改单价或数量却不维护总额、改积分倍率却不重算 `point_delta`、删除最后一条售卖项或流水都会破坏一致性。避免机制是正常过程 + 岗位禁止直接 DML 挡住这些入口，而不是声称 DBA 任意写入也安全（逐表例子见 [b-normalization](docs/stage2/b-normalization.md)§3）。库存权限域的异常分析：【待 C】。
 
 ### 范式分析
 
 | 域 | 表数 | 范式判定 | 依据 | 证据 |
 | --- | --- | --- | --- | --- |
-| 主数据 | 10 | 全部通过 1NF / 2NF / 3NF，均达 BCNF | 决定因素均为候选码；全码表无部分依赖；无传递依赖 | [a-normalization](docs/stage2/a-normalization.md) §3、§4 |
-| 订单 | 5 | 【待 B】 | —— | 【待 B】 |
+| 主数据 | 10 | 全部通过 1NF / 2NF / 3NF，均达 BCNF | 决定因素均为候选码；复合主码表无部分依赖；无传递依赖 | [a-normalization](docs/stage2/a-normalization.md) §3、§4 |
+| 订单 | 5 | 单值列满足 1NF、无部分依赖；`PointLedger` 严格说未达 3NF，按受控反规范化保留 | 已识别的候选码均为单列；`PointLedger` 存在非超码决定因素 `(实付快照, 倍率快照) → point_delta`，且 `point_delta` 非主属性 | [b-normalization](docs/stage2/b-normalization.md) |
 | 库存权限 | 10 | 【待 C】 | —— | 【待 C】 |
 
 三条与课程口径对齐的判断：
 
-- **2NF 按所有候选码检查，不只看主键**：三张全码表（`ProductCategory`、`ProductBom`、`ComboComponent`）的非主属性为空集，部分依赖无从谈起。
+- **2NF 按所有候选码检查，不只看主键**：三张复合主码表（`ProductCategory`、`ProductBom`、`ComboComponent`）各有一个非主属性（`is_primary` / `usage_qty` / `quantity`），都由整个复合码决定，两个方向都有种子反例，因此不是部分依赖。
 - **3NF 看决定因素，不等同于「样例里没有重复值」**：`Customer.member_level_id` 形似传递依赖（顾客 → 等级 → 倍率），但等级停用会把该列置空（`04:1326`–`1332`）、升级也不回溯（`04:86`–`95`），故 `current_points → member_level_id` 不成立。
 - **过滤唯一索引不是函数依赖**：`UQ_ProductCategory_is_primary`（每个商品至多一条主分类）是约束，不产生候选码。
 
 ### 分解方案
 
-**不做拆分，也不做合并。** 主数据域 10 张表各承载互异事实：4 张字典（分类 / 等级 / 原料 / 商品）、3 张全码关联（商品—分类 / 商品—原料 / 套餐—子项）、1 张实体（顾客）、2 张促销（活动头 / 规则行）。合并任何一对关联表都会同时丢掉两者各自的复合主码语义，并让「同一商品既是某套餐子项、又有自己的 BOM」无法表达——商品 1 正是这种情形。
+**主数据域不做拆分，也不做合并。** 10 张表各承载互异事实：4 张字典（分类 / 等级 / 原料 / 商品）、3 张复合主码关联（商品—分类 / 商品—原料 / 套餐—子项）、1 张实体（顾客）、2 张促销（活动头 / 规则行）。合并任何一对关联表都会同时丢掉两者各自的复合主码语义，并让「同一商品既是某套餐子项、又有自己的 BOM」无法表达——商品 1 正是这种情形。
 
 唯一形似冗余的 `Customer.current_points` 与 `PromotionProductRule` 的同窗多行，均不构成表内函数依赖违规，按「保留并写出分析证据」的口径处理，不拆表。
+
+订单域与库存权限域另计，不能把主数据域的结论扩成全库：订单域保留五张表与历史快照、总额、积分事件值，对公式值给出可分解的论证但不建金额倍率目录（[refactoring-design](docs/stage2/refactoring-design.md)）；库存权限域另有权限表拆分提案（C 主笔）。
 
 课程要求演示的「商品 → 类别 → 类别名」传递依赖在本项目中**不成立**（一个商品可属多个分类，见上表反例），因此也不存在由此产生、需要靠分解消除的异常。若教学需要独立演示分解，另建一张独立关系示例，不改动本项目结构；该示例随重构方案落 `docs/stage2/refactoring-design.md`（B 主笔）。
 
@@ -185,8 +188,9 @@ v0.1 的 25 张表还原为 **25 个实体、35 条物理外键**，按域拆成
 - [跨域接口契约](docs/stage1-cross-domain-interface-contract.md) — 三域之间的冻结接口：对象名、参数顺序与类型、返回列、种子常量，以及只读检查器 `sql/contract_interface_check.sql` 的校验口径
 - [第一阶段三人协作实施计划](docs/stage1-three-person-implementation-plan.md) — 对象、接口、角色和验收标准
 - [第二阶段三人协作实施计划](docs/stage2-three-person-implementation-plan.md) — ER 重建、规范化迁移与应用开发分工；含员工数据库身份、岗位查询接口、原子迁移/恢复、文件属主和修订自查。当前为待实施计划，第一阶段 SQL 仍为 v0.1
-- 第二阶段过程文档：[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（顾客端三个过程，草案未冻结）、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-11 的状态与决议唯一入口）、[A 域问题清单](docs/stage2/a-issues.md)、[A 域规范化分析](docs/stage2/a-normalization.md)、[C 域问题清单](docs/stage2/c-issues.md)、[C 域规范化分析](docs/stage2/c-normalization.md)
-- [ER 图](docs/er/) — [图例](docs/er/legend.md)与两域子图（[主数据](docs/er/a-master.svg)、[库存权限](docs/er/c-inventory-security.svg)）；订单域子图与合并总图待交
+- 第二阶段过程文档：[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（顾客端三个过程，草案未冻结）、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-11 的状态与决议唯一入口）、[业务规则映射](docs/stage2/business-rule-mapping.md)（35 条外键的基数与实现机制）、[重构方案](docs/stage2/refactoring-design.md)、[事务边界](docs/stage2/transaction-boundaries.md)
+- 三域分析：[A 域](docs/stage2/a-issues.md)问题清单 / [规范化](docs/stage2/a-normalization.md)、[B 域](docs/stage2/b-issues.md)问题清单 / [规范化](docs/stage2/b-normalization.md)、[C 域](docs/stage2/c-issues.md)问题清单 / [规范化](docs/stage2/c-normalization.md)
+- [ER 图](docs/er/) — [图例](docs/er/legend.md)与三域子图（[主数据](docs/er/a-master.svg)、[订单](docs/er/b-order.svg)、[库存权限](docs/er/c-inventory-security.svg)）；合并总图待交
 - [主数据数据字典](docs/主数据数据字典.md)、[订单履约数据字典](docs/订单履约数据字典.md)、[库存权限数据字典](docs/库存权限数据字典.md)
 - [第一阶段测试报告](docs/stage1-test-report.md)
 - 成员分工报告：[成员 A](docs/stage1-a-stage-report.md)（主数据与定价）、[成员 B](docs/stage1-b-stage-report.md)（订单与履约）、[成员 C](docs/stage1-c-stage-report.md)（库存、权限与集成）

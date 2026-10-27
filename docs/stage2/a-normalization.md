@@ -22,16 +22,16 @@ A 域共 **10 表、47 列、10 个主键**（含 3 个复合主键：`ProductCa
 | `MemberLevel` | 一个会员等级及其积分倍率与升级门槛 | `member_level_id`；`threshold_points`（业务唯一、**过程强制**、未声明） | 通过（达 BCNF；按业务 FD 判定亦然） | 保留结构 + **补声明**（I-A09、I-A12，§4.2 / §4.6） |
 | `Ingredient` | 一种可库存原料（含安全库存线） | `ingredient_id`；`(ingredient_name, unit_name)`（业务应唯一，**未声明**） | 通过（BCNF） | 保留结构 + **补声明**（I-A12） |
 | `Product` | 一个销售单元（单品或套餐） | `product_id`；`product_name`（业务应唯一，**未声明**） | 通过（BCNF） | 保留结构 + **补声明**（I-A12） |
-| `ProductCategory` | 一次「商品 × 分类」的归属（M:N 关联实体） | `(product_id, category_id)`（复合 PK，全码） | 通过（BCNF，无部分依赖，§4.3） | 保留 |
+| `ProductCategory` | 一次「商品 × 分类」的归属（M:N 关联实体） | `(product_id, category_id)`（复合 PK，非主属性 1 个） | 通过（BCNF，无部分依赖，§4.3） | 保留 |
 | `Customer` | 一位顾客（散客 / WOW / 付费） | `customer_id`；`mobile`（`UQ_Customer_Mobile`） | 通过；`current_points` 为**跨表物化派生值**（§4.1），`member_level_id` 不是传递依赖的结果（§4.2） | 保留（I-A08 结论：保留物化） |
-| `ProductBom` | 一条单品用料（每个销售单位消耗某原料的量） | `(product_id, ingredient_id)`（复合 PK，全码） | 通过（BCNF，无部分依赖，§4.3） | 保留 |
-| `ComboComponent` | 套餐中的一个子项组成 | `(combo_product_id, child_product_id)`（复合 PK，全码） | 通过（BCNF，无部分依赖，§4.3） | 保留 |
+| `ProductBom` | 一条单品用料（每个销售单位消耗某原料的量） | `(product_id, ingredient_id)`（复合 PK，非主属性 1 个） | 通过（BCNF，无部分依赖，§4.3） | 保留 |
+| `ComboComponent` | 套餐中的一个子项组成 | `(combo_product_id, child_product_id)`（复合 PK，非主属性 1 个） | 通过（BCNF，无部分依赖，§4.3） | 保留 |
 | `Promotion` | 一次促销活动 | `promotion_id`（**无业务候选码**，同名跨期合法） | 通过（BCNF；决定因素唯一） | 保留（§4.6） |
 | `PromotionProductRule` | 一条促销规则（某活动在某星期某时段对某商品的一口价） | `promotion_rule_id`（**无自然键**：窗口可重复，§3.10） | 通过（BCNF） | 保留；**不补**窗口唯一约束（§3.10 / §4.6） |
 
 **合并结论：本域没有应当合并的表对。** 10 张表各承载互异的事实：4 张字典（分类 / 等级 / 原料 / 商品）、3 张全码关联（商品—分类 / 商品—原料 / 套餐—子项）、1 张实体（顾客）、2 张促销（活动头 / 规则行）。三张关联表虽都只有 2–3 列，但分别回答「商品属于哪些分类」「单品消耗哪些原料」「套餐由哪些子项组成」，合并会同时丢掉三者各自的复合主码语义，并让「同一商品既是某套餐子项、又有自己的 BOM」无法表达（用例：商品 1 既是 `ProductBom` 的单品（`09a:78`），又经 `ComboComponent` 进入套餐 5（`09a:89`））。
 
-**拆分结论：本域没有应当拆分的表。** 唯一形似冗余的是 `Customer.current_points`（可由 B 域 `PointLedger` 汇总推出，§4.1）与 `PromotionProductRule` 的同窗多行（§3.10），两者都不构成表内 FD 违规，按 §4 给出的口径保留，不拆表。
+**拆分结论：本域没有应当拆分的表。** 唯一形似冗余的是 `Customer.current_points`（可由 B 域 `PointLedger` 的 `EFFECTIVE` 流水加总再加期初余额推出，§4.1）与 `PromotionProductRule` 的同窗多行（§3.10），两者都不构成表内 FD 违规，按 §4 给出的口径保留，不拆表。
 
 ## 2. 属性与键清单（对应 R6-02 的分析对象盘点）
 
@@ -140,7 +140,7 @@ A 域共 **10 表、47 列、10 个主键**（含 3 个复合主键：`ProductCa
   - `product_id ↛ is_primary`：反例在种子——商品 3 有两行 `(3,2,1)` 与 `(3,1,0)`（`09a:71`），同一 `product_id` 对应不同的 `is_primary`。
   - `category_id ↛ is_primary`：反例同样在种子——分类 1 下有 6 行，既有 `is_primary=1` 也有 `is_primary=0`（`09a:69`–`74`）。
   两个方向都有反例，**不是部分依赖**。这一点必须写明：只看 `is_primary` 的取值分布（每商品至多一个 1）会误判为「主分类是商品属性」，但主分类只能由「哪一行」确定，不是由 `product_id` 单独确定。
-- **范式**：1NF/2NF/3NF 通过（全码关联，非主属性完整依赖全键），达 BCNF。
+- **范式**：1NF/2NF/3NF 通过（复合主码关联，非主属性完整依赖整个键），达 BCNF。
 - **三类异常**：无。避免机制：归属事实只存一处，插入 / 删除一行只影响该「商品—分类」对；商品或分类被引用时外码拒绝删除（全库无删除过程，改为状态翻转），所以不存在「删分类后留下孤儿归属」。
 - **结论**：保留（I-A10 的第一项）。
 
@@ -150,7 +150,7 @@ A 域共 **10 表、47 列、10 个主键**（含 3 个复合主键：`ProductCa
 - **候选码**：`customer_id`（PK）、`mobile`（`UQ_Customer_Mobile`，`01:75`），两个单属性候选码。
 - **关键 FD**：
   - `customer_id → 全部属性`；`mobile → 全部属性`（唯一约束使然）。
-  - **`current_points` 是跨表物化值**：它可由 `PointLedger` 汇总推出，但这是**跨关系的派生**，不是本关系内的传递依赖（§4.1）。
+  - **`current_points` 是跨表物化值**：它可由 `PointLedger` 的 `EFFECTIVE` 流水加总再加期初余额推出（§4.1），但这是**跨关系的派生**，不是本关系内的传递依赖。
   - **`member_level_id` 不由 `current_points` 决定**——若成立就会构成 `customer_id → current_points → member_level_id` 的传递依赖并违反 3NF。它**不成立**，反例有两条（§4.2）：等级停用会把受影响顾客置空（`04:1326`–`1332`），于是同积分的两位顾客可一位有等级、一位为空；新增 / 调整门槛不回溯已有顾客，直到下一次积分入账才重算。
 - **范式**：1NF 通过；2NF 通过（单属性候选码，无真子集）；3NF 通过（决定因素均为候选码，`member_level_id` 与 `current_points` 之间无 FD）。**判定依赖 §4.2 的反例**，这是本表分析的关键一步。
 - **三类异常**：无。避免机制：`mobile` 唯一使「同一顾客建两次档」被拒（`sp_create_customer` 加锁查重后 `THROW 51005`，`04:1392`）；无删除过程；积分只增不减（`CK_PointLedger_point_delta` 与 `sp_apply_customer_points` 都要求 `point_delta >= 0`），`current_points` 不会出现负数或回退写法不一致。
@@ -159,24 +159,24 @@ A 域共 **10 表、47 列、10 个主键**（含 3 个复合主键：`ProductCa
 ### 3.7 `ProductBom`（商品用料表）
 
 - **业务含义**：一行 = 「某单品每卖一份消耗某原料多少」，是 B / C 锁库存与扣减的展开依据（经 `v_product_bom_detail`）。
-- **候选码**：`(product_id, ingredient_id)`（复合 PK，全码）。
+- **候选码**：`(product_id, ingredient_id)`（复合 PK，非主属性 1 个）。
 - **关键 FD**：`(product_id, ingredient_id) → usage_qty`，完整依赖全键。两个方向**都有反例**：
   - `product_id ↛ usage_qty`：商品 1 消耗四种原料，用量 1.000 / 1.000 / 30.000 / 20.000（`09a:78`）；
   - `ingredient_id ↛ usage_qty`：原料 3（生菜）被商品 1 / 2 / 6 使用，用量 30.000 / 20.000 / 120.000（`09a:78`–`82`）。
   两者都是候选码的真子集且不决定非主属性，无部分依赖。
-- **范式**：1NF/2NF/3NF 通过（全码），达 BCNF。
+- **范式**：1NF/2NF/3NF 通过（复合主码，非主属性完整依赖整个键），达 BCNF。
 - **三类异常**：无。避免机制：一条「用量」事实恰好一行，改用量只改该行；同一原料不可能在同一个商品的 BOM 里出现两行（复合主码拒绝），`sp_set_product_bom` 另有 JSON 内重复检查（`04:653`–`654`，`THROW 51005`）。
 - **结论**：保留（I-A10 的第二项）。
 
 ### 3.8 `ComboComponent`（套餐组成）
 
 - **业务含义**：一行 = 套餐中的一个子项及其份数（`09a` 的套餐 5 = 商品 1 ×1 + 商品 2 ×1 + 商品 4 ×2）。
-- **候选码**：`(combo_product_id, child_product_id)`（复合 PK，全码）。`child_product_id` 单独**不是**候选码：同一商品可同时是多个套餐的子项。
+- **候选码**：`(combo_product_id, child_product_id)`（复合 PK，非主属性 1 个）。`child_product_id` 单独**不是**候选码：同一商品可同时是多个套餐的子项。
 - **关键 FD**：`(combo_product_id, child_product_id) → quantity`。
   - `combo_product_id ↛ quantity`：反例是套餐 5 的三个子项份数 1 / 1 / 2（`09a:89`–`91`）。
   - `child_product_id ↛ quantity`：**种子里没有反例**（三个子项各自只出现在套餐 5），但按 R6-13 不能据此认定 FD 成立——业务上同一子项可被不同套餐以不同份数引用，构造反例即成立（如另一套餐把商品 4 记为 ×3）。这正是「样例无重复不等于依赖成立」的典型条目。
   两个方向都不构成部分依赖。
-- **范式**：1NF/2NF/3NF 通过（全码），达 BCNF。
+- **范式**：1NF/2NF/3NF 通过（复合主码，非主属性完整依赖整个键），达 BCNF。
 - **三类异常**：无。避免机制：一条组成事实一行；自引用形状的两个外码都指向 `Product`，但 `child_product_id = combo_product_id`（套餐包含自己）由 `sp_set_combo_component` 拒绝（`04:759`），JSON 内重复子项也被拒（`04:761`–`762`）——这是完整性约束，不是 FD。
 - **结论**：保留（I-A10 的第三项）。
 
@@ -206,12 +206,14 @@ A 域共 **10 表、47 列、10 个主键**（含 3 个复合主键：`ProductCa
 
 ### 4.1 `Customer.current_points`：跨表物化派生，保留（I-A08 结论）
 
-**事实**：`current_points` **可以完全由 B 域 `PointLedger` 汇总推出**，且两条路径在同事务内原子：
+**事实**：`current_points` **可由 B 域 `PointLedger` 的 `EFFECTIVE` 流水加总推出，但必须再加一个期初余额**——从零开始的总和并不成立。两条路径在同事务内原子：
 
 - 建流水时是 `PENDING`，**不计入**积分（`05:314` 插入，`ledger_status` 默认 `PENDING`）；
 - 只有完成 / 送达 / 自提的过程才把流水翻成 `EFFECTIVE`，并**紧接着**调用 A 的 `sp_apply_customer_points` 加同一 `point_delta`（`05:476`–`479`，另两处同形）；
 - 状态守卫要求「恰好一条 `PENDING`」才允许完成（`THROW 52502`），因此同一笔流水不会加两次；
 - `VOIDED` 只可能从 `PENDING` 转来（`05:689`），作废的流水**从未计入**积分，所以取消 / 退款不需要扣回，也不会让汇总式与物化值产生差额。
+
+**期初余额是真实存在的，不能省。** `09a` 给顾客 2、3 直接写入 `current_points` 500 / 1500（`09a:99`–`100`），而 `PointLedger` 没有任何对应流水——`09b` 只对流水做断言、不插入流水行。因此正确的关系是 `current_points = 期初 offset + SUM(point_delta WHERE EFFECTIVE)`。若把等式写成纯汇总，在种子数据上对顾客 2、3 会直接差 500 / 1500，断言必然失败。
 
 **结论：保留物化**，与 B 的 `SalesOrder.total_amount` 同一口径（两者都是「可由明细汇总、但读取频繁」的值，都保留并写明维护机制，而不是一方派生一方物化）。理由：
 
@@ -219,7 +221,7 @@ A 域共 **10 表、47 列、10 个主键**（含 3 个复合主键：`ProductCa
 2. 维护点唯一且同事务——除建档时 `sp_create_customer` 写 0（`04:1409`）之外，唯一的增量写入口是 `sp_apply_customer_points`（`04:53`–`103`）；`08:153` 另对 7 个业务角色 `DENY UPDATE ON dbo.Customer (current_points)`，直接改列被挡，而过程经所有权链不受该 `DENY` 限制（第一阶段已实测，`c-issues.md`），所以「谁能改这一列」在权限层也收成一条路。该过程只动 `Customer`、不碰 `PointLedger`，配对写由 B 的完成过程负责，属阶段一已冻结的跨域接口；
 3. SQL Server 没有可表达「跨表汇总」的声明式约束（无物化视图 / 断言），所以「加约束保证一致」这条路不存在，只能在回归里验证。
 
-**2.2 落地**：`13a` 增加一条一致性断言 `Customer.current_points = SUM(PointLedger.point_delta WHERE ledger_status = 'EFFECTIVE')`，基线脚本捕获 `09a` 的 3 行顾客现场（0 / 500 / 1500）；在数据字典写明「`current_points` 是物化派生列，不得直接 `UPDATE`」。**不删除该列改实时汇总**：那会让 A 的读路径反向依赖 B 的流水表，跨域放大，且顾客端查单会随订单量变慢。
+**2.2 落地**：基线脚本按顾客捕获三元组 `(current_points, SUM(EFFECTIVE point_delta), current_points − SUM)`，第三项即期初 offset。按 `09a` / `09b` 的种子现场，顾客 1 有订单完成产生的真实流水、offset 为 0，顾客 2、3 没有对应流水、offset 分别为 500 / 1500。`13a` 的一致性断言分两条：**变动对账**——迁移后 `current_points − SUM(EFFECTIVE)` 必须与基线相等；**期初登记**——该差额必须等于基线脚本登记的期初 offset，不允许出现「用补造流水抹平差额」的做法。同时在数据字典写明「`current_points` 是物化派生列，不得直接 `UPDATE`」。**不删除该列改实时汇总**：那会让 A 的读路径反向依赖 B 的流水表，跨域放大，且顾客端查单会随订单量变慢。
 
 ### 4.2 `MemberLevel` 与升级规则：没有传递依赖，但有两条必须写死的口径（I-A09 结论）
 
@@ -232,7 +234,7 @@ A 域共 **10 表、47 列、10 个主键**（含 3 个复合主键：`ProductCa
 
 **结论三（冻结事项）：**「加等级 / 调门槛不回溯已有顾客」是**预期行为**，不是缺陷——写进数据字典，避免 2.2 有人把它当 bug 改掉，从而把 `member_level_id` 真正变成传递依赖。
 
-### 4.3 三个复合主码表：全码、无部分依赖、无 3NF 问题（I-A10 结论）
+### 4.3 三个复合主码表：无部分依赖、无 3NF 问题（I-A10 结论）
 
 | 表 | 候选码 | 非主属性 | 对候选码真子集的部分依赖 | 判定 |
 | --- | --- | --- | --- | --- |
@@ -240,7 +242,9 @@ A 域共 **10 表、47 列、10 个主键**（含 3 个复合主键：`ProductCa
 | `ProductBom` | `(product_id, ingredient_id)` | `usage_qty` | 无：两个方向都有反例（§3.7） | 2NF/3NF 通过 |
 | `ComboComponent` | `(combo_product_id, child_product_id)` | `quantity` | 无：父项方向有反例；子项方向按业务规则可构造反例（§3.8） | 2NF/3NF 通过 |
 
-三表均为**全码**：非主属性只有一个，且只能由「哪一对」确定，不存在只依赖其中一个属性的可能。三表也都不含可传递的非主属性（没有「非主属性决定非主属性」的结构），因此 3NF 同样通过。结论写全而不是省略，是因为「没有异常」本身是 R6-15 要求的交付结论。
+三表**都不是全码表**（全码＝候选码包含全部属性，见文首术语定义）：每张表各有一个非主属性（`is_primary` / `usage_qty` / `quantity`），它由「哪一对」整体确定，且两个方向的真子集都有反例，因此不存在部分依赖。三表也都不含可传递的非主属性（没有「非主属性决定非主属性」的结构），所以 3NF 同样通过。结论写全而不是省略，是因为「没有异常」本身是 R6-15 要求的交付结论。
+
+> **2026-10-27 订正**：本节初稿把这三张表称作「全码」，与文首「全码＝候选码包含全部属性」的定义矛盾——它们各有非主属性。B 在 `b-delivery-handoff.md` §2 复核时指出，本处按定义改写。「无部分依赖」的结论不变，但理由从「非主属性为空集」更正为「非主属性完整依赖整个复合码」，两个方向的种子反例见 §3.5 / §3.7 / §3.8。
 
 ### 4.4 「商品→类别→类别名」示例：本项目不构成该传递依赖（I-A11 结论）
 
@@ -290,7 +294,7 @@ A 域共 **10 表、47 列、10 个主键**（含 3 个复合主键：`ProductCa
 | 4 | 补 `UQ_Ingredient_name_unit (ingredient_name, unit_name)` | 候选码声明（域内） | `11a` | 同上（同名单单位允许） |
 | 5 | 补 `UQ_MemberLevel_level_name`（建议） | 候选码声明（域内） | `11a` | 同上 |
 | 6 | 其余 5 表（含 3 张复合主码表、`Customer`、`PromotionProductRule`） | **无需结构变更**（R6-15 口径记录） | — | 兼容断言沿用第一阶段口径 |
-| 7 | 冻结事项 A | `Customer.current_points` 定性为跨表物化派生列，唯一维护入口 `sp_apply_customer_points`；禁止直接 `UPDATE` | 数据字典 §顾客 | §4.1 一致性断言 |
+| 7 | 冻结事项 A | `Customer.current_points` 定性为「期初 offset + 跨表物化增量」，唯一维护入口 `sp_apply_customer_points`；禁止直接 `UPDATE`，也禁止用补造流水抹平期初 | 数据字典 §顾客 | §4.1 的变动对账 + 期初登记两条断言 |
 | 8 | 冻结事项 B | `Customer.member_level_id` 语义：当前快照，等级停用置空，加档 / 调门槛不回溯 | 数据字典 §会员 | 停用置空与不回溯各一条 |
 | 9 | 冻结事项 C | `PromotionProductRule` 同窗多行合法，按 `priority DESC, rule_id ASC` 取一 | 数据字典 §促销 | 同窗两档价取高优先级 |
 | 10 | 独立示例关系（R6-05 传递依赖演示） | 教学演示，**不进 v1.0 结构** | `refactoring-design.md` | — |
@@ -304,4 +308,5 @@ A 域共 **10 表、47 列、10 个主键**（含 3 个复合主键：`ProductCa
 1. **结构事实对账（脚本）**：§2 的 47 行属性与键清单与 `sql/01_master_schema.sql` 逐项比对（表名、列名、类型、可空性、主键 / 唯一键 / 外键 / 默认值约束名、过滤唯一索引、`IDENTITY`），并与 `sql/04` 的 22 条命名 `CHECK` 交叉核对。**终轮 0 差异、退出码 0**；脚本 `result/stage2/scripts/check_a_norm.py`，输出归档 `result/stage2/a-normalization-check-2026-10-21.txt`（含首轮差异与归因——首轮 7 项差异全部是脚本判据缺陷，文档侧未改）。
 2. **数据例子对账**：§3、§4 引用的种子行（商品 3 双分类、原料 3 在三个商品的不同用量、套餐 5 的三子项份数、1/2 号规则同窗不同价、三位顾客积分 0/500/1500）已逐条回到 `09a` 核对行号。
 3. **过程依据对账**：`sp_create_member_level` / `sp_update_member_level` 的 `51005` 查重（`04:1158`–`1160`、`04:1241`–`1244`）、`sp_create_customer` 的默认档判据（`04:1398`–`1410`）、`sp_update_member_level_status` 的置空（`04:1328`）、定价函数的排序（`04:46`）、`sp_apply_customer_points` 的重算（`04:86`–`95`）均已回源码确认。
-4. **待补**：三人交叉复核（B 汇总时确认 FD 口径、C 合图时确认实体键列）；`a-issues.md` I-A08–I-A12 的结论文本回填（2026-10-21 已加指针，完整措辞待 2.1 收口统一）；§3、§4 与 B 的 `business-rule-mapping.md` 的交叉引用。
+4. **2026-10-27 交叉复核订正（B 提出，A 采纳）**：① 三张复合主码表原称「全码」与本文件文首定义矛盾，已按定义改写，见 §4.3 订正说明；② `current_points` 原写「可完全由 `PointLedger` 推出」及据此的 `13a` 纯汇总断言不成立——`09a` 给顾客 2、3 写有 500 / 1500 期初、无对应流水，已改为「期初 offset + 增量」并重写断言，见 §4.1。两处均为文档侧事实错误，源码与种子数据未动。
+5. **待补**：三人交叉复核（B 汇总时确认 FD 口径、C 合图时确认实体键列）；`a-issues.md` I-A08–I-A12 的结论文本回填（2026-10-21 已加指针，完整措辞待 2.1 收口统一）；§3、§4 与 B 的 `business-rule-mapping.md` 的交叉引用。
