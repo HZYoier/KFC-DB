@@ -8,7 +8,7 @@
 >
 > 范围：只管第二阶段新增或变更的对象。第一阶段已冻结的 `fn_get_effective_product_price`、`sp_apply_customer_points` 仍以 `docs/stage1-cross-domain-interface-contract.md` 为准，本文不重复、也不修改它们。
 >
-> 当前进度：§1 登记 OI-10 的顾客端三个过程（B 的三项待决已合入，余四条联合边界见 §1.6）；§2 已合入 B 的写接口签名与新查询提案，但**只抽查过部分源码行**，冻结前须完成 §2.3 的核对。
+> 当前进度：§1 登记 OI-10 的顾客端三个过程（B 的三项待决已合入，余四条联合边界见 §1.6）；§2 已合入 B 的写接口签名与新查询提案，并**已按源码逐条核对**（结果见 §2.3），剩 C 侧授权核对与 Common 调用样例。
 
 ## 0. 状态口径
 
@@ -168,7 +168,7 @@ dbo.sp_customer_list_orders
 | --- | --- | --- | --- |
 | `sp_list_orders_for_payment` | `@take INT = 100` | CASHIER；仅 `PENDING_PAYMENT`；按 `ordered_at, order_id` 升序 | RS1：`order_id BIGINT`、`order_no VARCHAR(50)`、`total_amount DECIMAL(10,2)`、`ordered_at DATETIME2(0)` |
 | `sp_get_order_for_payment` | `@order_id BIGINT` | CASHIER；仅 `PENDING_PAYMENT`，不存在或状态已变须明确失败 | RS1：同上加 `fulfillment_method VARCHAR(20)`；RS2：`order_item_id BIGINT`、`product_id BIGINT`、`product_name NVARCHAR(50)`、`quantity INT`、`unit_price DECIMAL(10,2)`、`promotion_id BIGINT?`，仅 `SELLABLE`，按 `order_item_id` |
-| `sp_get_order_operation_status` | 计划最小 `@order_id BIGINT`；**建议扩展**为 `@order_id BIGINT = NULL`、`@order_no VARCHAR(50) = NULL`，恰好一个非 NULL【待 A 定】 | CASHIER / STORE_MANAGER；全状态，精确单订单定位，不返回顾客资料 | RS1：`order_id BIGINT`、`order_no VARCHAR(50)`、`order_status VARCHAR(20)`、`payment_status VARCHAR(20)?`、`paid_amount DECIMAL(10,2)?`、`refunded_amount DECIMAL(10,2)?`、`is_completed BIT`、`pickup_code VARCHAR(20)?`；付款列 `LEFT JOIN`，不把无支付转成 0 |
+| `sp_get_order_operation_status` | `@order_id BIGINT = NULL`、`@order_no VARCHAR(50) = NULL`，**恰好一个非 NULL**（B 建议扩展，2026-10-27 A 接受，见 §2.3） | CASHIER / STORE_MANAGER；全状态，精确单订单定位，不返回顾客资料 | RS1：`order_id BIGINT`、`order_no VARCHAR(50)`、`order_status VARCHAR(20)`、`payment_status VARCHAR(20)?`、`paid_amount DECIMAL(10,2)?`、`refunded_amount DECIMAL(10,2)?`、`is_completed BIT`、`pickup_code VARCHAR(20)?`；付款列 `LEFT JOIN`，不把无支付转成 0 |
 | `sp_list_orders_for_packing` | `@take INT = 100` | PACKER；`IN_PRODUCTION` / `READY_FOR_PICKUP`，按 `ordered_at, order_id` | RS1：`order_id BIGINT`、`order_no VARCHAR(50)`、`order_status VARCHAR(20)`、`fulfillment_method VARCHAR(20)`、`pickup_code VARCHAR(20)?`；RS2：`order_id BIGINT`、`order_item_id BIGINT`、`parent_order_item_id BIGINT?`、`item_role VARCHAR(20)`、`product_id BIGINT`、`product_name NVARCHAR(50)`、`quantity INT`；只含 RS1 所选订单 |
 | `sp_list_my_deliveries` | `@take INT = 100` | 当前启用 RIDER；仅 `rider_employee_id = 自身` 且 `DELIVERING`；按 `picked_up_at, delivery_id` 升序 | RS1：`delivery_id BIGINT`、`order_id BIGINT`、`order_no VARCHAR(50)`、`delivery_status VARCHAR(20)`、`picked_up_at DATETIME2(0)?` |
 | `sp_list_deliveries_available_for_pickup` | `@take INT = 100` | 当前启用 RIDER；订单 `READY_FOR_DELIVERY` 且配送 `WAITING_PICKUP`、骑手 `NULL`；按 `production_finished_at, order_id` 升序 | RS1：`delivery_id BIGINT`、`order_id BIGINT`、`order_no VARCHAR(50)`、`production_finished_at DATETIME2(0)?`；不含顾客与金额 |
@@ -179,12 +179,29 @@ dbo.sp_customer_list_orders
 
 **权限边界**：`v_kitchen_queue` 给 CHEF、`v_pickup_board` 给 WAITER，店长按已有授权用 `v_order_detail` 选单取消/退款；`v_customer_point_ledger` **不是**收银支付页的数据源。视图精确授权以 `08` 为事实，**不因视图存在就授予所有岗位**。商品与顾客检索/注册调用 A 的接口，B 不复制定价或建会员规则；身份来自 C 的上下文，B 不实现登录、不自行 `EXECUTE AS`。
 
-### 2.3 冻结前 A 须做的核对（据 B 的交接检查表）
+### 2.3 冻结前核对结果（A，2026-10-27）
 
-- [ ] 逐条核对 SQL 类型与语言参数、结果集数量 / 列顺序 / `NULL` 性、Common 调用样例；
-- [ ] 状态查询「按号定位」的参数扩展是否接受（§2.2 第 3 行）；
-- [ ] 确认 `@take` 分页协议；
-- [ ] C 侧并行核对：每对象岗位、员工停用拒绝、GRANT / 白名单 / 种子、统一新错误编号，拒绝扩大到全表查询。
+已按源码逐条核对 `sql/05`，结论如下——**§2.1 / §2.2 的文本与源码一致，无订正**：
+
+| 核对项 | 方法 | 结论 |
+| --- | --- | --- |
+| 8 个写过程的参数名与类型 | 对照 `05:111`、`05:264`、`05:338`、`05:389`、`05:444`、`05:503`、`05:563`、`05:628` | 与 §2.1 表逐字一致；只有 `sp_create_order.@ordered_at` 有默认 `NULL` |
+| 岗位守卫 | 查各过程 `database_user_name = USER_NAME() AND status = 'ACTIVE' AND job_code = ...` | 8 个过程逐个对应 CASHIER / CASHIER / CHEF / PACKER / PACKER / RIDER / RIDER / STORE_MANAGER，与表中「岗位守卫」列一致 |
+| 错误码分布 | 抓 `05` 全部 `THROW 52xxx` | `52100`（岗位）+ `52101–52114` / `52201–52206` / `52301` / `52401` / `52501–52502` / `52601–52603` / `52701–52702` / `52801–52806`，与 §2.1 所列分段完全吻合，**无遗漏也无未登记码** |
+| 6 个查询提案引用的列 | 对照 `02:29`–`02:87`、`01:45`–`01:46` | 全部存在且类型一致：`order_no VARCHAR(50)`、`pickup_code VARCHAR(20) NULL`、`total_amount DECIMAL(10,2)`、`ordered_at` / `production_finished_at` / `picked_up_at` 均 `DATETIME2(0)`，`refunded_amount DECIMAL(10,2)` 非空而 `LEFT JOIN` 输出可空、`product_name NVARCHAR(50)` |
+| 取餐码唯一范围 | 查 `05:91`–`92` | `UQ_SalesOrder_pickup_code` 是 `WHERE pickup_code IS NOT NULL` 的过滤唯一索引，与 §1.3 约束 7 的「全部非 NULL 值」一致 |
+| 顾客下单的锁库衔接 | 查 `05:241` | `sp_create_order` 同样只调 `dbo.sp_lock_order_inventory @order_id`，不自行改库存——§1.3 约束 4 与其同源 |
+
+A 已定的两项：
+
+- **接受按 `order_no` 定位**（§2.2 第 3 行的参数扩展）。它用已有唯一订单号补上「`sp_create_order` 不返回 `order_id`」的缺口，避免为此给收银开放 `v_order_detail` 或基表；过程仍按岗位守卫、仍不返回顾客资料。
+- **`@take INT = 100`（1..200）作为临时分页口径**。它限的是订单数而非明细数；正式分页协议留到 2.3 应用开发时按页面形状再定，**不阻塞冻结**。
+
+仍待处理：
+
+- [ ] **C 侧并行核对**：每个对象的岗位授权、员工停用后的拒绝、GRANT / 白名单 / 种子、统一新错误编号；拒绝扩大到全表查询。
+- [ ] **Common 层调用样例**：8 个写过程无业务结果集、无 `RETURN` 值，成功判据只能是「未抛错 + 外层提交」，样例须按此写，不能拿 `ExecuteNonQuery` 行数当判据。
+- [ ] §1.6 表里的 4 条联合边界。
 
 ## 3. 变更记录
 
@@ -193,4 +210,4 @@ dbo.sp_customer_list_orders
 | 2026-10-21 | 建立本文。只登记 OI-10 的顾客端三个过程（依据计划 §6.1、§6.2、§6.4 与 `open-issues.md` OI-10）；其余接口留空待 2.2。三个过程的签名按现有实物对齐：`Customer.mobile VARCHAR(20)`（`01:75`）、`SalesOrder.order_no VARCHAR(50)` / `pickup_code VARCHAR(20)` / `total_amount DECIMAL(10,2)` / `ordered_at DATETIME2(0)`（`02:31`–`02:37`）、`items_json` 与 `sp_create_order` 同构（`05:111`）、默认等级判据与 `sp_create_customer` 逐字相同（`04:1398-1410`，取不到即 `51001`） |
 | 2026-10-21 | A 决两条：§1.2 建档幂等（不抛 `51005`）、不开 `@customer_type`；§1.3 下单不自动建档。§1.6 待决由 7 条减为 5 条（余 B×3、C×2），本文仍未冻结——冻结卡在 §2 其余接口与 §1.6 剩余 5 条 |
 | 2026-10-22 | 同步 C 于 10-21 的决定：§1.5 登记 `530xx` 三码与三条应用层映射；§1.1 / §1.5 落定 `cust_app` 的授权范围、`WITHOUT LOGIN` 建用户与部署侧登录映射、越权断言 `229`；§1.4 返回列经 C 确认只回订单头。§1.6 待决由 5 条减为 **3 条（全在 B：明细、取餐码规则、锁库规则文本）**；本文仍未冻结，冻结卡在 §2 其余接口与 §1.6 剩余 3 条 |
-| 2026-10-27 | 合入 B 的 `b-contract-decisions.md` §2–§4：§1.3 约束 4 换为完整锁库规则、约束 6/7 补服务端生成与 `53000` 拒绝、约束 10 补「不顺便支付/整体回滚」；§1.4 约束 2/3/6/7 补匹配口径、停用空集、只回订单头与取餐码不外泄。**订正自相矛盾**：§1.1 约束 5 改为写过程自持事务、查单不显式开事务。新增 §1.3 约束 8 **本轮只开放 `PICKUP`**（A 决，采纳 B 收敛建议；`DELIVERY` 的 `pickup_code` 必须为 `NULL` 与查单要求非空相冲突）。§1.5 补 `2627`/`2601 → E_CONFLICT` 与 `53002` 的适用范围。§1.6 原 3 条 B 待决清空，另列 4 条仍需 A/C 或三方联定的问题（外送凭据、结果未知恢复、员工凭据生命周期、登录映射）。同日并入 `b-interface-handoff.md`：§2 原「待 2.2 补」改为 §2.1 八个现有写接口（参数、岗位守卫、变更结果、`52100`/`52xxx` 分段错误码、无业务结果集与结果未知口径）、§2.2 六个新查询提案（`@take` 限订单数、两结果集一致键集、按 `order_no` 定位的参数扩展）、§2.3 冻结前 A 的核对清单；仅 `05:111`/`05:264`/`05:389`/`05:503`/`05:628` 五处签名经抽查核对。**仍未冻结**：卡在 §2.3 的逐条核对与 §1.6 表 |
+| 2026-10-27 | 合入 B 的 `b-contract-decisions.md` §2–§4：§1.3 约束 4 换为完整锁库规则、约束 6/7 补服务端生成与 `53000` 拒绝、约束 10 补「不顺便支付/整体回滚」；§1.4 约束 2/3/6/7 补匹配口径、停用空集、只回订单头与取餐码不外泄。**订正自相矛盾**：§1.1 约束 5 改为写过程自持事务、查单不显式开事务。新增 §1.3 约束 8 **本轮只开放 `PICKUP`**（A 决，采纳 B 收敛建议；`DELIVERY` 的 `pickup_code` 必须为 `NULL` 与查单要求非空相冲突）。§1.5 补 `2627`/`2601 → E_CONFLICT` 与 `53002` 的适用范围。§1.6 原 3 条 B 待决清空，另列 4 条仍需 A/C 或三方联定的问题（外送凭据、结果未知恢复、员工凭据生命周期、登录映射）。同日并入 `b-interface-handoff.md`：§2 原「待 2.2 补」改为 §2.1 八个现有写接口（参数、岗位守卫、变更结果、`52100`/`52xxx` 分段错误码、无业务结果集与结果未知口径）、§2.2 六个新查询提案（`@take` 限订单数、两结果集一致键集、按 `order_no` 定位的参数扩展）、§2.3 冻结前 A 的核对清单；仅 `05:111`/`05:264`/`05:389`/`05:503`/`05:628` 五处签名经抽查核对。同日 A 完成 §2.3 全量核对：8 个过程签名、岗位守卫、`52xxx` 错误码分布与 6 个查询提案引用的列**全部与源码一致，无订正**；A 定两项——接受 `sp_get_order_operation_status` 按 `order_no` 定位的参数扩展，`@take INT = 100`（1..200）作临时分页口径。**仍未冻结**：卡在 C 侧授权核对、Common 调用样例与 §1.6 表 |
