@@ -8,8 +8,8 @@
 -- 依赖：01（A 域原料）、03（C 域表）、06（三个角色同步过程）、08（7 个 role_* 数据库
 --       角色、7 个 test_* 数据库用户与 test_store_manager 的启动引导）、
 --       09a（A 域主数据；本文件只读引用其冻结 ID，不新增不修改）。
--- 依据：docs/stage1/stage1-three-person-implementation-plan.md §5 C-2 line 316、320；
---       docs/stage1/stage1-cross-domain-interface-contract.md §6（A 冻结的原料 ID 与安全线）、
+-- 依据：docs/stage1/three-person-implementation-plan.md §5 C-2 line 316、320；
+--       docs/stage1/cross-domain-interface-contract.md §6（A 冻结的原料 ID 与安全线）、
 --       §7.1（10a 以 test_store_manager 为写主体，依赖本文件建出该名的 ACTIVE 员工行）、
 --       §7.2（不新增不修改 A 域数据）。
 -- 冻结的 C 域种子 ID（供 09d / 10c 与 B 的 09b 只读引用）：

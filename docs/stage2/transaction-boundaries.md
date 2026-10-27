@@ -1,6 +1,6 @@
 # B 主笔：业务事务边界与应用调用规范
 
-> 2026-10-14；依据既有 B 过程和[跨域契约](../stage1/stage1-cross-domain-interface-contract.md)整理。
+> 2026-10-14；依据既有 B 过程和[跨域契约](../stage1/cross-domain-interface-contract.md)整理。
 > 数据库现状为源码已实现；应用 helper、故障注入及 v1.0 测试是后续验收要求，不是本轮运行结果。
 
 ## 1. 八个业务入口

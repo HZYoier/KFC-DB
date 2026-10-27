@@ -8,8 +8,8 @@
 -- 依赖：01/02/03（表）、04（A 域 18 个主数据过程）、05（B 域 8 个订单过程）、
 --       06（C 域过程，含 sp_write_audit_log 与 sp_receive_inventory）、
 --       07a/07b/07c（10 个视图）。因此本文件必须排在三域过程与视图之后。
--- 依据：docs/stage1/stage1-three-person-implementation-plan.md §5 C-1 line 303、§5 C-2 line 313-315；
---       docs/库存权限数据字典.md §11；docs/stage1/stage1-cross-domain-interface-contract.md。
+-- 依据：docs/stage1/three-person-implementation-plan.md §5 C-1 line 303、§5 C-2 line 313-315；
+--       docs/库存权限数据字典.md §11；docs/stage1/cross-domain-interface-contract.md。
 -- 进度：完整交付（角色、测试用户、启动引导、授权矩阵、DENY、证书与三个签名）。
 -- 说明：角色同步过程不得使用 EXECUTE AS OWNER（否则 USER_NAME() 会指向 dbo），
 --       故改用证书签名把 ALTER ANY ROLE / ALTER ANY USER 抬进模块内部：店长本人

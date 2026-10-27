@@ -79,7 +79,7 @@ sqlcmd -S ".\SQLEXPRESS" -E -C -f 65001 -i sql/run_all.sql
 
 ### 5.5 回归与最终复验
 
-四条夹具链全量回归 144 条断言 0 FAIL（`t3` 的 14 条按设计以不可提交事务收尾、无 `RESULT` 行）；`08` 连跑两遍幂等；`09c` 重跑被守卫 `THROW 51001` 拒绝。B 合并四个文件并收尾后，我复核了他对 `10c` 的扩充（+131/-4 行、825 行全 CRLF）并在本环境重跑全链——`10c` 由 15 条增至 **17 条**，数字与 B 环境完全一致。此后（2026-10-03）为 `10c` 增加 T14，由 17 条进一步增至 **18 条**，并在成员 A 的环境上从空库整跑复核通过，详见 `docs/stage1/stage1-test-report.md` 第 10 节。
+四条夹具链全量回归 144 条断言 0 FAIL（`t3` 的 14 条按设计以不可提交事务收尾、无 `RESULT` 行）；`08` 连跑两遍幂等；`09c` 重跑被守卫 `THROW 51001` 拒绝。B 合并四个文件并收尾后，我复核了他对 `10c` 的扩充（+131/-4 行、825 行全 CRLF）并在本环境重跑全链——`10c` 由 15 条增至 **17 条**，数字与 B 环境完全一致。此后（2026-10-03）为 `10c` 增加 T14，由 17 条进一步增至 **18 条**，并在成员 A 的环境上从空库整跑复核通过，详见 `docs/stage1/test-report.md` 第 10 节。
 
 ## 6. 实验结果
 
@@ -97,5 +97,5 @@ sqlcmd -S ".\SQLEXPRESS" -E -C -f 65001 -i sql/run_all.sql
 
 成员 C 的第一阶段目标已经完成。库存与补货的每一步（锁定、释放、实扣、建议、审批、分批收货）都可追溯、可回滚、可审计；岗位最小权限在数据库角色与过程内校验两层上均有正反证据；三域从空库一次部署的能力已在本机与成员 B 的环境上分别复现，结论一致。
 
-原始证据全部随仓库归档在 [`result/`](../../result/README.md)：B 环境见 `stage1-full-test-2026-10-01.txt` 等文件；本环境见 `stage1-full-test-c-2026-10-01.txt`（整链）、`stage1-receiving-invariants-c-2026-10-01.txt` 与 `stage1-receiving-boundaries-c-2026-10-01.txt`（收货链断言）和 `stage1-regression-c-2026-10-01.txt`（回归汇总），均可按 `result/README.md` 的 SHA-256 逐字节核对。结论摘要另见[第一阶段测试报告](stage1-test-report.md) §9「独立复验（成员 C）」。
+原始证据全部随仓库归档在 [`result/`](../../result/README.md)：B 环境见 `stage1-full-test-2026-10-01.txt` 等文件；本环境见 `stage1-full-test-c-2026-10-01.txt`（整链）、`stage1-receiving-invariants-c-2026-10-01.txt` 与 `stage1-receiving-boundaries-c-2026-10-01.txt`（收货链断言）和 `stage1-regression-c-2026-10-01.txt`（回归汇总），均可按 `result/README.md` 的 SHA-256 逐字节核对。结论摘要另见[第一阶段测试报告](test-report.md) §9「独立复验（成员 C）」。
 
