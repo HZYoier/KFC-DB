@@ -1,0 +1,428 @@
+# B release artifact check — 2026-10-27
+# Python 3.12.14; command: python -I -X utf8 result/stage2/scripts/check_b_stage2.py --self-test
+# Scope: read-only document/source verification with six in-memory negative probes.
+# These are not SQL/Web runtime acceptance results.
+PASS five B tables
+PASS draw entity SalesOrder
+PASS baseline SalesOrder.order_id
+PASS draw column SalesOrder.order_id
+PASS svg column SalesOrder.order_id
+PASS baseline SalesOrder.order_no
+PASS draw column SalesOrder.order_no
+PASS svg column SalesOrder.order_no
+PASS baseline SalesOrder.customer_id
+PASS draw column SalesOrder.customer_id
+PASS svg column SalesOrder.customer_id
+PASS baseline SalesOrder.order_status
+PASS draw column SalesOrder.order_status
+PASS svg column SalesOrder.order_status
+PASS baseline SalesOrder.fulfillment_method
+PASS draw column SalesOrder.fulfillment_method
+PASS svg column SalesOrder.fulfillment_method
+PASS baseline SalesOrder.pickup_code
+PASS draw column SalesOrder.pickup_code
+PASS svg column SalesOrder.pickup_code
+PASS baseline SalesOrder.total_amount
+PASS draw column SalesOrder.total_amount
+PASS svg column SalesOrder.total_amount
+PASS baseline SalesOrder.ordered_at
+PASS draw column SalesOrder.ordered_at
+PASS svg column SalesOrder.ordered_at
+PASS baseline SalesOrder.paid_at
+PASS draw column SalesOrder.paid_at
+PASS svg column SalesOrder.paid_at
+PASS baseline SalesOrder.production_started_at
+PASS draw column SalesOrder.production_started_at
+PASS svg column SalesOrder.production_started_at
+PASS baseline SalesOrder.production_finished_at
+PASS draw column SalesOrder.production_finished_at
+PASS svg column SalesOrder.production_finished_at
+PASS baseline SalesOrder.completed_at
+PASS draw column SalesOrder.completed_at
+PASS svg column SalesOrder.completed_at
+PASS baseline SalesOrder.cancelled_at
+PASS draw column SalesOrder.cancelled_at
+PASS svg column SalesOrder.cancelled_at
+PASS baseline SalesOrder.created_at
+PASS draw column SalesOrder.created_at
+PASS svg column SalesOrder.created_at
+PASS baseline SalesOrder.updated_at
+PASS draw column SalesOrder.updated_at
+PASS svg column SalesOrder.updated_at
+PASS draw entity SalesOrderItem
+PASS baseline SalesOrderItem.order_item_id
+PASS draw column SalesOrderItem.order_item_id
+PASS svg column SalesOrderItem.order_item_id
+PASS baseline SalesOrderItem.order_id
+PASS draw column SalesOrderItem.order_id
+PASS svg column SalesOrderItem.order_id
+PASS baseline SalesOrderItem.product_id
+PASS draw column SalesOrderItem.product_id
+PASS svg column SalesOrderItem.product_id
+PASS baseline SalesOrderItem.parent_order_item_id
+PASS draw column SalesOrderItem.parent_order_item_id
+PASS svg column SalesOrderItem.parent_order_item_id
+PASS baseline SalesOrderItem.item_role
+PASS draw column SalesOrderItem.item_role
+PASS svg column SalesOrderItem.item_role
+PASS baseline SalesOrderItem.quantity
+PASS draw column SalesOrderItem.quantity
+PASS svg column SalesOrderItem.quantity
+PASS baseline SalesOrderItem.unit_price
+PASS draw column SalesOrderItem.unit_price
+PASS svg column SalesOrderItem.unit_price
+PASS baseline SalesOrderItem.promotion_id
+PASS draw column SalesOrderItem.promotion_id
+PASS svg column SalesOrderItem.promotion_id
+PASS baseline SalesOrderItem.created_at
+PASS draw column SalesOrderItem.created_at
+PASS svg column SalesOrderItem.created_at
+PASS baseline SalesOrderItem.updated_at
+PASS draw column SalesOrderItem.updated_at
+PASS svg column SalesOrderItem.updated_at
+PASS draw entity Payment
+PASS baseline Payment.payment_id
+PASS draw column Payment.payment_id
+PASS svg column Payment.payment_id
+PASS baseline Payment.order_id
+PASS draw column Payment.order_id
+PASS svg column Payment.order_id
+PASS baseline Payment.payment_method
+PASS draw column Payment.payment_method
+PASS svg column Payment.payment_method
+PASS baseline Payment.paid_amount
+PASS draw column Payment.paid_amount
+PASS svg column Payment.paid_amount
+PASS baseline Payment.payment_status
+PASS draw column Payment.payment_status
+PASS svg column Payment.payment_status
+PASS baseline Payment.paid_at
+PASS draw column Payment.paid_at
+PASS svg column Payment.paid_at
+PASS baseline Payment.refunded_amount
+PASS draw column Payment.refunded_amount
+PASS svg column Payment.refunded_amount
+PASS baseline Payment.refunded_at
+PASS draw column Payment.refunded_at
+PASS svg column Payment.refunded_at
+PASS baseline Payment.third_party_txn_no
+PASS draw column Payment.third_party_txn_no
+PASS svg column Payment.third_party_txn_no
+PASS baseline Payment.created_at
+PASS draw column Payment.created_at
+PASS svg column Payment.created_at
+PASS baseline Payment.updated_at
+PASS draw column Payment.updated_at
+PASS svg column Payment.updated_at
+PASS draw entity Delivery
+PASS baseline Delivery.delivery_id
+PASS draw column Delivery.delivery_id
+PASS svg column Delivery.delivery_id
+PASS baseline Delivery.order_id
+PASS draw column Delivery.order_id
+PASS svg column Delivery.order_id
+PASS baseline Delivery.rider_employee_id
+PASS draw column Delivery.rider_employee_id
+PASS svg column Delivery.rider_employee_id
+PASS baseline Delivery.delivery_status
+PASS draw column Delivery.delivery_status
+PASS svg column Delivery.delivery_status
+PASS baseline Delivery.picked_up_at
+PASS draw column Delivery.picked_up_at
+PASS svg column Delivery.picked_up_at
+PASS baseline Delivery.delivered_at
+PASS draw column Delivery.delivered_at
+PASS svg column Delivery.delivered_at
+PASS baseline Delivery.created_at
+PASS draw column Delivery.created_at
+PASS svg column Delivery.created_at
+PASS baseline Delivery.updated_at
+PASS draw column Delivery.updated_at
+PASS svg column Delivery.updated_at
+PASS draw entity PointLedger
+PASS baseline PointLedger.point_ledger_id
+PASS draw column PointLedger.point_ledger_id
+PASS svg column PointLedger.point_ledger_id
+PASS baseline PointLedger.order_id
+PASS draw column PointLedger.order_id
+PASS svg column PointLedger.order_id
+PASS baseline PointLedger.customer_id
+PASS draw column PointLedger.customer_id
+PASS svg column PointLedger.customer_id
+PASS baseline PointLedger.paid_amount_snapshot
+PASS draw column PointLedger.paid_amount_snapshot
+PASS svg column PointLedger.paid_amount_snapshot
+PASS baseline PointLedger.point_multiplier_snapshot
+PASS draw column PointLedger.point_multiplier_snapshot
+PASS svg column PointLedger.point_multiplier_snapshot
+PASS baseline PointLedger.point_delta
+PASS draw column PointLedger.point_delta
+PASS svg column PointLedger.point_delta
+PASS baseline PointLedger.ledger_status
+PASS draw column PointLedger.ledger_status
+PASS svg column PointLedger.ledger_status
+PASS baseline PointLedger.created_at
+PASS draw column PointLedger.created_at
+PASS svg column PointLedger.created_at
+PASS baseline PointLedger.effective_at
+PASS draw column PointLedger.effective_at
+PASS svg column PointLedger.effective_at
+PASS 53 B columns
+PASS 35 physical FKs in source
+PASS FK mapping FK_ProductCategory_Product
+PASS FK mapping FK_ProductCategory_Category
+PASS FK mapping FK_Customer_MemberLevel
+PASS FK mapping FK_ProductBom_Product
+PASS FK mapping FK_ProductBom_Ingredient
+PASS FK mapping FK_ComboComponent_ComboProduct
+PASS FK mapping FK_ComboComponent_ChildProduct
+PASS FK mapping FK_PromotionProductRule_Promotion
+PASS FK mapping FK_PromotionProductRule_Product
+PASS FK mapping FK_SalesOrder_Customer
+PASS FK mapping FK_SalesOrderItem_SalesOrder
+PASS FK mapping FK_SalesOrderItem_Product
+PASS FK mapping FK_SalesOrderItem_Parent
+PASS FK mapping FK_SalesOrderItem_Promotion
+PASS FK mapping FK_Payment_SalesOrder
+PASS FK mapping FK_Delivery_SalesOrder
+PASS FK mapping FK_PointLedger_SalesOrder
+PASS FK mapping FK_PointLedger_Customer
+PASS FK mapping FK_EmployeeBusinessRole_Employee
+PASS FK mapping FK_EmployeeBusinessRole_BusinessRole
+PASS FK mapping FK_EmployeeBusinessRole_AssignedByEmployee
+PASS FK mapping FK_RolePermission_BusinessRole
+PASS FK mapping FK_Inventory_Ingredient
+PASS FK mapping FK_InventoryMovement_Inventory
+PASS FK mapping FK_ReplenishmentSuggestion_Ingredient
+PASS FK mapping FK_ReplenishmentSuggestion_CreatedByEmployee
+PASS FK mapping FK_ReplenishmentSuggestion_SubmittedByEmployee
+PASS FK mapping FK_ReplenishmentSuggestion_ApprovedByEmployee
+PASS FK mapping FK_ReplenishmentSuggestion_RejectedByEmployee
+PASS FK mapping FK_PurchaseOrder_ReplenishmentSuggestion
+PASS FK mapping FK_PurchaseOrder_ApprovedByEmployee
+PASS FK mapping FK_PurchaseOrderItem_PurchaseOrder
+PASS FK mapping FK_PurchaseOrderItem_Ingredient
+PASS FK mapping FK_AuditLog_Employee
+PASS FK mapping FK_Delivery_RiderEmployee
+PASS 10 B graph edges
+PASS declared graph FK FK_SalesOrder_Customer
+PASS parent endpoint FK_SalesOrder_Customer
+PASS child endpoint FK_SalesOrder_Customer
+PASS SVG FK FK_SalesOrder_Customer
+PASS declared graph FK FK_SalesOrderItem_SalesOrder
+PASS parent endpoint FK_SalesOrderItem_SalesOrder
+PASS child endpoint FK_SalesOrderItem_SalesOrder
+PASS SVG FK FK_SalesOrderItem_SalesOrder
+PASS declared graph FK FK_SalesOrderItem_Product
+PASS parent endpoint FK_SalesOrderItem_Product
+PASS child endpoint FK_SalesOrderItem_Product
+PASS SVG FK FK_SalesOrderItem_Product
+PASS declared graph FK FK_SalesOrderItem_Parent
+PASS parent endpoint FK_SalesOrderItem_Parent
+PASS child endpoint FK_SalesOrderItem_Parent
+PASS SVG FK FK_SalesOrderItem_Parent
+PASS declared graph FK FK_SalesOrderItem_Promotion
+PASS parent endpoint FK_SalesOrderItem_Promotion
+PASS child endpoint FK_SalesOrderItem_Promotion
+PASS SVG FK FK_SalesOrderItem_Promotion
+PASS declared graph FK FK_Payment_SalesOrder
+PASS parent endpoint FK_Payment_SalesOrder
+PASS child endpoint FK_Payment_SalesOrder
+PASS SVG FK FK_Payment_SalesOrder
+PASS declared graph FK FK_Delivery_SalesOrder
+PASS parent endpoint FK_Delivery_SalesOrder
+PASS child endpoint FK_Delivery_SalesOrder
+PASS SVG FK FK_Delivery_SalesOrder
+PASS declared graph FK FK_PointLedger_SalesOrder
+PASS parent endpoint FK_PointLedger_SalesOrder
+PASS child endpoint FK_PointLedger_SalesOrder
+PASS SVG FK FK_PointLedger_SalesOrder
+PASS declared graph FK FK_PointLedger_Customer
+PASS parent endpoint FK_PointLedger_Customer
+PASS child endpoint FK_PointLedger_Customer
+PASS SVG FK FK_PointLedger_Customer
+PASS declared graph FK FK_Delivery_RiderEmployee
+PASS parent endpoint FK_Delivery_RiderEmployee
+PASS child endpoint FK_Delivery_RiderEmployee
+PASS SVG FK FK_Delivery_RiderEmployee
+PASS eight write procedures
+PASS signature sp_create_order
+PASS error sp_create_order:52100
+PASS error sp_create_order:52101
+PASS error sp_create_order:52102
+PASS error sp_create_order:52103
+PASS error sp_create_order:52104
+PASS error sp_create_order:52104
+PASS error sp_create_order:52105
+PASS error sp_create_order:52106
+PASS error sp_create_order:52107
+PASS error sp_create_order:52108
+PASS error sp_create_order:52109
+PASS error sp_create_order:52110
+PASS error sp_create_order:52111
+PASS error sp_create_order:52112
+PASS error sp_create_order:52113
+PASS error sp_create_order:52114
+PASS signature sp_pay_order
+PASS error sp_pay_order:52100
+PASS error sp_pay_order:52201
+PASS error sp_pay_order:52202
+PASS error sp_pay_order:52203
+PASS error sp_pay_order:52204
+PASS error sp_pay_order:52205
+PASS error sp_pay_order:52206
+PASS signature sp_start_production
+PASS error sp_start_production:52100
+PASS error sp_start_production:52301
+PASS signature sp_finish_production
+PASS error sp_finish_production:52100
+PASS error sp_finish_production:52401
+PASS signature sp_pick_up_order
+PASS error sp_pick_up_order:52100
+PASS error sp_pick_up_order:52501
+PASS error sp_pick_up_order:52502
+PASS signature sp_pick_up_delivery
+PASS error sp_pick_up_delivery:52100
+PASS error sp_pick_up_delivery:52601
+PASS error sp_pick_up_delivery:52602
+PASS error sp_pick_up_delivery:52603
+PASS signature sp_confirm_delivery
+PASS error sp_confirm_delivery:52100
+PASS error sp_confirm_delivery:52701
+PASS error sp_confirm_delivery:52702
+PASS error sp_confirm_delivery:52502
+PASS signature sp_cancel_or_refund_order
+PASS error sp_cancel_or_refund_order:52100
+PASS error sp_cancel_or_refund_order:52801
+PASS error sp_cancel_or_refund_order:52802
+PASS error sp_cancel_or_refund_order:52803
+PASS error sp_cancel_or_refund_order:52804
+PASS error sp_cancel_or_refund_order:52805
+PASS error sp_cancel_or_refund_order:52806
+PASS local link b-issues.md:../stage2-three-person-implementation-plan.md
+PASS local link b-issues.md:open-issues.md
+PASS local link b-issues.md:../订单履约数据字典.md
+PASS local link b-issues.md:../er/b-order.svg
+PASS local link b-issues.md:b-normalization.md
+PASS local link b-issues.md:transaction-boundaries.md
+PASS local link b-issues.md:refactoring-design.md
+PASS local link b-normalization.md:b-issues.md
+PASS local link b-normalization.md:../订单履约数据字典.md
+PASS local link b-normalization.md:refactoring-design.md
+PASS local link b-interface-handoff.md:../stage2-three-person-implementation-plan.md
+PASS local link b-interface-handoff.md:transaction-boundaries.md
+PASS local link b-interface-handoff.md:b-contract-decisions.md
+PASS local link b-baseline-reconciliation.md:refactoring-design.md
+PASS local link b-baseline-reconciliation.md:b-normalization.md
+PASS local link b-baseline-reconciliation.md:b-test-cases.md
+PASS local link b-baseline-reconciliation.md:refactoring-design.md
+PASS local link b-test-cases.md:transaction-boundaries.md
+PASS local link b-test-cases.md:b-interface-handoff.md
+PASS local link b-test-cases.md:b-duplicate-product-decision.md
+PASS local link b-stage-report.md:b-issues.md
+PASS local link b-stage-report.md:../er/b-order.drawio
+PASS local link b-stage-report.md:../er/b-order.svg
+PASS local link b-stage-report.md:business-rule-mapping.md
+PASS local link b-stage-report.md:b-normalization.md
+PASS local link b-stage-report.md:transaction-boundaries.md
+PASS local link b-stage-report.md:refactoring-design.md
+PASS local link b-stage-report.md:b-interface-handoff.md
+PASS local link b-stage-report.md:b-test-cases.md
+PASS local link b-stage-report.md:b-baseline-reconciliation.md
+PASS local link b-stage-report.md:b-duplicate-product-decision.md
+PASS local link b-stage-report.md:b-contract-decisions.md
+PASS local link b-stage-report.md:b-customer-test-cases.md
+PASS local link b-stage-report.md:refactoring-design.md
+PASS local link b-stage-report.md:../../result/stage2/scripts/check_b_stage2.py
+PASS local link b-stage-report.md:../../result/stage2/b-artifact-check-2026-10-24.txt
+PASS local link b-stage-report.md:b-delivery-handoff.md
+PASS local link b-stage-report.md:../../result/stage2/b-artifact-check-2026-10-27.txt
+PASS local link b-duplicate-product-decision.md:b-issues.md
+PASS local link b-duplicate-product-decision.md:source-requirements.md
+PASS local link b-contract-decisions.md:application-contract.md
+PASS local link b-contract-decisions.md:open-issues.md
+PASS local link b-contract-decisions.md:b-interface-handoff.md
+PASS local link b-customer-test-cases.md:b-contract-decisions.md
+PASS local link business-rule-mapping.md:../stage2-three-person-implementation-plan.md
+PASS local link business-rule-mapping.md:a-issues.md
+PASS local link business-rule-mapping.md:b-issues.md
+PASS local link business-rule-mapping.md:c-issues.md
+PASS local link business-rule-mapping.md:../er/legend.md
+PASS local link business-rule-mapping.md:b-contract-decisions.md
+PASS local link refactoring-design.md:../stage2-three-person-implementation-plan.md
+PASS local link refactoring-design.md:open-issues.md
+PASS local link refactoring-design.md:../订单履约数据字典.md
+PASS local link refactoring-design.md:b-normalization.md
+PASS local link refactoring-design.md:transaction-boundaries.md
+PASS local link refactoring-design.md:a-normalization.md
+PASS local link refactoring-design.md:b-normalization.md
+PASS local link refactoring-design.md:c-normalization.md
+PASS local link refactoring-design.md:b-contract-decisions.md
+PASS local link transaction-boundaries.md:../stage1-cross-domain-interface-contract.md
+PASS local link transaction-boundaries.md:b-contract-decisions.md
+PASS local link b-delivery-handoff.md:b-issues.md
+PASS local link b-delivery-handoff.md:b-normalization.md
+PASS local link b-delivery-handoff.md:../er/b-order.drawio
+PASS local link b-delivery-handoff.md:../er/b-order.svg
+PASS local link b-delivery-handoff.md:business-rule-mapping.md
+PASS local link b-delivery-handoff.md:b-interface-handoff.md
+PASS local link b-delivery-handoff.md:b-contract-decisions.md
+PASS local link b-delivery-handoff.md:b-baseline-reconciliation.md
+PASS local link b-delivery-handoff.md:refactoring-design.md
+PASS local link b-delivery-handoff.md:transaction-boundaries.md
+PASS local link b-delivery-handoff.md:b-test-cases.md
+PASS local link b-delivery-handoff.md:b-customer-test-cases.md
+PASS local link b-delivery-handoff.md:b-stage-report.md
+PASS local link b-delivery-handoff.md:open-issues.md
+PASS BT group 1
+PASS BT group 2
+PASS BT group 3
+PASS BT group 4
+PASS BT group 5
+PASS BT group 6
+PASS BT group 7
+PASS BT group 8
+PASS BT group 9
+PASS BT group 10
+PASS BT group 11
+PASS CG group 1
+PASS CG group 2
+PASS CG group 3
+PASS CG group 4
+PASS CG group 5
+PASS CG group 6
+PASS CG group 7
+PASS CG group 8
+PASS decision coverage OI-09
+PASS decision coverage 待决一
+PASS decision coverage 待决二
+PASS decision coverage 待决三
+PASS decision coverage 不新增第四个
+PASS decision coverage UPDLOCK
+PASS decision coverage HOLDLOCK
+PASS decision coverage 53000
+PASS decision coverage DELIVERY
+PASS opening offset in refactoring
+PASS exact C mapping key in summary
+PASS Python NULL binding
+PASS delivery handoff OI-11
+PASS delivery handoff R79-02
+PASS delivery handoff R79-17
+PASS delivery handoff CASHIER
+PASS delivery handoff STORE_MANAGER
+PASS delivery handoff cust_app
+PASS delivery handoff README
+PASS delivery handoff 14个CHECK
+PASS delivery handoff 全码
+PASS three-layer role demo 1
+PASS three-layer role demo 2
+PASS three-layer role demo 3
+PASS three-layer role demo 4
+PASS README B constraint counts
+PASS negative probe: signature mismatch
+PASS negative probe: missing column
+PASS negative probe: missing FK
+PASS negative probe: broken link
+PASS negative probe: wrong endpoint
+PASS negative probe: missing role demo
+RESULT: pass=423 fail=0 total=423

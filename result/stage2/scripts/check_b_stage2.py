@@ -15,6 +15,7 @@ B_DOCS = [
     'b-duplicate-product-decision.md', 'b-contract-decisions.md',
     'b-customer-test-cases.md', 'business-rule-mapping.md',
     'refactoring-design.md', 'transaction-boundaries.md',
+    'b-delivery-handoff.md',
 ]
 
 
@@ -94,6 +95,14 @@ def validate(overrides=None):
     check('opening_offset' in docs['refactoring-design.md'], 'opening offset in refactoring')
     check('RolePermission(business_role_id,permission_code,status)' in docs['refactoring-design.md'], 'exact C mapping key in summary')
     check('None' in docs['transaction-boundaries.md'], 'Python NULL binding')
+    delivery = docs['b-delivery-handoff.md']
+    for phrase in ['OI-11', 'R79-02', 'R79-17', 'CASHIER', 'STORE_MANAGER', 'cust_app', 'README', '14个CHECK', '全码']:
+        check(phrase in delivery, 'delivery handoff ' + phrase)
+    for i in range(1, 5):
+        check('| RD-' + f'{i:02d}' in delivery, 'three-layer role demo ' + str(i))
+    actual_checks = re.findall(r'ADD CONSTRAINT\s+(CK_\w+)', src, re.I)
+    actual_unique = re.findall(r'ADD CONSTRAINT\s+(UQ_\w+)\s+UNIQUE', src, re.I)
+    check(len(actual_checks) == 14 and len(actual_unique) == 4, 'README B constraint counts')
     return results
 
 
@@ -106,6 +115,7 @@ def main():
             ('missing FK', 'docs/stage2/business-rule-mapping.md', lambda s: s.replace('FK_SalesOrder_Customer', 'REMOVED_FK', 1)),
             ('broken link', 'docs/stage2/b-issues.md', lambda s: s + '\n[missing](__missing_b_check__.md)\n'),
             ('wrong endpoint', 'docs/er/b-order.drawio', lambda s: s.replace('startArrow=ERone;', 'startArrow=ERzeroToMany;', 1)),
+            ('missing role demo', 'docs/stage2/b-delivery-handoff.md', lambda s: s.replace('| RD-02', '| REMOVED-02', 1)),
         ]
         for label, path, mutate in mutations:
             source = (ROOT / path).read_text(encoding='utf-8-sig')
