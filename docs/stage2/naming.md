@@ -121,7 +121,7 @@ R5-09 要求命名能对上数据字典，因此每个表名在字典里都有�
 | N-02 | `status` 6 处写 `[status]`、3 处写 `status` | `01:20`/`30`/`39`/`49`/`79`/`118` 加了；`03:32`/`44`/`68` 没加 | 统一为 `[status]`（语义不变，纯可读性） |
 | N-03 | `01` 的 `CREATE TABLE` 不带 `dbo.` 限定（`create table Category(`），`02`/`03` 全部写 `dbo.` | `01:17`–`123` | 迁移时统一加 `dbo.`。当前部署账号默认模式是 `dbo`，行为无差异；但若被默认模式非 `dbo` 的账号执行，表会落到别的模式里 |
 | N-04 | `01` 的 DDL 关键字小写（`bigint not null`），`02`/`03` 大写（`BIGINT NOT NULL`） | 三个文件之间 | 纯风格，迁移时随 N-03 一并统一；不单独改 |
-| N-05 | `UQ_Customer_Mobile` 的列名段写成 PascalCase，其余 8 个唯一约束与 3 个唯一索引的列名段均为 lower_snake（`UQ_SalesOrder_order_no`、`UQ_Payment_order_id`） | `01:75` | **不改**。该名已被 4 处文档引用（`stage1-阶段报告.md`、`stage1-a-stage-report.md`、`a-issues.md`、`a-normalization.md`），其中两份属第一阶段已交付物；为大小写改一个约束名会打断证据链，收益不抵代价。**作为唯一登记在案的例外保留** |
+| N-05 | `UQ_Customer_Mobile` 的列名段写成 PascalCase，其余 8 个唯一约束与 3 个唯一索引的列名段均为 lower_snake（`UQ_SalesOrder_order_no`、`UQ_Payment_order_id`） | `01:75` | **不改**。该名已被 4 处文档引用（`stage1/阶段报告.md`、`stage1/a-stage-report.md`、`stage2/a-issues.md`、`stage2/a-normalization.md`），其中两份属第一阶段已交付物；为大小写改一个约束名会打断证据链，收益不抵代价。**作为唯一登记在案的例外保留** |
 
 **不打算改的**：表名不使用 `tbl_` / `tb` 前缀，列名不使用 `c_` 前缀；关联表不加 `Link` 后缀；唯一索引沿用 `UQ_` 前缀。这些都是有意的口径，不是遗漏。
 

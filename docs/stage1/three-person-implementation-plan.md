@@ -58,7 +58,7 @@ docs/
   主数据数据字典.md                         # A
   订单履约数据字典.md                       # B
   库存权限数据字典.md                       # C
-  stage1-test-report.md                   # C 主写
+  test-report.md                          # C 主写
 ```
 
 唯一部署入口为 `sql/run_all.sql`：使用 `sqlcmd -S <实例> -E -C -f 65001 -i sql/run_all.sql`，或在 SSMS 启用 **SQLCMD Mode** 后执行该文件。`-C`（信任服务器证书）不可省略：ODBC Driver 18 默认强制加密，本地实例用的是自签证书，不加会报“证书链是由不受信任的颁发机构颁发的”而连不上。`-f 65001` 同样不可省略：`sql/` 下脚本是 UTF-8 无 BOM，不加该参数 `sqlcmd` 按代码页 936 解码，**中文字符串字面量会被静默读错**（不报错）。实测 `LEN(N'中文测试')` 不加得 6、加得 4，`UNICODE(首字)` 不加得 28051、加得 20013。这会让 `01` 以外的中文种子写成乱码、`THROW N'…'` 的报错变乱码；另一种形态是中文串吞掉收尾单引号使整批被当成未闭合字符串而静默作废（`exit=0`、无输出、语句未执行），比报错更危险。**单独执行任何含中文字面量的脚本（`04`、`09a`、`10a`、`09b`、`09c`、`10b`、`10c` 等）时同样要加。** 官方 VS Code mssql 扩展不支持 SQLCMD 的 `:r`，在编辑器中直接执行该文件会失败，必须走上述两种方式之一；它以 `:r` 固定引入 `00_create_database → 01_master_schema → 02_order_schema → 03_inventory_security_schema → 04_master_constraints_crud → 06_inventory_constraints_crud → 05_order_constraints_crud → 07a → 07b → 07c → 08 → 09a → 09c → 09b → 09d → 10a → 10b → 10c`。`09c` 必须先为订单提供期初库存，`09b` 才能调用锁库过程；`09d` 在订单制作触发补货建议后再创建收货数据。所有脚本不得依赖手工切换数据库或窗口变量。
@@ -371,7 +371,7 @@ sp_create_customer             sp_update_customer_member_level
 
 ## 8. 变更记录
 
-下表保留协作当日的评审状态，历史行中的“待确认”表示当时尚未闭环，不代表当前交付仍有未决接口。最终接口结论统一以 `stage1-cross-domain-interface-contract.md` §8 和本表最后一行为准。
+下表保留协作当日的评审状态，历史行中的“待确认”表示当时尚未闭环，不代表当前交付仍有未决接口。最终接口结论统一以 `cross-domain-interface-contract.md` §8 和本表最后一行为准。
 
 | 日期 | 变更内容 | 发起人 | 三人确认 |
 | --- | --- | --- | --- |
