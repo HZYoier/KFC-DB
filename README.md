@@ -4,7 +4,7 @@
 
 ## 项目范围
 
-覆盖门店从后台准备到补货闭环的完整经营链路，按业务主线分层建设：商品/BOM/促销等主数据、订单与支付、积分两段式、防超卖库存、补货建议与采购入库，以及后续的经营分析视角。**第一阶段关系数据库交付已完成**：可从空库一次部署表、约束、过程、视图、种子和岗位权限，并执行 A/B/C 三域验收。**第二阶段正在进行**：ER 模型重建（2.1）的四类交付物已齐——三域子图与合并总图（25 实体 / 35 外键）、三域规范化分析、问题清单、A 的命名与情形验证，「数据库设计」一节五项已补全；迁移（2.2）与应用开发（2.3）尚未开工。
+覆盖门店从后台准备到补货闭环的完整经营链路，按业务主线分层建设：商品/BOM/促销等主数据、订单与支付、积分两段式、防超卖库存、补货建议与采购入库，以及后续的经营分析视角。**第一阶段关系数据库交付已完成**：可从空库一次部署表、约束、过程、视图、种子和岗位权限，并执行 A/B/C 三域验收。**第二阶段正在进行**：ER 模型重建（2.1）的四类交付物已齐——三域子图与合并总图（25 实体 / 35 外键）、三域规范化分析、问题清单、A 的命名与情形验证，「数据库设计」一节五项已补全；迁移（2.2）尚未开工，应用开发（2.3）已起访问层底座 `app/common/`。
 
 ## 目录结构
 
@@ -22,7 +22,11 @@ KFC-DB/
 │   ├── 09a ~ 09d                三域种子数据
 │   ├── 10a / 10b / 10c          三域验收断言
 │   └── contract_interface_check.sql   只读跨域接口契约检查（独立执行）
-├── docs/                        设计与验收文档（45 份：顶层 8 + stage1/ 7 + stage2/ 21 + er/ 9）
+├── app/                         应用层（2.3）：访问层底座 app/common/ 与各域 routes/service/dao 三层
+├── tests/stage2/                应用侧冒烟与集成脚本
+├── requirements.txt             Python 依赖，写精确版本（Flask / pyodbc）
+├── config.example.env           连接配置示例；复制为 .env 后按本机改，.env 不入库
+├── docs/                        设计与验收文档（46 份：顶层 8 + stage1/ 7 + stage2/ 22 + er/ 9）
 │   ├── stage2-three-person-implementation-plan.md  第二阶段计划与分工：ER 重建、规范化与迁移、应用开发，含 v0.1 问题清单
 │   ├── 主数据 / 订单履约 / 库存权限数据字典.md      三份字段级数据字典
 │   ├── 业务流程.md               业务主线 8 步（含异常路径）
@@ -35,14 +39,15 @@ KFC-DB/
 │   │   ├── test-report.md        完整测试报告：环境、结果、E2E 结论、三次独立复验
 │   │   ├── cross-domain-interface-contract.md   A/B/C 之间冻结的接口契约
 │   │   └── three-person-implementation-plan.md  第一阶段协作实施计划与分工总览
-│   ├── stage2/                  第二阶段过程文档（21 份）
+│   ├── stage2/                  第二阶段过程文档（22 份）
 │   │   ├── source-requirements.md   教学要求核对：65 项逐条编号与落点
 │   │   ├── open-issues.md           跨域开放问题：状态与决议的唯一入口
-│   │   ├── application-contract.md  第二阶段跨域接口契约（草案，未冻结）
+│   │   ├── application-contract.md  第二阶段跨域接口契约（§2 定于 2026-11-03 冻结）
 │   │   ├── a-* / b-* / c-*.md       三域问题清单、规范化分析、阶段报告与交接
 │   │   ├── naming.md                命名口径：对象形状、表名与字典对照、5 条偏差登记
 │   │   ├── business-rule-mapping.md 联系两端基数与实现机制的映射（B 主笔）
-│   │   └── refactoring-design.md、transaction-boundaries.md  重构方案与事务边界
+│   │   ├── refactoring-design.md、transaction-boundaries.md  重构方案与事务边界
+│   │   └── access-layer-contract.md 访问层四个签名、参数定型与错误码映射（2.3 底座）
 │   └── er/                      ER 图源文件与图例（9 份）
 │       ├── legend.md                端点符号与画法口径
 │       ├── a-master.drawio / .svg   主数据与定价域子图（16 实体 16 联系）
@@ -85,6 +90,8 @@ KFC-DB/
 - 已验证实例（三台机器各自从空库整跑，结论一致）：`localhost\MSSQLSERVER2`（Developer Edition）、`.\SQLEXPRESS`（Express Edition）、`localhost`（`@@SERVERNAME` = `DESKTOP-TSLV34Q`，Express Edition）
 - 登录方式：Windows 身份验证；部署账号需要建库权限
 - 客户端：`sqlcmd`（ODBC Driver 18）或启用 SQLCMD Mode 的 SSMS
+- 应用侧（2.3）：Python 3.11 以上（本机 3.13.12）+ `pip install -r requirements.txt`（Flask 3.1.3 / pyodbc 5.3.0）；三台机器装同一个 **Microsoft ODBC Driver 18 for SQL Server**，驱动名写进 `.env` 的 `KFC_DB_DRIVER`，不依赖系统默认驱动
+- 连接配置从环境变量读，仓库只有 `config.example.env` 的形状；复制为 `.env` 后填本机实例名，`.env` 与 `.venv/` 均不入库
 
 > 下文命令中的 `-S` 一律写作 `localhost\MSSQLSERVER2`；实际执行时换成自己的实例名即可，脚本与实例名无关。
 
@@ -197,9 +204,9 @@ v0.1 的 25 张表还原为 **25 个实体、35 条物理外键**，按域拆成
 - [跨域接口契约](docs/stage1/cross-domain-interface-contract.md) — 三域之间的冻结接口：对象名、参数顺序与类型、返回列、种子常量，以及只读检查器 `sql/contract_interface_check.sql` 的校验口径
 - [第一阶段三人协作实施计划](docs/stage1/three-person-implementation-plan.md) — 对象、接口、角色和验收标准
 - [第二阶段三人协作实施计划](docs/stage2-three-person-implementation-plan.md) — ER 重建、规范化迁移与应用开发分工；含员工数据库身份、岗位查询接口、原子迁移/恢复、文件属主和修订自查。当前为待实施计划，第一阶段 SQL 仍为 v0.1
-- 第二阶段过程文档：[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（顾客端三个过程，草案未冻结）、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-11 的状态与决议唯一入口）、[业务规则映射](docs/stage2/business-rule-mapping.md)（35 条外键的基数与实现机制）、[重构方案](docs/stage2/refactoring-design.md)、[事务边界](docs/stage2/transaction-boundaries.md)
+- 第二阶段过程文档：[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（§2 的八写六查定于 2026-11-03 冻结，顾客端三过程仍为草案）、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-12 的状态与决议唯一入口）、[业务规则映射](docs/stage2/business-rule-mapping.md)（35 条外键的基数与实现机制）、[重构方案](docs/stage2/refactoring-design.md)、[事务边界](docs/stage2/transaction-boundaries.md)、[访问层接口](docs/stage2/access-layer-contract.md)（`app/common/` 的四个签名与错误码映射）
 - 三域分析：[A 域](docs/stage2/a-issues.md)问题清单 / [规范化](docs/stage2/a-normalization.md)、[B 域](docs/stage2/b-issues.md)问题清单 / [规范化](docs/stage2/b-normalization.md)、[C 域](docs/stage2/c-issues.md)问题清单 / [规范化](docs/stage2/c-normalization.md)、[命名口径](docs/stage2/naming.md)
-- [ER 图](docs/er/) — [图例](docs/er/legend.md)与三域子图（[主数据](docs/er/a-master.svg)、[订单](docs/er/b-order.svg)、[库存权限](docs/er/c-inventory-security.svg)）；合并总图待交
+- [ER 图](docs/er/) — [图例](docs/er/legend.md)与三域子图（[主数据](docs/er/a-master.svg)、[订单](docs/er/b-order.svg)、[库存权限](docs/er/c-inventory-security.svg)）；合并总图（25 实体 35 联系）
 - [主数据数据字典](docs/主数据数据字典.md)、[订单履约数据字典](docs/订单履约数据字典.md)、[库存权限数据字典](docs/库存权限数据字典.md)
 - [第一阶段测试报告](docs/stage1/test-report.md)
 - 第一阶段成员分工报告：[成员 A](docs/stage1/a-stage-report.md)（主数据与定价）、[成员 B](docs/stage1/b-stage-report.md)（订单与履约）、[成员 C](docs/stage1/c-stage-report.md)（库存、权限与集成）

@@ -1,2 +1,13 @@
 # 编辑器本地配置：含本机实例名与连接 GUID，只对个人环境有意义，不入库
 .vscode/
+
+# 本地秘密：.env 只在本机存在，入仓的只有 config.example.env 的形状
+.env
+
+# Python 运行产物
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+instance/
+*.log
