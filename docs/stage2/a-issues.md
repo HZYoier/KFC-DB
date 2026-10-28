@@ -69,10 +69,12 @@ A 域外键 9 条，全部落在域内（见上表）。A 域不向外域发外�
 
 ## 3. 观察与预计变更（非 v0.1 缺陷）
 
+**2026-10-28：以下五条结论随 2.1 收口定稿**——B 的 `business-rule-mapping.md` 已于 10-24 冻结基数口径，C 的合并总图已于 10-27 交付并逐表核过实体键列，两条前置都齐了。每条结论末尾标注的「草案」保留为当时状态，不再逐条改写。
+
 **I-A08 `Customer.current_points` 是否属于派生冗余（留待 2.2）**
 - 观察：`Customer.current_points` 物化存放顾客累计积分，而积分流水在 B 的 `PointLedger`；两者的一致性由 A 的 `sp_apply_customer_points` 维护，没有约束直接保证。
 - 建议：2.2 在 `docs/stage2/a-normalization.md` 按函数依赖判断——若 `current_points` 可由流水汇总推出，则与 `SalesOrder.total_amount` 是同类冗余议题，两者口径应一致（都保留并说明维护机制，或都改为派生）。影响：`sp_apply_customer_points`、B 的积分两段式、视图。
-- **结论（2026-10-21，`a-normalization.md` §4.1，草案）**：完全可派生——`current_points = SUM(PointLedger.point_delta WHERE ledger_status='EFFECTIVE')`，三条路径（PENDING 不计、EFFECTIVE 只加一次、VOIDED 只从 PENDING 转来）保证同事务原子。**保留物化**，与 `SalesOrder.total_amount` 同口径；2.2 在 `13a` 加一致性断言，字典写明唯一维护入口，不删列改实时汇总。
+- **结论（2026-10-21，`a-normalization.md` §4.1；2026-10-27 订正：原写「完全可派生」不成立）**：**不能完全派生**——`09a:96`–`101` 给顾客 2、3 写了 500 / 1500 期初而无对应流水，口径是 `current_points = 期初 offset + SUM(EFFECTIVE point_delta)`；三条路径（PENDING 不计、EFFECTIVE 只加一次、VOIDED 只从 PENDING 转来）保证同事务原子。**保留物化**，与 `SalesOrder.total_amount` 同口径；2.2 在 `13a` 按三元组 `(current_points, SUM(EFFECTIVE), 差值=期初 offset)` 加断言，字典写明唯一维护入口，不删列改实时汇总。
 
 **I-A09 `MemberLevel` 与升级规则的函数依赖（留待 2.2）**
 - 观察：`MemberLevel.threshold_points` 决定升级门槛，实际等级由顾客累计积分落在哪个门槛区间决定；本域只存等级与门槛的静态映射。
@@ -80,9 +82,9 @@ A 域外键 9 条，全部落在域内（见上表）。A 域不向外域发外�
 - **结论（2026-10-21，`a-normalization.md` §4.2，草案）**：**不存在传递依赖**——`current_points → member_level_id` 不成立，两条反例：等级停用把受影响顾客置空（`04:1326`–`1332`）、加档 / 调门槛不回溯（`04:86`–`95`）。`threshold_points` 的唯一性是等级解析正确的前提，已由两个过程 `THROW 51005` 强制但未声明 → **2.2 补 `UQ_MemberLevel_threshold_points`**；“不回溯”作为预期行为写进字典，防止 2.2 被当 bug 改掉。
 
 **I-A10 三个复合主码表的 2NF / 3NF 判定（留待 2.2）**
-- 观察：`ProductCategory`、`ProductBom`、`ComboComponent` 均为全码（所有列都在主码内或直接依赖全码），结构上无部分依赖。
-- 建议：2.2 逐表写出候选码与函数依赖，明确它们是“全码、无部分依赖”，把“没有异常”也写成有依据的结论，而不是省略。影响：dictionaries、ER 子图。
-- **结论（2026-10-21，`a-normalization.md` §3.5–§3.8、§4.3，草案）**：三表均为全码，2NF/3NF 通过。两表（`ProductCategory`、`ProductBom`）的部分依赖方向各有种子反例；`ComboComponent.child_product_id ↛ quantity` 在种子里无重复、但按 R6-13 不能据此认定 FD，已写明“样例无重复不等于依赖成立”。**无需结构变更**。
+- 观察：`ProductCategory`、`ProductBom`、`ComboComponent` 均为复合主码表，各有一个非主属性（`is_primary` / `usage_qty` / `quantity`）由整个复合码决定，结构上无部分依赖。**（2026-10-27 订正**：原写「均为全码」，与「全码＝候选码包含全部属性」的定义矛盾，`a-normalization.md` §4.3 已改。）
+- 建议：2.2 逐表写出候选码与函数依赖，明确它们是「复合主码、无部分依赖」，把「没有异常」也写成有依据的结论，而不是省略。影响：dictionaries、ER 子图。
+- **结论（2026-10-21，`a-normalization.md` §3.5–§3.8、§4.3，草案）**：三表均为复合主码表、各有非主属性，2NF/3NF 通过。两表（`ProductCategory`、`ProductBom`）的部分依赖方向各有种子反例；`ComboComponent.child_product_id ↛ quantity` 在种子里无重复、但按 R6-13 不能据此认定 FD，已写明“样例无重复不等于依赖成立”。**无需结构变更**。
 
 **I-A11 “商品→类别→类别名”示例需按 FD 判断（留待 2.2）**
 - 观察：教学原文用“商品编号→类别编号→类别名称”举例传递依赖，但本项目 `ProductCategory` 是 M:N 关联表，一个商品可属多分类，`product_id` 并不单值决定 `category_id`。
@@ -104,7 +106,7 @@ A 域外键 9 条，全部落在域内（见上表）。A 域不向外域发外�
 ## 5. 下一步（本文件之外）
 
 - 与本文同步产出 `docs/er/a-master.drawio` / `.svg`：以上表行即子图的实体与键列来源，符号照 `docs/er/legend.md`。
-- 依赖与范式分析单独成文：**`docs/stage2/a-normalization.md`（2026-10-21 草案）**，本文 §3 的 I-A08–I-A12 结论见其 §4；结构对账证据 `result/stage2/a-normalization-check-2026-10-21.txt`（终轮 0 差异）。
+- 依赖与范式分析单独成文：**`docs/stage2/a-normalization.md`（2026-10-28 定稿，随 2.1 收口）**，本文 §3 的 I-A08–I-A12 结论见其 §4；结构对账证据 `result/stage2/a-normalization-check-2026-10-21.txt`（终轮 0 差异）。
 - 本域联系条目提交给 B 汇总进 `docs/stage2/business-rule-mapping.md`（两端最小 / 最大基数 + 保证机制）：条目见 **§6**，共 16 条，与 `a-master.drawio` 的 r1–r16 一一对应。
 - `docs/stage2/naming.md` 与 `design-validation.md` 待 C 合并总图后再定稿。
 
