@@ -1,7 +1,7 @@
 # B 主笔：业务事务边界与应用调用规范
 
 > 2026-10-14；依据既有 B 过程和[跨域契约](../stage1/cross-domain-interface-contract.md)整理。
-> 数据库现状为源码已实现；应用 helper、故障注入及 v1.0 测试是后续验收要求，不是本轮运行结果。
+> 数据库现状为源码已实现；2026-10-30接入A已交付Common，B的实际测试边界见[B冻结回执](b-freeze-receipt.md)。完整员工业务/故障注入及v1.0验收尚不可由包装层测试替代。
 
 ## 1. 八个业务入口
 
@@ -52,9 +52,9 @@ PAYMENT_TIMEOUT 是受控调用原因，不表示已实现自动计时任务。
 | third_party_txn_no | VARCHAR(100)，可空 | Python显式传None（SQL NULL），禁止空字符串冒充NULL；无默认值不能省略 |
 | ordered_at | DATETIME2(0)，可空 | 正常应用不提供历史时间；仅受控 test_* 可传 |
 
-A 定 Common 的实际语言签名；B 提供这些用例、按接口适配，不自行创建第二套连接工厂。C 定登录和授权。新查询过程签名/错误码尚待契约冻结，不在本文件擅自命名编码。
+A已交付Common实际签名与SqlParam构造器；B的orders/dao已适配八个现有写过程，不自行创建第二套连接工厂。C定登录和授权。六个新查询按共同契约§2等待2026-11-03冻结及错误码登记，不在本文件擅自命名编码。
 
-2026-10-24技术栈同步：唯一接口为A的 `open_connection(session)`、`query_procedure(session,name,typed_parameters)`、`execute_procedure(session,name,typed_parameters)`、`run_in_transaction(session,callback)`；B目标目录为 `app/orders/{routes,service,dao}.py`，路由不写SQL、DAO不另开连接底座，错误统一交 `app/common/errors.py` 与Flask全局处理。当前底座尚未交付，不创建自己的Common或凭据存储。每请求结束关闭连接，关闭驱动池是A的职责；`pyodbc.pooling = False` 应在首次连接前设置，不应当作连接串参数，依据[pyodbc官方源码说明](https://github.com/mkleehammer/pyodbc/blob/master/src/pyodbcmodule.cpp)。具体初始化由A确认。跨请求真实身份恢复问题见[B决策材料](b-contract-decisions.md) §5。
+2026-10-30实际接口：A的 `execute_procedure(session,name,params)`、`query_procedure(session,name,params)`、`run_in_transaction(session,callback)`；callback接收真实连接。B已实现 `app/orders/{service,dao}.py`，不注册路由、不保存凭据、不直接调用open_connection。缺员工登录/口令在service与DAO双层拒绝，避免Common回退部署账户；单写不额外包helper，多过程原子需求才用helper。真实临时库验证了helper提交/回滚，但不是员工订单全链验收。关闭池/多结果集/nextset异常传播仍属A；请求身份上下文属C，风险详见[B冻结回执](b-freeze-receipt.md) §3。
 
 ## 6. 后续 13b / 应用测试矩阵
 

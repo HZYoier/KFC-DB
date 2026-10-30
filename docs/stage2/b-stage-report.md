@@ -94,3 +94,29 @@ B 不直接改 A/C 产物；此处交接表示材料已在文件中就绪，不�
 
 最终实际静态结果423通过/0失败（含6种内存负例），可复跑输出见[10-27静态核验记录](../../result/stage2/b-artifact-check-2026-10-27.txt)。独立审查首轮421通过，报告补齐两条链接后终轮为423；审查未发现严重或重要问题，提出的本轮记录归档问题已补齐。本轮仍是材料/只读检查交付，不是新SQL或Flask运行通过；OI-03与联合冻结门槛不因发布文档消失。
 A可直接取B入口§2补README；C可按§3—5落实守卫、演示与问题状态；A/C按B契约决定合入自己的唯一属主文件后继续开发。发布前验证原有远端A/C文件完全保留，AI记录仅追加；推送结果与远端提交号以本轮对话的实际校验为准。
+
+## 9. A/C新进展同步与B首次运行代码交付（2026-10-30）
+
+### 实验思路
+
+先同步远端d741e24，区分“协议已定可实现”与“共同设计尚未冻结”：C已冻结快照形状，因此立即实现baseline_b；A已交Common，因此接入现有八写过程，不提前注册页面、不部署六新查询或顾客过程。B技术上支持2026-11-03建议，最终日期待用户本人确认，不代用户/C签字或关闭OI-03。
+
+### 实验过程
+
+1. 按TDD先写输入、身份、定型参数、异常传播与快照测试：第一轮15例因缺实现失败，再补SQL/DAO/service转绿；追加非ASCII支付方式时先得到失败，去掉未经契约批准的ASCII限制后转绿。后续扩展至18例，未为过测试改A/C或共同契约。
+2. [baseline_b](../../sql/stage2/baseline_b.sql)实现五表53列，显式列清单、batch_id+原键、去IDENTITY/业务约束及public DENY。没有GO/自持事务/跨连接或业务表DML，嵌入C的同一采集事务。
+3. [DAO](../../app/orders/dao.py)/[service](../../app/orders/service.py)实现下单、支付、开始/完成制作、自取、骑手认领/送达、取消退款八动作。只用Common占位和SqlParam；金额Decimal、长JSON NVARCHAR(MAX)、可空流水None、严格输入白名单；缺员工凭据先E_AUTH，防止部署账户回退，不自动重试未知结果支付。
+4. 单元测试调用真实service/DAO/Common，仅替换外部连接。SQL测试连接localhost\MSSQLSERVER2，在本次独有临时库构造与02同列形状的五表，核对逐值/类型/NULL、多批次、空源表、重复批次、public拒读、调用方回滚；再用真实Common验证5001字符Unicode/Decimal/None绑定，以及helper第二步THROW后的整体回滚和正常提交。finally仅清理本次成功创建的精确随机库名；清理后此前缀残留0。
+5. 兼容性重跑A原有common冒烟，不改其源码；KFC_DB只读和dbo预写入守卫，无业务写入。独立只读审查另跑17边界单元用例，未发现B自有代码阻塞问题。
+6. [B冻结回执](b-freeze-receipt.md)补齐refactoring-design §7.2/11b依赖矩阵；同步更新基线/事务文档，不再把C已交协议说成缺失。补齐本次AI记录，保留所有旧条目。
+
+### 结果与复跑
+
+- B完整入口：`.venv/Scripts/python.exe -X utf8 tests/stage2/orders/run_tests.py --sql-server localhost\MSSQLSERVER2`，**18通过/0失败/0跳过**（17边界单元+1真实SQL集成案例），[完整输出](../../result/stage2/b-orders-check-2026-10-30.txt)。要求有建临时库权限的Windows测试身份；该入口要求固定18例且无skip，否则非零退出。
+- A兼容冒烟：配置本机服务器、Trusted_Connection=yes、TrustCert=yes与PYTHONPATH后运行`tests/stage2/check_app_common.py`，**9通过**，[完整输出](../../result/stage2/b-common-smoke-2026-10-30.txt)。08确实以dbo触发51004，而非跳过。
+- B静态材料核对：`python -I -X utf8 result/stage2/scripts/check_b_stage2.py --self-test`，本轮[完整输出](../../result/stage2/b-artifact-check-2026-10-30.txt)归档；静态条目不是SQL/Web用例分母。通用`unittest discover -s tests`发现0例，不能拿此当通过；故提供上述显式目录、分母和拒绝跳过的B入口。
+
+### 交接与结论边界
+
+C现在可以直接引用真实baseline_b，不必再用B桩；全25表实际采集还需A的baseline_a。本轮SQL源是合成五表夹具，不包含A/C完整FK/业务过程，**不是完整capture、迁移或真实员工订单支付全链通过**。
+A可接收B的日期回执/11b矩阵；需修Common两结果集支持、nextset异常吞掉风险及无游标重复分页文本，C需完成请求身份和日期回执。nextset问题可能影响无结果集写过程，B包装层测试不证明该风险已修。B未改A/C源码，未新增路由或擅自提前11b/13b；共同冻结后按矩阵继续，不伪称第二阶段已全部完成。

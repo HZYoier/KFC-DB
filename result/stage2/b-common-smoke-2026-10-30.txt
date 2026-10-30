@@ -1,0 +1,19 @@
+B compatibility rerun of A-owned common smoke (source unchanged)
+Date: 2026-10-30
+Environment: KFC_DB_SERVER=localhost\MSSQLSERVER2; KFC_DB_TRUSTED_CONNECTION=yes; KFC_DB_TRUST_CERT=yes; PYTHONPATH=repository root
+Command: .venv/Scripts/python.exe -X utf8 tests/stage2/check_app_common.py
+Scope: KFC_DB reads, validation, and dbo pre-write 51004 guard; not real employee writes.
+
+Raw terminal output:
+PASS 01 应用工厂可建
+PASS 02 配置不含口令
+PASS 03 视图可查：n=6
+PASS 04 返回行是字典
+PASS 05 DAO 模板可跑：6 行
+PASS 06 DECIMAL 转字符串
+PASS 07 空名被挡：E_INPUT
+PASS 08 库侧 51004 归 E_FORBIDDEN：E_FORBIDDEN / sql=51004
+PASS 09 口令被抹掉：PWD=***;SERVER=x
+共 9 条 PASS
+
+Exit code: 0

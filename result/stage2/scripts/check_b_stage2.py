@@ -15,7 +15,7 @@ B_DOCS = [
     'b-duplicate-product-decision.md', 'b-contract-decisions.md',
     'b-customer-test-cases.md', 'business-rule-mapping.md',
     'refactoring-design.md', 'transaction-boundaries.md',
-    'b-delivery-handoff.md',
+    'b-delivery-handoff.md', 'b-freeze-receipt.md',
 ]
 
 
