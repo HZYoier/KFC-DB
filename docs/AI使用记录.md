@@ -481,3 +481,20 @@
 
 ---
 
+## （2026-10-30）—— 2.2 冻结前 C 侧两件：11c 白名单落位与基线采集框架（C）
+
+**聊了什么：** 我 pull 到 A/B 的 4 个新提交（A 订正 N-01、注释 52502、2.1 收口、2.2 冻结启动并提议 2026-11-03；A 另交了 app/common 共享层骨架），要求按工作流完成建议推进的任务然后提交。OI-03 明确冻结前 C 还有两项：`11c` 白名单落位与 `capture_baseline.sql` 快照形状；本轮即完成这两项并实测。
+
+**AI 做了什么：**
+1. 读齐 pull 变化与冻结前置条件：A 的 `a-normalization.md` §5（13a 期初 offset 依赖 C 的基线形状）、B 的 `b-baseline-reconciliation.md` §7 七项最小协议、`refactoring-design.md` §7/§7.2、计划 §5.1/§5.2/§7.1。
+2. 定 `11c` 白名单落位：保留固定枚举 CHECK（不改为纯目录/FK），随 I-C12 拆分迁至 `Permission.permission_code`（改名 `CK_Permission_permission_code`）；`11c` 同时 ALTER 扩展 CHECK、插入目录行、写角色映射种子；`cust_app` 三过程不进 RolePermission 白名单，按契约 §1.5 单独核对。写入新增 `docs/stage2/migration-guide.md` §5，并回填 `c-normalization.md` §4.5、`c-issues.md` I-C10/I-C12。
+3. 冻结基线协议与快照形状（migration-guide §2/§3）：`SchemaVersion`、`MigrationBatch`（CAPTURING→COMPLETED/FAILED→VOID、previous_batch_id）、`MigrationBaseline`（每表 row_count/checksum）、`MigrationBaselineScope`（25 表清单）、25 张 `Baseline_<Table>`（batch_id + 原业务列，无 IDENTITY/默认/业务 FK）；单会话单事务、应用锁、停写确认、失败回滚后独立短事务标 FAILED、漂移摘要、权限/保留、13a offset（Baseline_Customer + Baseline_PointLedger）与 B §7 逐条答复。
+4. 交付 `sql/stage2/capture_baseline.sql`（辅助表/摘要函数/失败标记与作废过程/采集入口）与 `sql/stage2/baseline_c.sql`（C 域 10 表快照，由源码形状生成）；在空库部署的 v0.1 上用仓库外 A/B 临时桩实测：batch 1 失败事务回滚并标 FAILED、batch 2 COMPLETED、batch 3 重试 COMPLETED（previous=2）、batch 1 VOID；v1.0/停写/漂移守卫分别拒绝；最终验证 31 PASS / 0 FAIL，25 表/178 行、摘要一致、13a offset 0/500/1500。证据与脚本归档 `result/stage2/`（SHA 入 README），测试后删库。
+5. 更新 `open-issues.md` OI-03：C 两项 ✅（含证据指针），B 的第③项仍待；**未代填 C 对 2026-11-03 的日期回执**，留给本人确认。
+
+**核对结果：** 部署 `run_all.sql` exit=0、0 条「消息」行；基线框架 31 PASS / 0 FAIL；失败回滚/重试/作废/三道守卫均有原始输出；A/B 文件只读未改。A/B 的 `baseline_a/b.sql` 尚未到货，committed capture 未做真实端到端（临时桩仅验证框架），日志已写明边界。
+
+**我的处理：** 本轮授权 AI 代 commit，push 仍由我手动；下一步等 B 的第③项与三人日期回执，随后写 11c/12_permissions/13c 与签名三路径验收；A 的 app/common 共享层留待 2.3 前复核。
+
+---
+

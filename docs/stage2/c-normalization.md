@@ -222,6 +222,7 @@ C 域共 **10 表、56 列、10 个主键**（含 3 个复合主键：`PurchaseO
 - **`11c`**：建 `Permission`、搬数据（含"同码多名即拒绝"检查）、删列、加外键、白名单 `CHECK` 迁位；对 `11c` 应同步扩展白名单的新对象，向 `Permission` 增行并在 `RolePermission` 授给相应角色。
 - **`13c`/`regression.sql`**：等价断言——52 条授权行按 `(role, code)` 逐行不变；46 个目录行且每码名称与迁移前一致（名称保真）；`RolePermission` 与 `sys.database_permissions` 的 `GRANT` 双向差集仍为空（t9 T7 的等价覆盖）；负例：重复目录行、断链外键、同码多名输入被拒。
 - **`baseline_c.sql`**：迁移前快照必须捕获 `RolePermission` 的 `(role, code, name, status)` 全量（名称保真比对的基准），见计划 §5.2"权限映射"。
+- **2026-10-30 冻结决议（OI-03 ①）**：保留固定枚举白名单；随拆分迁至 `Permission.permission_code`（改名 `CK_Permission_permission_code`），`11c` 同时 ALTER 扩展 CHECK、插入新目录行、写角色映射种子；纯目录/FK 不替代白名单；`cust_app` 三过程不进 `RolePermission` 白名单（契约 §1.5 单独核对）。详见 `migration-guide.md` §5。
 - **文档**：数据字典（§9/§11 与本域表数：v1.0 为 11 表）随 2.2 更新；ER 总图 v1.0 拆出 `Permission` 实体；`I-C10` 的落点表述（白名单 CHECK 位置）同步更新。
 - **跨域影响：无**。全仓检索确认：`permission_name` 仅出现于 `03` 建列与 `09c` 种子（`06` 的白名单 `CHECK` 只约束 `permission_code`），没有任何过程、视图、A/B 域文件或第一阶段测试读取该列；`08` 的 `GRANT`/`DENY` 与 `RolePermission` 无关——拆分是 C 域内部结构变更，不涉及跨域调用者（验证记录见 §7）。
 

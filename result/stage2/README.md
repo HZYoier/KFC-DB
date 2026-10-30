@@ -1,6 +1,6 @@
 # stage2 证据（C 侧）
 
-隔离实验执行日期：2026-10-13（重跑捕获；实验首做于 2026-10-10，本次为归档要求下的完整复现）；文档对账证据增补于 2026-10-15；ER 子图复核证据增补于 2026-10-17；合并总图对账、B 图复核与契约授权核对增补于 2026-10-27。
+隔离实验执行日期：2026-10-13（重跑捕获；实验首做于 2026-10-10，本次为归档要求下的完整复现）；文档对账证据增补于 2026-10-15；ER 子图复核证据增补于 2026-10-17；合并总图对账、B 图复核与契约授权核对增补于 2026-10-27；2.2 基线采集框架证据增补于 2026-10-30。
 
 实例：`.\SQLEXPRESS`（SQL Server 2025 Express 17.0.1000.7；混合模式；Windows 身份验证部署登录）
 
@@ -41,6 +41,10 @@
 - （2026-10-27 增补）`c-er-oi09-followup-2026-10-27.txt`：C 子图 r6 按 OI-09 冻结口径（结构基数）重生成的几何/字节证据（12 实体 / 14 联系、0 穿盒、r6 = `ERzeroToMany`）。
 - （2026-10-27 增补）`scripts/gen_c_er.py` / `check_c_er_collide.py`：C 子图生成器与几何自查脚本（可从本目录复跑）。
 
+- （2026-10-30 增补）`c-baseline-protocol-check-2026-10-30.txt`：2.2 基线采集框架的 H20 三段式证据（首轮 7 项实现差异归因 → 修正 → 终轮 31 PASS / 0 FAIL；含失败回滚、重试、VOID、v1.0/停写/漂移守卫）。
+- （2026-10-30 增补）`scripts/gen_baseline_sql.py`：按 v0.1 源码生成 `baseline_c.sql` 与仓库外 A/B 测试桩；`scripts/check_baseline_protocol_20261030.sql`：批次状态/元数据/快照行数/摘要/13a offset 的最终验证脚本。
+- （2026-10-30 增补）`../docs/stage2/migration-guide.md`、`../sql/stage2/capture_baseline.sql`、`../sql/stage2/baseline_c.sql`：2.2 辅助表/快照形状与采集入口（仓库文件，SHA 见下）。
+
 ## SHA-256
 
 ```text
@@ -61,6 +65,9 @@ FD0ABF69C42A324AD3AF17988046DF2C259DE6889B72AE4282C13DDD439E8829  scripts/gen_st
 243F828B5CCB7FE0246D9E9422AB3E41C2F57FCB6FB0C4AC6CB5C45E05536845  scripts/check_stage2_model.py
 5CB0B9DB14C457CD12D5051853E35BC90A4CBA8F088E6AA4E9545AB43245D2FE  scripts/review_b_er_20261027.py
 B63C349044115A63E0458E3539F731C8D05FBDFF239EF2F64A63B14CD0B1B18C  scripts/check_contract_auth_20261027.py
+9052EE18A2225235DEDD8974A4B83718E0D16B86A29F79347E812BB1ABCB3F74  c-baseline-protocol-check-2026-10-30.txt
+166A263A899E423FD0843D0DA4B90EC33863B59A2EA6F98065F2EB58394B4488  scripts/gen_baseline_sql.py
+89D082103F9BCA658E2DF24BCD75E6B39D04719E7885E69A855612816601462F  scripts/check_baseline_protocol_20261030.sql
 C74A2BE06C7B5C49D4667EFF6B0D2FF0E229069196A2A21482732D38ED4EDD7C  c-er-oi09-followup-2026-10-27.txt
 3B8CF7CBD6DB7E9A748A6CFC37DF9716713AAC362443BDA935431E8D9E6E044E  scripts/gen_c_er.py
 71D4946CFE2151946FE828F36C5B9D0ECF0B3A33EE59DE88626D2C25F5B6DCF6  scripts/check_c_er_collide.py

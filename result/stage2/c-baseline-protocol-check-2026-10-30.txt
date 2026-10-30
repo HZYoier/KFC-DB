@@ -1,0 +1,182 @@
+==============================================================================
+2.2 基线采集框架 — 设计与实测证据（成员 C）
+日期：2026-10-30
+环境：Windows 11 · Python 3.13 · SQL Server 2025 Express 17.0.1000.7（.\SQLEXPRESS）
+部署：空库 → sql/run_all.sql exit=0、0 条「消息」行；测试后删库（KFC_DB 不存在）
+产物：docs/stage2/migration-guide.md（冻结件）
+      sql/stage2/capture_baseline.sql
+      sql/stage2/baseline_c.sql
+脚本：result/stage2/scripts/gen_baseline_sql.py
+      result/stage2/scripts/check_baseline_protocol_20261030.sql
+边界：A/B 的 baseline_a/b.sql 尚未交付；端到端采集以仓库外临时桩（由 gen_baseline_sql.py
+      生成、未入仓）验证框架，C 域用真实 baseline_c.sql。committed capture 的 :r 路径指向
+      sql/stage2/baseline_a/b/c.sql，A/B 到货后按 guide 直接运行。
+==============================================================================
+
+§1 首轮差异与归因（均为实现/判据缺陷，不涉及 A/B 文件）
+ 1) SQLCMD 未定义可选变量 BatchNote → 脚本在解析期退出，未创建批次；改为 operator_note=NULL
+    （guide 命令无需 BatchNote）。
+ 2) fn_stage2_schema_digest 引用 sys.key_constraints.definition（该目录无 definition 列）→ Msg 207；
+    改为 unique_index_id，列清单由 sys.index_columns 段覆盖。
+ 3) STRING_AGG 排序规则冲突（目录对象 vs 数据库默认）→ Msg 4191；所有聚合与分隔符显式
+    COLLATE DATABASE_DEFAULT。
+ 4) 列契约派生表缺列别名 → Msg 8155；EXCEPT 两侧首列加 AS 别名。
+ 5) CHECKSUM_AGG 不能直接用于 nvarchar(max) → 可比列过滤 max_length <> -1（AuditLog.detail_json
+    排除），migration-guide §4.2 同步。
+ 6) 测试夹具在即席 sqlcmd 中漏 USE KFC_DB → 2812/208（非产品缺陷）；重跑加 USE。
+ 7) 第一次真实采集（batch 1）在列契约处失败：事务回滚、无快照行、批次自动标 FAILED；修复后
+    batch 2 COMPLETED；batch 3 重试 COMPLETED（previous=2）；batch 1 经 sp_void → VOID。
+    证明失败回滚与状态机生效。
+
+§2 修正清单
+ - capture_baseline.sql：可选变量、摘要键约束列、STRING_AGG collation、派生表别名、
+   checksum 列过滤。
+ - migration-guide.md §4.2 同步 checksum 口径。
+ - 不改 A/B 文件；baseline_a/b 桩仅仓库外测试，不入库。
+
+§3 终轮绿输出
+（1）采集成功（batch 2）
+已将数据库上下文更改为 "KFC_DB"。
+PASS: baseline batch completed.
+batch_id schema_digest
+-------- -------------
+2 EAFFB31DBB7C9078CCA25EDD85ACA15BA4F833496F8548170868C210B87B9ECF
+
+（2）状态与 13a offset（batch 2）
+已将数据库上下文更改为 "KFC_DB"。
+batch_id|batch_status|previous_batch_id|source_baseline|app_stop_confirmed|schema_digest
+--------|------------|-----------------|---------------|------------------|-------------
+1|FAILED|NULL|test-20261030|1|EAFFB31DBB7C9078CCA25EDD85ACA15BA4F833496F8548170868C210B87B9ECF
+2|COMPLETED|1|test-20261030b|1|EAFFB31DBB7C9078CCA25EDD85ACA15BA4F833496F8548170868C210B87B9ECF
+
+(2 行受影响)
+meta_rows|total_rows
+---------|----------
+25|178
+
+(1 行受影响)
+table_name|row_count|content_checksum
+----------|---------|----------------
+AuditLog|13|-421299977
+BusinessRole|7|1021733728
+Category|2|1431927568
+ComboComponent|3|1394
+Customer|3|1963789394
+Delivery|1|-313670775
+EmployeeAccount|7|-1459420178
+EmployeeBusinessRole|7|394360933
+Ingredient|6|1422724314
+Inventory|6|-1545958029
+InventoryMovement|26|-1342177279
+MemberLevel|3|-927594148
+Payment|2|-637929752
+PointLedger|2|-1042378249
+Product|6|-428362502
+ProductBom|12|-178582581
+ProductCategory|8|0
+Promotion|1|-751038418
+PromotionProductRule|2|-1991379901
+PurchaseOrder|1|1082782894
+PurchaseOrderItem|1|-1630918993
+ReplenishmentSuggestion|1|110498121
+RolePermission|52|871209706
+SalesOrder|3|565037542
+SalesOrderItem|3|-842846036
+
+(25 行受影响)
+version_code|batch_id|object_digest
+------------|--------|-------------
+v0.1|2|EAFFB31DBB7C9078CCA25EDD85ACA15BA4F833496F8548170868C210B87B9ECF
+
+(1 行受影响)
+batch_id|inventory_rows
+--------|--------------
+2|6
+
+(1 行受影响)
+customer_id|current_points|eff_sum|opening_offset
+-----------|--------------|-------|--------------
+1|28|28|0
+2|500|0|500
+3|1500|0|1500
+
+(3 行受影响)
+
+（3）守卫（预期拒绝：53101 / 53103 / 53111 / 53100 / 53112）
+=== mark COMPLETED as FAILED (expect 53101) ===
+已将数据库上下文更改为 "KFC_DB"。
+消息 53101，级别 16，状态 1，服务器 HBY\SQLEXPRESS，过程 dbo.sp_mark_baseline_failed，第 14 行
+mark_failed: batch must exist in CAPTURING state.
+exit=1
+
+=== void VOID batch again (expect 53103) ===
+已将数据库上下文更改为 "KFC_DB"。
+消息 53103，级别 16，状态 1，服务器 HBY\SQLEXPRESS，过程 dbo.sp_void_baseline_batch，第 14 行
+void: only FAILED -> VOID is allowed.
+exit=1
+
+=== v1.0 guard (expect 53111) ===
+已将数据库上下文更改为 "KFC_DB"。
+
+(1 行受影响)
+已将数据库上下文更改为 "KFC_DB"。
+消息 53111，级别 16，状态 1，服务器 HBY\SQLEXPRESS，第 22 行
+capture: database is already v1.0; baseline capture is not allowed.
+exit=1
+已将数据库上下文更改为 "KFC_DB"。
+
+(1 行受影响)
+
+=== stop-write guard (expect 53100) ===
+已将数据库上下文更改为 "KFC_DB"。
+消息 53100，级别 16，状态 1，服务器 HBY\SQLEXPRESS，第 16 行
+capture: ConfirmAppStopped=YES is required; stop application writes first.
+exit=1
+
+=== drift guard (expect 53112) ===
+已将数据库上下文更改为 "KFC_DB"。
+已将数据库上下文更改为 "KFC_DB"。
+消息 53112，级别 16，状态 1，服务器 HBY\SQLEXPRESS，第 26 行
+capture: live schema differs from registered v0.1 digest; stop and re-baseline.
+exit=1
+已将数据库上下文更改为 "KFC_DB"。
+
+=== final batch state ===
+已将数据库上下文更改为 "KFC_DB"。
+batch_id batch_status previous_batch_id source_baseline
+-------- ------------ ----------------- ---------------
+1 VOID NULL test-20261030
+2 COMPLETED 1 test-20261030b
+3 COMPLETED 2 test-20261030c
+4 VOID 3 test-fake
+
+(4 行受影响)
+
+（4）最终协议验证（31 PASS / 0 FAIL）
+已将数据库上下文更改为 "KFC_DB"。
+PASS: batch states (4 batches, 2 COMPLETED, 0 CAPTURING)
+PASS: batch 2 metadata 25 tables / 178 rows
+PASS: batch 3 metadata 25 tables / 178 rows
+PASS: v0.1 digest equals live digest and both completed batches
+PASS: failed/void batches have no snapshot rows (rollback)
+PASS: 13a opening offsets = 0/500/1500
+RESULT: pass=31 fail=0
+
+（5）失败回归（batch 1，事务回滚后 FAILED）
+已将数据库上下文更改为 "KFC_DB"。
+FAIL: baseline batch failed and was marked FAILED where possible.
+消息 8155，级别 16，状态 2，服务器 HBY\SQLEXPRESS，第 8 行
+没有为 'x' 的列 2 指定任何列名称。
+
+§4 边界与待办
+ - A/B baseline files pending：committed capture 未做真实端到端；临时桩只证明框架/状态机/回滚。
+ - v0.1 行 batch_id=2（首个完成批）；batch 3 同摘要；迁移必须显式选择 COMPLETED 批次/v1.0 行。
+ - 测试后删库，不把测试批次留给后续联调。
+ - 下一步：按 guide 写 11c/12_permissions/13c；等 A/B baseline 文件；签名三路径验收。
+
+§5 SHA-256
+  docs/stage2/migration-guide.md                      4DA88C2610731AAA6C373EE4926433AA5000CDE65D3D288919FE103A7156B8F5
+  sql/stage2/capture_baseline.sql                     42861C0E2D8C0458A19E85462C80FEA794FDBC9FD2E784887031B890331F0550
+  sql/stage2/baseline_c.sql                           7ECFAA93C8949EF15702379629FEF9DF4F49C7AC708B712F210103302864BD05
+  result/stage2/scripts/gen_baseline_sql.py           166A263A899E423FD0843D0DA4B90EC33863B59A2EA6F98065F2EB58394B4488
+  result/stage2/scripts/check_baseline_protocol_20261030.sql  89D082103F9BCA658E2DF24BCD75E6B39D04719E7885E69A855612816601462F

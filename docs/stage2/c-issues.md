@@ -83,6 +83,7 @@
 **I-C10 白名单 CHECK 的扩展是 2.2 计划变更（非缺陷）**
 - `CK_RolePermission_permission_code` 白名单（46 项）将随 v1.0 新增对象在 `11c` 中扩展（分工已由 B 复核确认：白名单 / 种子归 `11c`，授权 / 签名核对归 `12_permissions.sql`）。
 - 记录目的：避免把"为新增对象扩白名单"误读为 v0.1 设计缺陷。影响：`11c`、`12_permissions.sql`、必要时 `09c` 映射种子。
+- **2026-10-30 更新**：随 I-C12 拆分，固定枚举 CHECK 迁至 `Permission.permission_code`（改名 `CK_Permission_permission_code`），`11c` 仍同时 ALTER 扩展 CHECK；`cust_app` 三过程不进 `RolePermission` 白名单，由 `12_permissions` 按契约 §1.5 单独核对。详见 `migration-guide.md` §5。
 
 **I-C11 员工登录映射是部署约定（保留结构）**
 - `login_name` / `database_user_name` 仅为档案字段，无声明式约束保证与服务器登录同名映射；由 2.3 的 `provision_employee.template.ps1` 与部署预检负责。影响：2.3 部署模板。
@@ -93,6 +94,7 @@
 - 复现证据：`docs/stage2/c-normalization.md` §3.4（异常数据例）与 §4（拆分方案、无损连接与依赖保持论证、迁移影响）。
 - 建议：2.2 拆分为 `Permission(permission_code, permission_name)` 与 `RolePermission(business_role_id, permission_code, status)`，白名单 `CHECK` 迁至 `Permission`；只动本域、无跨域调用者。
 - 影响对象：`11c`、`13c`、`baseline_c.sql`（名称保真基线）、数据字典、ER 总图、`I-C10` 的白名单落点表述。
+- **2026-10-30 冻结决议（OI-03 ①）**：保留固定枚举白名单，随拆分迁至 `Permission.permission_code`（改名 `CK_Permission_permission_code`）；`11c` 同时 ALTER 扩展 CHECK、插入新目录行、写角色映射种子；纯目录/FK 不替代白名单。详见 `migration-guide.md` §5。
 
 **I-C13 `PurchaseOrder` 候选码未在约束层声明——2.2 拟补唯一约束（2026-10-15 规范化分析）**
 - 业务规则：一张建议单对应一张采购单（字典 §4），`replenishment_suggestion_id` 是业务候选码；v0.1 由"仅 `SUBMITTED` 可审批 + 无第二条生成路径"的过程状态机保证，约束层无兜底。
