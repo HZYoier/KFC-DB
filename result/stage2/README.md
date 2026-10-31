@@ -48,6 +48,9 @@
 - （2026-10-31 增补）`c-baseline-b-integration-2026-10-31.txt`：B 的 `baseline_b.sql` 静态核对（46 PASS）与真实集成证据（B 真文件 + C 真文件 + A 临时桩；batch1/2、25 表/178 行、B 五表 53 列逐值双向相等、public DENY 229；17 PASS / 0 FAIL）。
 - （2026-10-31 增补）`scripts/check_b_baseline_sql.py`：B 基线文件的 5 表/53 列/键/无事务静态核对；`scripts/check_b_baseline_integration_20261031.sql`：真实集成后的逐值/权限/行数验证。
 
+- （2026-10-31 增补）`c-11c-migration-check-2026-10-31.txt`：11c（Permission 拆分、白名单 46→53、RolePermission 52→66、UQ PurchaseOrder、身份上下文过程）的外层事务回滚/提交实测；旧 52 行与名称保真、签名不变、上下文 51004/正例三结果集。
+- （2026-10-31 增补）`scripts/check_11c_rollback_20261031.sql` / `check_11c_commit_20261031.sql`：11c 回滚还原与提交终态/上下文验证脚本。
+
 ## SHA-256
 
 ```text
@@ -70,6 +73,9 @@ FD0ABF69C42A324AD3AF17988046DF2C259DE6889B72AE4282C13DDD439E8829  scripts/gen_st
 0F83A08434E90F3519CB884615CC76BFF9104761701322F426A24BCB82C7E3A8  c-baseline-b-integration-2026-10-31.txt
 9447B88168F6EF8BE69FB4D0F06AD5F91F85248C973D6CDF024A2D81C4737260  scripts/check_b_baseline_sql.py
 EE294A2EB436E80CB60A9E29BC9D48761FEC8A9C5667165E1102700C820F04C2  scripts/check_b_baseline_integration_20261031.sql
+435920CBB1DB5E9B9CEA72F88E0DF732A2BEBBA6C62C5F44AE915729A157617E  c-11c-migration-check-2026-10-31.txt
+5F7EA94ACF81F604EF107275ADCB30A7C127694C211C739A94C3E5E56B94C79D  scripts/check_11c_rollback_20261031.sql
+2CE42E19BF31C74456ACDA3689E9079C1E052E04856917C28367F27E6D062A9A  scripts/check_11c_commit_20261031.sql
 B63C349044115A63E0458E3539F731C8D05FBDFF239EF2F64A63B14CD0B1B18C  scripts/check_contract_auth_20261027.py
 9052EE18A2225235DEDD8974A4B83718E0D16B86A29F79347E812BB1ABCB3F74  c-baseline-protocol-check-2026-10-30.txt
 166A263A899E423FD0843D0DA4B90EC33863B59A2EA6F98065F2EB58394B4488  scripts/gen_baseline_sql.py

@@ -532,3 +532,19 @@
 
 ---
 
+## （2026-10-31 续）—— OI-03 关闭、2.1 收口与 11c 落地（C）
+
+**聊了什么：** 我要求按对全组最好的方向决策。于是我作为 C 回执确认 A 提议的 **2026-11-03** 为 2.2 冻结日（A 提议、B 技术回执支持、C 确认），关闭 OI-03、2.1 正式收口，并立即开始写 `11c`，不在冻结日前空等。
+
+**AI 做了什么：**
+1. 关闭 OI-03、记录 2.1 收口；补 `open-issues` 变更记录。
+2. 写 `sql/stage2/11c_inventory_security_migration.sql`：Permission 目录（旧 46 码名称保真 + 新 7 码，`CK_Permission_permission_code` 53 码固定白名单）→ 删旧 `CK_RolePermission_permission_code`/`permission_name` → `FK_RolePermission_Permission` → 新增 14 行角色映射（52→66）→ `UQ_PurchaseOrder_replenishment_suggestion_id` → 新建 `sp_get_current_employee_context`（三结果集：员工头/角色/权限；无映射或停用抛 51004）。
+3. 在 v0.1+09c 空库上实测两条路径：外层事务 **回滚** 完整还原 v0.1（Permission 不存在、52 行/旧列/旧 CHECK 复原）；外层事务 **提交** 后 53/66、旧 52 行与名称逐项保真、三个角色同步签名不变、dbo 调用 51004、test_cashier 正例返回 6 个权限码三结果集。首版文件 LF 已转 CRLF 并重新部署复跑（H5）；证据 `result/stage2/c-11c-migration-check-2026-10-31.txt`（H20 三段式）。
+4. 更新 `migration-guide.md` §9、`c-issues.md` I-C12/I-C13、`open-issues` OI-03 的落地记录；测试后删库。
+
+**核对结果：** 11c 回滚/提交两套测试均通过；旧授权行/名称保真；签名 3/3；上下文 51004 + 正例 3 结果集；未改 A/B 文件。边界：`run_migration`/`11a`/`11b`/`12_permissions`/`13c` 未运行，A 的 `baseline_a/11a`、B 的 `11b` 仍缺。
+
+**我的处理：** 本轮由我授权 AI 代 commit、**push 仍由我手动**；A/B 11x 到齐后再做 12/13c/run_migration 与真实迁移演练。
+
+---
+

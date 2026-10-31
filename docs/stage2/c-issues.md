@@ -95,6 +95,7 @@
 - 建议：2.2 拆分为 `Permission(permission_code, permission_name)` 与 `RolePermission(business_role_id, permission_code, status)`，白名单 `CHECK` 迁至 `Permission`；只动本域、无跨域调用者。
 - 影响对象：`11c`、`13c`、`baseline_c.sql`（名称保真基线）、数据字典、ER 总图、`I-C10` 的白名单落点表述。
 - **2026-10-30 冻结决议（OI-03 ①）**：保留固定枚举白名单，随拆分迁至 `Permission.permission_code`（改名 `CK_Permission_permission_code`）；`11c` 同时 ALTER 扩展 CHECK、插入新目录行、写角色映射种子；纯目录/FK 不替代白名单。详见 `migration-guide.md` §5。
+- **2026-10-31 11c 已落地并实测**：Permission 53 码 / RolePermission 66 行、旧 52 行与名称保真；`sp_get_current_employee_context` 已建并验证；证据 `result/stage2/c-11c-migration-check-2026-10-31.txt`。
 
 **I-C13 `PurchaseOrder` 候选码未在约束层声明——2.2 拟补唯一约束（2026-10-15 规范化分析）**
 - 业务规则：一张建议单对应一张采购单（字典 §4），`replenishment_suggestion_id` 是业务候选码；v0.1 由"仅 `SUBMITTED` 可审批 + 无第二条生成路径"的过程状态机保证，约束层无兜底。
@@ -102,6 +103,7 @@
 - 复现证据：`docs/库存权限数据字典.md` §4 设计要点（如实记录"约束层没有兜底"）；`c-normalization.md` §3.8 / §5.6。
 - 建议：2.2 补 `UQ_PurchaseOrder_replenishment_suggestion_id`——只声明既有业务事实、不动行数据；`13c` 加负例（同建议单第二张采购单被 `2601/2627` 拒绝）。
 - 影响对象：`11c`、`13c`、`baseline_c.sql`（迁移前 1:1 现场比对）。
+- **2026-10-31 11c 已落地并实测**：`UQ_PurchaseOrder_replenishment_suggestion_id` 已添加；证据同 I-C12。
 
 ## 4. 跨域条目索引（状态见 `open-issues.md`）
 

@@ -163,3 +163,4 @@
 ## 9. 验证记录（本轮）
 
 - 本文为**设计冻结件**；`capture_baseline.sql` 与 `baseline_c.sql` 的实跑证据见 `result/stage2/c-baseline-protocol-check-2026-10-30.txt`（首轮差异/修正/终轮输出按 H20 三段式）。A/B 的 `baseline_a/b.sql` 尚未交付时，端到端采集不宣称通过；框架以仓库外临时桩验证状态机与回滚，证据日志注明边界。
+- （2026-10-31 增补）`11c` 已按 §5/§5.1 落地并实测：外层事务回滚完整还原 v0.1；提交终态 Permission 53 / RolePermission 66、旧 52 行与名称保真、三签名不变、身份上下文 51004 + 三结果集正例。证据 `result/stage2/c-11c-migration-check-2026-10-31.txt`。`12_permissions`/`13c`/`run_migration` 仍待 A/B 的 `11a/11b` 与冻结日。
