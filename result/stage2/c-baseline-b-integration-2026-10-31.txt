@@ -1,0 +1,122 @@
+==============================================================================
+B 基线文件复核与真实集成 — C 侧证据（2026-10-31）
+环境：Windows 11 · Python 3.13 · SQL Server 2025 Express 17.0.1000.7（.\SQLEXPRESS）
+对象：B 的 sql/stage2/baseline_b.sql（只读）+ C 的 baseline_c.sql + A 的临时桩（仓库外）
+部署：空库 → sql/run_all.sql exit=0、0 条「消息」行（日志末三行见 §3）
+边界：A 的 baseline_a.sql 尚未交付；A 域用仓库外临时桩，不能宣称 25 表真实 A/B/C 端到端。
+      11a/11b/13x 与 v1.0 迁移未运行。
+==============================================================================
+
+§1 首轮差异与归因
+ 1) 静态核对首轮 1 项 FAIL：校验器要求 @batch_id 出现 ≥10 次，而 B 文件每表 1 处共 5 处
+    （文件头注释被剥除后不计数）。归因：校验器判据阈值写错；B 文件未改。
+ 2) 真实集成首轮即成功（capture batch 1）；第二次重跑成功（batch 2），验证 B 文件的
+    public DENY 重复执行与批次链。未发现 B 文件缺陷。
+
+§2 修正清单
+ - check_b_baseline_sql.py：@batch_id 阈值 ≥10 → ≥5。
+ - 不改 B 的 baseline_b.sql（只读复核，H1）；不改 A/C 业务文件。
+
+§3 终轮绿输出
+（1）部署 v0.1（run_all 末三行）
+PASS: T13 已关闭采购单再收货被拒（50000：只允许对 APPROVED 或 PARTIALLY_RECEIVED 收货）
+PASS: T14 值班经理不能调用角色分配过程（229：EXECUTE 只授给 role_store_manager）
+RESULT: pass=18 fail=0
+
+（2）真实集成 capture 第一次（batch 1）
+已将数据库上下文更改为 "KFC_DB"。
+PASS: baseline batch completed.
+batch_id schema_digest
+-------- -------------
+1 EAFFB31DBB7C9078CCA25EDD85ACA15BA4F833496F8548170868C210B87B9ECF
+
+（3）真实集成 capture 第二次（batch 2，含 B 文件重复执行）
+已将数据库上下文更改为 "KFC_DB"。
+PASS: baseline batch completed.
+batch_id schema_digest
+-------- -------------
+2 EAFFB31DBB7C9078CCA25EDD85ACA15BA4F833496F8548170868C210B87B9ECF
+
+（4）B 基线集成验证（17 PASS / 0 FAIL）
+已将数据库上下文更改为 "KFC_DB"。
+PASS: two real-B batches COMPLETED, no CAPTURING
+PASS: batch 2 previous_batch_id = 1
+PASS: real-B batch metadata 25 tables / 178 rows
+PASS: B metadata row counts 3/3/2/1/2
+PASS: Baseline_SalesOrder 15 columns equal source
+PASS: SalesOrder reverse set equal
+PASS: Baseline_SalesOrderItem 10 columns equal source
+PASS: SalesOrderItem reverse set equal
+PASS: Baseline_Payment 11 columns equal source
+PASS: Payment reverse set equal
+PASS: Baseline_Delivery 8 columns equal source
+PASS: Delivery reverse set equal
+PASS: Baseline_PointLedger 9 columns equal source
+PASS: PointLedger reverse set equal
+PASS: public cannot SELECT Baseline_SalesOrder (229)
+PASS: business tables unchanged by capture
+PASS: v0.1 digest equals live
+RESULT: pass=17 fail=0
+
+（5）静态核对（46 PASS / 0 FAIL）
+[PASS] baseline_b 无 GO
+[PASS] baseline_b 无事务控制
+[PASS] baseline_b 无 USE
+[PASS] baseline_b 使用入口 @batch_id
+[PASS] SalesOrder 快照表已定义
+[PASS] SalesOrder 列序 = batch_id + 源 53/53 列（实际 16）
+[PASS] SalesOrder batch_id BIGINT NOT NULL
+[PASS] SalesOrder 全部类型/可空性一致
+[PASS] SalesOrder 主键 = (batch_id, 源主键)
+[PASS] SalesOrder 无 IDENTITY/DEFAULT/FK
+[PASS] SalesOrder INSERT 形状正确
+[PASS] SalesOrder INSERT/SELECT 列清单 = 全列
+[PASS] SalesOrderItem 快照表已定义
+[PASS] SalesOrderItem 列序 = batch_id + 源 53/53 列（实际 11）
+[PASS] SalesOrderItem batch_id BIGINT NOT NULL
+[PASS] SalesOrderItem 全部类型/可空性一致
+[PASS] SalesOrderItem 主键 = (batch_id, 源主键)
+[PASS] SalesOrderItem 无 IDENTITY/DEFAULT/FK
+[PASS] SalesOrderItem INSERT 形状正确
+[PASS] SalesOrderItem INSERT/SELECT 列清单 = 全列
+[PASS] Payment 快照表已定义
+[PASS] Payment 列序 = batch_id + 源 53/53 列（实际 12）
+[PASS] Payment batch_id BIGINT NOT NULL
+[PASS] Payment 全部类型/可空性一致
+[PASS] Payment 主键 = (batch_id, 源主键)
+[PASS] Payment 无 IDENTITY/DEFAULT/FK
+[PASS] Payment INSERT 形状正确
+[PASS] Payment INSERT/SELECT 列清单 = 全列
+[PASS] Delivery 快照表已定义
+[PASS] Delivery 列序 = batch_id + 源 53/53 列（实际 9）
+[PASS] Delivery batch_id BIGINT NOT NULL
+[PASS] Delivery 全部类型/可空性一致
+[PASS] Delivery 主键 = (batch_id, 源主键)
+[PASS] Delivery 无 IDENTITY/DEFAULT/FK
+[PASS] Delivery INSERT 形状正确
+[PASS] Delivery INSERT/SELECT 列清单 = 全列
+[PASS] PointLedger 快照表已定义
+[PASS] PointLedger 列序 = batch_id + 源 53/53 列（实际 10）
+[PASS] PointLedger batch_id BIGINT NOT NULL
+[PASS] PointLedger 全部类型/可空性一致
+[PASS] PointLedger 主键 = (batch_id, 源主键)
+[PASS] PointLedger 无 IDENTITY/DEFAULT/FK
+[PASS] PointLedger INSERT 形状正确
+[PASS] PointLedger INSERT/SELECT 列清单 = 全列
+[PASS] 5 个快照表均有 public DENY
+[PASS] B 文件不越界写 A/C 表（仅 B 五表）
+
+RESULT: pass=46 fail=0
+
+§4 结论与边界
+ - B 的 baseline_b.sql：5 表 / 53 列、显式列、batch_id + 原主键、无 IDENTITY/DEFAULT/FK、
+   无 GO/事务/USE、不写业务表、public DENY；静态 46/0。
+ - 真实集成：batch1/2 COMPLETED（previous=1）、25 表/178 行；B 五表 53 列逐值双向相等、
+   public 229、业务表未被写；17/0。
+ - 仍缺 A 的 baseline_a.sql；25 表真实三域端到端待 A 交付后按 migration-guide §8 再跑。
+ - 测试后删库；测试批次不保留。
+
+§5 SHA-256
+  sql/stage2/baseline_b.sql（B 只读）                       7C35F8197D89A2073EB58017ABAFF0A1102828882859943F5272CBA8B19114EB
+  result/stage2/scripts/check_b_baseline_sql.py             9447B88168F6EF8BE69FB4D0F06AD5F91F85248C973D6CDF024A2D81C4737260
+  result/stage2/scripts/check_b_baseline_integration_20261031.sql  EE294A2EB436E80CB60A9E29BC9D48761FEC8A9C5667165E1102700C820F04C2

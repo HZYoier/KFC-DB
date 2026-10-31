@@ -113,6 +113,26 @@
 - **当前预期数量（以冻结清单为准）**：v0.1 白名单 46 码 → v1.0 增加 6 个查询过程 + `sp_get_current_employee_context` = **53 码**；`RolePermission` 行数按冻结的角色×过程矩阵计算，不硬编码。`13c` 断言：白名单 = `Permission` 行集 = `sys.database_permissions` 中 `role_*` 的 EXECUTE/SELECT 目标集，`cust_app` 三过程单独核对且不得出现在业务角色 GRANT 中。
 - **名称保真**：`baseline_c.sql` 捕获 `RolePermission(business_role_id, permission_code, permission_name, status)` 全量；`11c` 搬 `DISTINCT (code,name)` 前先检查同码多名（有则拒绝并输出码），`13c` 用 `Permission ⋈ RolePermission` 回旧关系逐行比对名称与状态。
 
+### 5.1 v1.0 新增权限码与角色映射（冻结输入，2026-10-31）
+
+来源：`application-contract.md` §2.2 的六个员工查询（参数/岗位由 B 的 [`b-freeze-receipt.md`](b-freeze-receipt.md) §2 复核）+ C 的 `sp_get_current_employee_context`（T1 #6）。**本表是 11c/12 的输入；冻结日确认后按此执行，B 调整岗位时以共同 §2.2 + B 矩阵重算。**
+
+| 新对象 | 权限码 | 11c `RolePermission` 种子 / 12 `GRANT` 角色 |
+| --- | --- | --- |
+| `sp_list_orders_for_payment` | `sp_list_orders_for_payment` | cashier |
+| `sp_get_order_for_payment` | `sp_get_order_for_payment` | cashier |
+| `sp_get_order_operation_status` | `sp_get_order_operation_status` | cashier、store_manager |
+| `sp_list_orders_for_packing` | `sp_list_orders_for_packing` | packer |
+| `sp_list_my_deliveries` | `sp_list_my_deliveries` | rider |
+| `sp_list_deliveries_available_for_pickup` | `sp_list_deliveries_available_for_pickup` | rider |
+| `sp_get_current_employee_context`（C） | `sp_get_current_employee_context` | 七个业务角色（chef / cashier / packer / rider / waiter / shift_manager / store_manager；C 拟定，随冻结确认） |
+
+- **白名单**：46 → **53** 码（7 个新增）；`Permission` 同步 7 行。
+- **RolePermission**：52 → **66** 行（新增 14 行：1+1+2+1+1+1+7）；11c 写种子，12 的 `GRANT` 必须与之逐项相等。
+- **cust_app**：三个顾客过程仍按契约 §1.5 **显式 GRANT**，不进 `Permission`/`RolePermission` 白名单；12 单独核对，13c 以 `EXECUTE AS USER='cust_app'` 直调员工过程/基表 SELECT 均 229 验证。
+- **错误码**：六个新查询的 SQL 错误码由 B 在冻结清单提出、C 登记；未登记前不写 529xx 生产码。
+- **13c**：断言白名单 = `Permission` 行 = `sys.database_permissions` 中 `role_*` 的目标集；`cust_app` 三过程单独断言；任何新增/遗漏都失败。
+
 ## 6. B §7「C 需确认的最小协议」逐条答复
 
 | B 的问题 | C 冻结口径 |

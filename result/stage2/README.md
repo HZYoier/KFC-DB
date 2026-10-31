@@ -45,6 +45,9 @@
 - （2026-10-30 增补）`scripts/gen_baseline_sql.py`：按 v0.1 源码生成 `baseline_c.sql` 与仓库外 A/B 测试桩；`scripts/check_baseline_protocol_20261030.sql`：批次状态/元数据/快照行数/摘要/13a offset 的最终验证脚本。
 - （2026-10-30 增补）`../docs/stage2/migration-guide.md`、`../sql/stage2/capture_baseline.sql`、`../sql/stage2/baseline_c.sql`：2.2 辅助表/快照形状与采集入口（仓库文件，SHA 见下）。
 
+- （2026-10-31 增补）`c-baseline-b-integration-2026-10-31.txt`：B 的 `baseline_b.sql` 静态核对（46 PASS）与真实集成证据（B 真文件 + C 真文件 + A 临时桩；batch1/2、25 表/178 行、B 五表 53 列逐值双向相等、public DENY 229；17 PASS / 0 FAIL）。
+- （2026-10-31 增补）`scripts/check_b_baseline_sql.py`：B 基线文件的 5 表/53 列/键/无事务静态核对；`scripts/check_b_baseline_integration_20261031.sql`：真实集成后的逐值/权限/行数验证。
+
 ## SHA-256
 
 ```text
@@ -64,6 +67,9 @@ ED766C58F5FCF53E60C2399B4E50E00FC858AC4F38CE71EC57556965810CA4B1  c-contract-aut
 FD0ABF69C42A324AD3AF17988046DF2C259DE6889B72AE4282C13DDD439E8829  scripts/gen_stage2_model.py
 243F828B5CCB7FE0246D9E9422AB3E41C2F57FCB6FB0C4AC6CB5C45E05536845  scripts/check_stage2_model.py
 5CB0B9DB14C457CD12D5051853E35BC90A4CBA8F088E6AA4E9545AB43245D2FE  scripts/review_b_er_20261027.py
+0F83A08434E90F3519CB884615CC76BFF9104761701322F426A24BCB82C7E3A8  c-baseline-b-integration-2026-10-31.txt
+9447B88168F6EF8BE69FB4D0F06AD5F91F85248C973D6CDF024A2D81C4737260  scripts/check_b_baseline_sql.py
+EE294A2EB436E80CB60A9E29BC9D48761FEC8A9C5667165E1102700C820F04C2  scripts/check_b_baseline_integration_20261031.sql
 B63C349044115A63E0458E3539F731C8D05FBDFF239EF2F64A63B14CD0B1B18C  scripts/check_contract_auth_20261027.py
 9052EE18A2225235DEDD8974A4B83718E0D16B86A29F79347E812BB1ABCB3F74  c-baseline-protocol-check-2026-10-30.txt
 166A263A899E423FD0843D0DA4B90EC33863B59A2EA6F98065F2EB58394B4488  scripts/gen_baseline_sql.py

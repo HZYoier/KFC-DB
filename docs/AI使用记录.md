@@ -515,3 +515,20 @@
 
 ---
 
+## （2026-10-31）—— B 基线接入：baseline_b 复核、真实集成与冻结输入补齐（C）
+
+**聊了什么：** 我 pull 到 B 的 `6e5218a`（B 基线、11b 依赖矩阵、冻结回执、typed order service），要求继续推进。B 已按 C 的迁移协议交付 `baseline_b.sql`，并明确 C 可将其接入 capture、待 A 的 `baseline_a` 跑 25 表整链；本轮即做 B 文件的独立复核与真实集成。
+
+**AI 做了什么：**
+1. 读 B 的 `b-freeze-receipt.md`（§2 11b 矩阵、§3 对 A 访问层的六条反馈、§6 C 可继续事项）、`baseline_b.sql` 与 orders service/DAO；确认 B 技术上支持 2026-11-03，但不代 C/用户签字。
+2. 静态核对 B 的 `baseline_b.sql`：5 表 / 53 列与 `sql/02` 逐列一致（类型/可空性）、`batch_id` + 原主键、无 IDENTITY/DEFAULT/业务 FK、无 GO/事务/USE、显式列清单、public DENY、不越界写 A/C 表——**46 PASS / 0 FAIL**（首轮唯一 FAIL 是校验器把 `@batch_id` 阈值写成 ≥10，B 文件实际每表 1 处共 5 处，已修正判据）。
+3. 真实集成：空库部署 v0.1（`run_all` exit=0、0 错误），用 **B 真文件 + C 真文件 + A 临时桩**跑 `capture_baseline.sql` 两次——batch1/2 均 COMPLETED（previous=1）、25 表/178 行；B 五表 53 列与源表**双向 EXCEPT 逐值相等**、public 读取被 229 拒绝、业务表未被写——**17 PASS / 0 FAIL**。A 的 `baseline_a.sql` 未到，未宣称 25 表真实 A/B/C 端到端。
+4. 补冻结输入：`migration-guide.md` §5.1 新增 7 个权限码（六个员工查询 + `sp_get_current_employee_context`）与 14 行角色映射——白名单 46→53、RolePermission 52→66；`cust_app` 三过程仍单独 GRANT、不入业务岗位白名单；13c 按此断言。
+5. 更新 OI-03：B 的第③项 ✅、C 两项 ✅，**三项冻结前置已齐**，只剩 C 本人的 2026-11-03 日期回执；补变更记录。证据与脚本归档 `result/stage2/`（SHA 入 README），测试后删库。
+
+**核对结果：** 静态 46/0、真实集成 17/0；B 的 `baseline_b.sql` 未改一字；A/B 文件只读；B 的 app/orders 与 A 访问层的多结果集/nextset 等问题仍归 A（B 回执 §3 已列）。
+
+**我的处理：** 本轮由我授权 AI 代 commit、**push 仍由我手动**；A 的 `baseline_a.sql`/`11a`、B 的 `11b/13b` 到齐后再做真实 25 表端到端；日期回执由我本人确认后登记。
+
+---
+
