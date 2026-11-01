@@ -1,0 +1,12 @@
+<form method="post" action="{{ url_for('master.do_action', entity='customer', action='create') }}">
+  <fieldset><legend>店长建档（初始积分 0，等级取默认档；手机号已存在会按冲突拒绝）</legend></fieldset>
+  <label>手机号<input name="mobile" maxlength="11" pattern="[0-9]{11}" required></label>
+  <label>类型<select name="customer_type"><option>GUEST</option><option>WOW</option><option>PAID</option></select></label>
+  <button type="submit">建档</button>
+</form>
+<form method="post" action="{{ url_for('master.do_action', entity='customer', action='level') }}">
+  <fieldset><legend>改会员等级</legend></fieldset>
+  <label>顾客ID<input name="customer_id" type="number" min="1" required></label>
+  <label>等级ID<input name="member_level_id" type="number" min="1" required></label>
+  <button type="submit">提交</button>
+</form>

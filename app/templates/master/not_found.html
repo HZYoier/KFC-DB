@@ -1,0 +1,5 @@
+{% extends "master/layout.html" %}
+{% block title %}未知实体{% endblock %}
+{% block content %}
+<div class="empty">没有实体「{{ entity }}」。<a href="{{ url_for('master.index') }}">回总览</a></div>
+{% endblock %}

@@ -1,0 +1,14 @@
+<form method="post" action="{{ url_for('master.do_action', entity='promotion', action='create') }}">
+  <fieldset><legend>新建促销活动（时间精确到分钟）</legend></fieldset>
+  <label>名称<input name="promotion_name" maxlength="50" required></label>
+  <label>类型<input name="promotion_type" maxlength="20" placeholder="如 WEEKDAY" required></label>
+  <label>开始<input name="start_at" type="datetime-local" required></label>
+  <label>结束<input name="end_at" type="datetime-local" required></label>
+  <button type="submit">新建</button>
+</form>
+<form method="post" action="{{ url_for('master.do_action', entity='promotion', action='status') }}">
+  <fieldset><legend>改活动状态</legend></fieldset>
+  <label>活动ID<input name="promotion_id" type="number" min="1" required></label>
+  <label>状态<select name="status"><option>ACTIVE</option><option>INACTIVE</option></select></label>
+  <button type="submit">提交</button>
+</form>

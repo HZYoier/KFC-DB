@@ -1,0 +1,21 @@
+<form method="post" action="{{ url_for('master.do_action', entity='member-level', action='create') }}">
+  <fieldset><legend>新建等级（门槛分 ≥ 0；必须留一个门槛 ≤ 0 的启用档作默认档）</legend></fieldset>
+  <label>等级名<input name="level_name" maxlength="50" required></label>
+  <label>积分倍率<input name="point_multiplier" type="number" step="0.01" min="0.01" required></label>
+  <label>门槛分<input name="threshold_points" type="number" min="0" required></label>
+  <button type="submit">新建</button>
+</form>
+<form method="post" action="{{ url_for('master.do_action', entity='member-level', action='update') }}">
+  <fieldset><legend>整行修改</legend></fieldset>
+  <label>等级ID<input name="member_level_id" type="number" min="1" required></label>
+  <label>等级名<input name="level_name" maxlength="50" required></label>
+  <label>积分倍率<input name="point_multiplier" type="number" step="0.01" min="0.01" required></label>
+  <label>门槛分<input name="threshold_points" type="number" min="0" required></label>
+  <button type="submit">提交</button>
+</form>
+<form method="post" action="{{ url_for('master.do_action', entity='member-level', action='status') }}">
+  <fieldset><legend>停用 / 启用（停用会清空该档顾客的等级快照，历史不重算）</legend></fieldset>
+  <label>等级ID<input name="member_level_id" type="number" min="1" required></label>
+  <label>状态<select name="status"><option>INACTIVE</option><option>ACTIVE</option></select></label>
+  <button type="submit">提交</button>
+</form>

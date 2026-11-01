@@ -1,0 +1,21 @@
+<form method="post" action="{{ url_for('master.do_action', entity='promotion-rule', action='create') }}">
+  <fieldset><legend>新增规则（星期 1=周一 … 7=周日；同窗多条时优先级大者生效）</legend></fieldset>
+  <label>活动ID<input name="promotion_id" type="number" min="1" required></label>
+  <label>商品ID<input name="product_id" type="number" min="1" required></label>
+  <label>星期<input name="weekday_no" type="number" min="1" max="7" required></label>
+  <label>开始<input name="start_time" type="time" required></label>
+  <label>结束<input name="end_time" type="time" required></label>
+  <label>促销价<input name="promo_price" type="number" step="0.01" min="0.01" required></label>
+  <label>优先级<input name="priority" type="number" min="0" value="0" required></label>
+  <button type="submit">新增</button>
+</form>
+<form method="post" action="{{ url_for('master.do_action', entity='promotion-rule', action='update') }}">
+  <fieldset><legend>改规则（活动与商品不可改，要换请停用后重建）</legend></fieldset>
+  <label>规则ID<input name="promotion_rule_id" type="number" min="1" required></label>
+  <label>星期<input name="weekday_no" type="number" min="1" max="7" required></label>
+  <label>开始<input name="start_time" type="time" required></label>
+  <label>结束<input name="end_time" type="time" required></label>
+  <label>促销价<input name="promo_price" type="number" step="0.01" min="0.01" required></label>
+  <label>优先级<input name="priority" type="number" min="0" required></label>
+  <button type="submit">提交</button>
+</form>

@@ -1,0 +1,20 @@
+<form method="post" action="{{ url_for('master.do_action', entity='product', action='create') }}">
+  <fieldset><legend>新建商品（套餐请选 COMBO，随后用「套餐组成」填子项）</legend></fieldset>
+  <label>名称<input name="product_name" maxlength="50" required></label>
+  <label>标准价<input name="base_price" type="number" step="0.01" min="0.01" required></label>
+  <label>类型<select name="product_type"><option>SINGLE</option><option>COMBO</option></select></label>
+  <label>分类ID<input name="category_id" type="number" min="1" required></label>
+  <button type="submit">新建</button>
+</form>
+<form method="post" action="{{ url_for('master.do_action', entity='product', action='price') }}">
+  <fieldset><legend>改标准价</legend></fieldset>
+  <label>商品ID<input name="product_id" type="number" min="1" required></label>
+  <label>新标准价<input name="base_price" type="number" step="0.01" min="0.01" required></label>
+  <button type="submit">改价</button>
+</form>
+<form method="post" action="{{ url_for('master.do_action', entity='product', action='status') }}">
+  <fieldset><legend>改商品状态</legend></fieldset>
+  <label>商品ID<input name="product_id" type="number" min="1" required></label>
+  <label>状态<select name="status"><option>ACTIVE</option><option>INACTIVE</option></select></label>
+  <button type="submit">提交</button>
+</form>

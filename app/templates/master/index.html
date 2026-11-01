@@ -1,0 +1,18 @@
+{% extends "master/layout.html" %}
+{% block title %}总览{% endblock %}
+{% block content %}
+{% if notice %}<div class="notice">{{ notice[1] }}</div>{% endif %}
+<h2>主数据总览</h2>
+<div class="cards">
+  {% for slug, item in entities.items() %}
+  <a class="card" href="{{ url_for('master.list_view', entity=slug) }}">
+    <b>{{ item.title }}</b>
+    <span>{{ item.code }}</span>
+  </a>
+  {% endfor %}
+</div>
+<p class="hint">
+  九个实体码与契约 §2.4.1 一一对应。列表允许看停用项（店长维护需要）；写入按钮只提交，
+  唯一键、状态机与定价规则由库里的过程裁决，页面不复述这些判断。
+</p>
+{% endblock %}

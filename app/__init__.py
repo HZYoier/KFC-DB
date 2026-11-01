@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
+import os
+import secrets
 
 from flask import Flask
 
@@ -24,6 +26,9 @@ def create_app(config: DbConfig | None = None) -> Flask:
     app.json.ensure_ascii = False  # 中文原样回显，页面层不再手工反转义
 
     app.config["KFC_DB"] = config or load_db_config()
+    # 会话签名密钥：C 的登录层要把员工数据库登录放进 Flask 会话，没有它 session 不可用。
+    # 从环境变量取，本机没配就现生成一把——重启后旧会话失效，正好逼着重新登录。
+    app.secret_key = os.environ.get("KFC_SECRET_KEY") or secrets.token_hex(32)
     log.configure(app)
     errors.register_error_handlers(app)
     _register_blueprints(app)

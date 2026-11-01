@@ -63,6 +63,12 @@ def p_datetime(value) -> SqlParam:
     return SqlParam(value, pyodbc.SQL_TYPE_TIMESTAMP)
 
 
+def p_time(value) -> SqlParam:
+    """TIME(0) 参数（促销规则的 start_time / end_time）。用 datetime.time，不要传字符串，
+    否则驱动按 varchar 送，靠服务器隐式转换，出错时看不出是哪一层的问题。"""
+    return SqlParam(value, pyodbc.SQL_SS_TIME2)
+
+
 def _config(config: DbConfig | None = None) -> DbConfig:
     if config is not None:
         return config

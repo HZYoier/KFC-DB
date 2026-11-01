@@ -1,0 +1,6 @@
+<form method="post" action="{{ url_for('master.do_action', entity='combo', action='set') }}">
+  <fieldset><legend>设置套餐组成（整体替换；每行「子项商品ID 数量」，留空即清空）</legend></fieldset>
+  <label>套餐商品ID<input name="product_id" type="number" min="1" required></label>
+  <label>组成<textarea name="lines" placeholder="4 1&#10;5 2"></textarea></label>
+  <button type="submit">保存</button>
+</form>

@@ -1,0 +1,6 @@
+<form method="post" action="{{ url_for('master.do_action', entity='bom', action='set') }}">
+  <fieldset><legend>设置单品配方（整体替换；每行「原料ID 用量」，留空即清空）</legend></fieldset>
+  <label>商品ID<input name="product_id" type="number" min="1" required></label>
+  <label>配方<textarea name="lines" placeholder="1 0.25&#10;3 0.5"></textarea></label>
+  <button type="submit">保存</button>
+</form>

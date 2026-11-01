@@ -1,0 +1,17 @@
+<form method="post" action="{{ url_for('master.do_action', entity='ingredient', action='create') }}">
+  <fieldset><legend>新建原料</legend></fieldset>
+  <label>名称<input name="ingredient_name" maxlength="50" required></label>
+  <label>单位<input name="unit_name" maxlength="50" required></label>
+  <label>安全库存<input name="safety_stock_qty" type="number" step="0.001" min="0.001" required></label>
+  <button type="submit">新建</button>
+</form>
+<form method="post" action="{{ url_for('master.do_action', entity='ingredient', action='update') }}">
+<form method="post" action="{{ url_for('master.do_action', entity='ingredient', action='update') }}">
+  <fieldset><legend>整行修改（含状态）</legend></fieldset>
+  <label>原料ID<input name="ingredient_id" type="number" min="1" required></label>
+  <label>名称<input name="ingredient_name" maxlength="50" required></label>
+  <label>单位<input name="unit_name" maxlength="50" required></label>
+  <label>安全库存<input name="safety_stock_qty" type="number" step="0.001" min="0.001" required></label>
+  <label>状态<select name="status"><option>ACTIVE</option><option>INACTIVE</option></select></label>
+  <button type="submit">提交</button>
+</form>
