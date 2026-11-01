@@ -134,7 +134,7 @@ dbo.sp_customer_list_orders
 
 计划 §6.2 表里除顾客端三行外，其余接口由 B 的 [`b-interface-handoff.md`](b-interface-handoff.md) 于 2026-10-14 交出，2026-10-27 由 A 合入本节。**2026-10-28：本节复核完毕**——§2.1 的 8 个签名、岗位守卫与错误码分段逐条对过源码（见 §2.3），C 另从授权侧核了 55 项；§2.2 的 6 个查询在仓库中尚无对应过程，表中列名与类型已按 `01` / `02` 核过。
 
-**§2 冻结日 2026-11-03**（OI-03）：签名、参数与返回列自此不再改动，`11b` 按本版写；§2.2 的实现归 B，**未实现前应用层不得调用**。冻结后若仍要改，须三人联合决定并记入 §3 变更记录，不在脚本里就地改签名。
+**§2 冻结日 2026-11-03**（OI-03）：签名、参数与返回列自此不再改动，`11b` 按本版写；§2.2 的实现归 B，**未实现前应用层不得调用**；§2.4 的四个接口归 A，**2026-11-01 已实现于 `11a`**。冻结后若仍要改，须三人联合决定并记入 §3 变更记录，不在脚本里就地改签名。
 
 ### 2.1 现有写接口（8 个，第一阶段已部署，**本轮不改签名**）
 
@@ -205,6 +205,103 @@ A 已定的两项：
 - [ ] **Common 层调用样例**：8 个写过程无业务结果集、无 `RETURN` 值，成功判据只能是「未抛错 + 外层提交」，样例须按此写，不能拿 `ExecuteNonQuery` 行数当判据。属 2.3，不阻塞 §2 冻结。
 - [ ] §1.6 表里的 4 条联合边界（属 §1 顾客端，不阻塞 §2 冻结）。
 
+### 2.4 A 域查询 / 注册接口（4 个，2026-11-01 已实现于 `11a`）
+
+计划 §6.2 表里归 A 的四行（收银选商品、收银检索顾客、新顾客建档、维护主数据）。与 §2.2 同口径：**固定列、按稳定键排序、不 `SELECT *`、参数必须绑定；无结果返回空集合，权限 / 身份问题必须抛错**。全部落在 [`sql/stage2/11a_master_migration.sql`](../../sql/stage2/11a_master_migration.sql) §4，**本轮不改签名**。
+
+四个过程的身份守卫都按 `USER_NAME()` 映射 `EmployeeAccount`（`status = 'ACTIVE'` 且 `job_code` 匹配），参数里不含员工 ID，无法用参数冒充身份。错误码复用 A 域 `510xx` 段：**`51000` 输入非法、`51004` 岗位不符、`51005` 手机号重复**（登记见 [`naming.md`](naming.md) §7，映射沿用 `app/common/errors.py`：`51000 → E_INPUT`、`51004 → E_FORBIDDEN`、`51005 → E_CONFLICT`）。
+
+#### 2.4.1 `sp_list_master_records`
+
+```sql
+dbo.sp_list_master_records
+(
+    @entity_code VARCHAR(30),
+    @status      VARCHAR(20) = NULL
+)
+-- STORE_MANAGER；按 @entity_code 返回下列之一（单结果集）
+```
+
+| `@entity_code` | 返回列（顺序即定义列序） | 排序键 | 支持 `@status` |
+| --- | --- | --- | --- |
+| `CATEGORY` | `category_id BIGINT`、`category_name NVARCHAR(50)`、`status VARCHAR(20)` | `category_id` | 是 |
+| `PRODUCT` | `product_id BIGINT`、`product_name NVARCHAR(50)`、`base_price DECIMAL(10,2)`、`product_type VARCHAR(20)`、`status VARCHAR(20)` | `product_id` | 是 |
+| `INGREDIENT` | `ingredient_id BIGINT`、`ingredient_name NVARCHAR(50)`、`unit_name NVARCHAR(50)`、`safety_stock_qty DECIMAL(12,3)`、`status VARCHAR(20)` | `ingredient_id` | 是 |
+| `MEMBER_LEVEL` | `member_level_id BIGINT`、`level_name NVARCHAR(50)`、`point_multiplier DECIMAL(5,2)`、`threshold_points INT`、`status VARCHAR(20)` | `member_level_id` | 是 |
+| `CUSTOMER` | `customer_id BIGINT`、`mobile VARCHAR(20)`、`customer_type VARCHAR(20)`、`member_level_id BIGINT?`、`level_name NVARCHAR(50)?`、`current_points INT`、`status VARCHAR(20)` | `customer_id` | 是 |
+| `PRODUCT_BOM` | `product_id BIGINT`、`product_name NVARCHAR(50)`、`ingredient_id BIGINT`、`ingredient_name NVARCHAR(50)`、`usage_qty DECIMAL(12,3)` | `product_id, ingredient_id` | **否** |
+| `COMBO` | `combo_product_id BIGINT`、`combo_product_name NVARCHAR(50)`、`child_product_id BIGINT`、`child_product_name NVARCHAR(50)`、`quantity INT` | `combo_product_id, child_product_id` | **否** |
+| `PROMOTION` | `promotion_id BIGINT`、`promotion_name NVARCHAR(50)`、`promotion_type VARCHAR(20)`、`start_at DATETIME2(0)`、`end_at DATETIME2(0)`、`status VARCHAR(20)` | `promotion_id` | 是 |
+| `PROMOTION_RULE` | `promotion_rule_id BIGINT`、`promotion_id BIGINT`、`promotion_name NVARCHAR(50)`、`product_id BIGINT`、`product_name NVARCHAR(50)`、`weekday_no INT`、`start_time TIME(0)`、`end_time TIME(0)`、`promo_price DECIMAL(10,2)`、`priority INT` | `promotion_id, priority DESC, promotion_rule_id` | **否** |
+
+约束：
+
+1. `@entity_code` 先 `UPPER(LTRIM(RTRIM(...)))` 再比对；不在上表九码之内按 `51000` 拒绝，**不做模糊匹配也不默认返回任何实体**。
+2. `@status` 只接受 `ACTIVE` / `INACTIVE` / `NULL`，其余按 `51000` 拒绝；`NULL` 表示**含停用项**（店长维护页要能看到停用记录，这也是不给收银这个接口的原因之一）。给没有状态列的三张表传 `@status`（哪怕传 `'ACTIVE'`）同样按 `51000` 拒绝，不静默忽略。
+3. 无结果返回空集合；岗位不符 `51004`，**不返回空集合冒充**。
+4. `CUSTOMER` 一行的 `level_name` 走 `LEFT JOIN`，`member_level_id` 为空时该列也为 `NULL`——B 的取值口径是「等级停用时清空」，所以这里**不能**用 `INNER JOIN` 把无等级顾客过滤掉。
+5. `PROMOTION_RULE` 的排序刻意与 `fn_get_effective_product_price` 的 `priority DESC, promotion_rule_id ASC` 同向：页面上排在前面的就是实际生效的那条，避免「展示 3.00、结算 7.00」的表面矛盾（同窗多条规则的合法性见 [`a-normalization.md`](a-normalization.md) §4.2）。
+
+#### 2.4.2 `sp_list_sale_products`
+
+```sql
+dbo.sp_list_sale_products (@take INT = 100)
+-- CASHIER
+-- RS1: product_id BIGINT, product_name NVARCHAR(50),
+--      effective_price DECIMAL(10,2), promotion_id BIGINT?
+```
+
+约束：
+
+1. 只返回 `Product.status = 'ACTIVE'` 的商品，按 `product_id` 升序。
+2. 价格由 `dbo.fn_get_effective_product_price(product_id, SYSDATETIME())` 计算，`promotion_id` 为命中的规则所归属的促销，未命中为 `NULL`；`CROSS APPLY` 保证每行都有价，**不会出现 `effective_price` 为空的行**。
+3. `@take` 取 1..200（NULL 也算越界），越界按 `51000` 拒绝，**不静默截断到 200**（与 §2.2 分页协议同一条规矩）。
+4. **展示价不替代下单快照**：真实成交价以 `sp_create_order` 写入的订单项快照为准，页面显示的价只用于选品与提示。两次拉取之间促销可能生效或失效，本过程不缓存、不锁行。
+5. B 的收银页是唯一调用方；本过程不返回成本、库存或 BOM，选品页不该看得到这些。
+
+#### 2.4.3 `sp_find_customer_for_order`
+
+```sql
+dbo.sp_find_customer_for_order (@mobile VARCHAR(20))
+-- CASHIER
+-- RS1: customer_id BIGINT, mobile VARCHAR(20), customer_type VARCHAR(20),
+--      member_level_id BIGINT?, level_name NVARCHAR(50)?
+```
+
+约束：
+
+1. **精确匹配** `mobile = LTRIM(RTRIM(@mobile))`，`TOP (1)` 加 `ORDER BY customer_id`；不按前缀、不按姓名模糊查，避免用「输错一半」拉出别家顾客。
+2. 只回 `status = 'ACTIVE'` 的顾客；停用顾客按查无此人处理（空集合），**不**在这里抛状态错误——收银员无从处理「该顾客已停用」。
+3. `@mobile` 为 `NULL` 或空白按 `51000` 拒绝（空参数是调用缺陷，不是「查无此人」）；格式不做 11 位校验（那是建档的事，查不到就返回空集合）。
+4. 无结果返回空集合，**不抛错**——「新客」是正常业务分支，调用方据此转 §2.4.4 建档。
+5. 只回这四个字段，`current_points` 与累计消费**不在**本过程里：收银台上不需要，多给一列就多一处泄露面。
+
+#### 2.4.4 `sp_register_customer_for_order`
+
+```sql
+dbo.sp_register_customer_for_order (@mobile VARCHAR(20))
+-- CASHIER；**无业务结果集**（与 §2.1 的写过程同口径：正常完成仅表示未抛错）
+```
+
+约束：
+
+1. 固定建 `GUEST`、`current_points = 0`、`status = 'ACTIVE'`，`member_level_id` 取默认档。**没有** `@customer_type` / `@member_level_id` / `@points` 参数——收银台不该有表达它们的入口。
+2. 默认等级判据、重复手机号 `51005`、事务边界**都只存在于** `dbo.sp_create_customer`，本过程以 `EXEC dbo.sp_create_customer @mobile = ..., @customer_type = 'GUEST'` 委托，不复制一份规则。依靠**所有权链**，收银员无需被授予 `sp_create_customer` 的 `EXECUTE` 也能走通（该过程只要求「映射到启用员工」，不校验岗位）。
+3. 它与店长建档接口的差别只有两处：收银员可调、`@customer_type` 锁定为 `GUEST`。**重复手机号仍抛 `51005`**（不像顾客端 §1.2 那样幂等）——收银员看得见屏幕上的手机号，撞号说明该走检索而不是新建。这与计划 §6.2 的「返回既有重复码」一致。
+4. `@mobile` 必须匹配 11 位数字（`NOT LIKE '[0-9]'×11`），否则 `51000`；`LTRIM/RTRIM` 后写入，与 `sp_create_customer` 一致。
+5. **新 `customer_id` 不由本过程返回**。调用方建档成功后按 §2.4.3 用同一手机号回查取 ID，再带 `customer_id` 去 `sp_create_order`。这条两步流程是本接口没有结果集的直接后果，页面不要缓存建档前的检索结果。
+
+#### 2.4.5 授权（C 的 `12_permissions.sql`）
+
+```sql
+GRANT EXECUTE ON dbo.sp_list_master_records         TO role_store_manager;
+GRANT EXECUTE ON dbo.sp_list_sale_products          TO role_cashier;
+GRANT EXECUTE ON dbo.sp_find_customer_for_order     TO role_cashier;
+GRANT EXECUTE ON dbo.sp_register_customer_for_order TO role_cashier;
+```
+
+两条都成立才算守住：**授权层**漏配时，越权调用返回 `229`；授权被误放开时，**过程层的岗位守卫**仍返回 `51004`。2026-11-01 本地已用 `test_cashier` / `test_store_manager` 双向验证过这四个过程（14 条断言全过，含两种越权方向与「临时错授后仍 `51004`」）。本批接口**不向任何岗位开放基表 `SELECT`**，主数据页只能经 `sp_list_master_records` 取数。
+
 ## 3. 变更记录
 
 | 日期 | 变更 |
@@ -214,3 +311,4 @@ A 已定的两项：
 | 2026-10-22 | 同步 C 于 10-21 的决定：§1.5 登记 `530xx` 三码与三条应用层映射；§1.1 / §1.5 落定 `cust_app` 的授权范围、`WITHOUT LOGIN` 建用户与部署侧登录映射、越权断言 `229`；§1.4 返回列经 C 确认只回订单头。§1.6 待决由 5 条减为 **3 条（全在 B：明细、取餐码规则、锁库规则文本）**；本文仍未冻结，冻结卡在 §2 其余接口与 §1.6 剩余 3 条 |
 | 2026-10-27 | 合入 B 的 `b-contract-decisions.md` §2–§4：§1.3 约束 4 换为完整锁库规则、约束 6/7 补服务端生成与 `53000` 拒绝、约束 10 补「不顺便支付/整体回滚」；§1.4 约束 2/3/6/7 补匹配口径、停用空集、只回订单头与取餐码不外泄。**订正自相矛盾**：§1.1 约束 5 改为写过程自持事务、查单不显式开事务。新增 §1.3 约束 8 **本轮只开放 `PICKUP`**（A 决，采纳 B 收敛建议；`DELIVERY` 的 `pickup_code` 必须为 `NULL` 与查单要求非空相冲突）。§1.5 补 `2627`/`2601 → E_CONFLICT` 与 `53002` 的适用范围。§1.6 原 3 条 B 待决清空，另列 4 条仍需 A/C 或三方联定的问题（外送凭据、结果未知恢复、员工凭据生命周期、登录映射）。同日并入 `b-interface-handoff.md`：§2 原「待 2.2 补」改为 §2.1 八个现有写接口（参数、岗位守卫、变更结果、`52100`/`52xxx` 分段错误码、无业务结果集与结果未知口径）、§2.2 六个新查询提案（`@take` 限订单数、两结果集一致键集、按 `order_no` 定位的参数扩展）、§2.3 冻结前 A 的核对清单；仅 `05:111`/`05:264`/`05:389`/`05:503`/`05:628` 五处签名经抽查核对。同日 A 完成 §2.3 全量核对：8 个过程签名、岗位守卫、`52xxx` 错误码分布与 6 个查询提案引用的列**全部与源码一致，无订正**；A 定两项——接受 `sp_get_order_operation_status` 按 `order_no` 定位的参数扩展，`@take INT = 100`（1..200）作临时分页口径。**仍未冻结**：卡在 C 侧授权核对、Common 调用样例与 §1.6 表 |
 | 2026-10-28 | **定 2.2 冻结日 2026-11-03（OI-03，A 提议、待 B/C 回执）并冻结 §2**：§2 头部改为「已复核完毕」，§2.2 标题去掉「待冻结」；分页协议定稿（`@take` 1..200，**不做** offset / keyset 翻页，调用方在「返回行数 < `@take`」时停止，越界拒绝而不静默截断到 200，具体码位归 B 的 `52xxx`）；§2.3 的 C 侧核对勾掉（10-27 已 55 PASS），Common 调用样例与 §1.6 四条边界注明属 2.3 / §1，不阻塞 §2 冻结。冻结后改签名须三人联定并记入本节 |
+| 2026-11-01 | **新增 §2.4：A 域四个 v1.0 查询 / 注册接口并已实现**（计划 §6.2 归 A 的四行）——`sp_list_master_records`（店长，九实体码固定列，无状态列的 BOM / 套餐 / 促销规则传 `@status` 即 `51000`）、`sp_list_sale_products`（收银，`@take` 1..200，价走 `fn_get_effective_product_price`，展示价不替代快照）、`sp_find_customer_for_order`（收银，精确手机号、只回启用顾客、无结果空集合）、`sp_register_customer_for_order`（收银，固定 GUEST / 0 分，委托 `sp_create_customer`，重复号 `51005`，**无结果集**，新 ID 靠回查 §2.4.3 取得）。四个过程落在 `11a`，授权清单交 C 的 `12_permissions`（§2.4.5）；本地 `test_cashier` / `test_store_manager` 双向越权 14 断言全过。签名随 §2 于 2026-11-03 一同冻结 |
