@@ -99,8 +99,14 @@ def _json_items(text, id_key: str, value_key: str, parser) -> str:
             continue
         if len(parts) != 2:
             raise AppError("E_INPUT")
+        value = parser(parts[1])
         items.append(
-            {id_key: _int_in_range(parts[0], 1, 2**63 - 1), value_key: parser(parts[1])}
+            {
+                id_key: _int_in_range(parts[0], 1, 2**63 - 1),
+                # Decimal 直接 json.dumps 会报错；写成字符串，OPENJSON 的 WITH DECIMAL 能转，
+                # 且不会像 float 那样丢掉「0.500」的末位
+                value_key: str(value) if isinstance(value, Decimal) else value,
+            }
         )
     return json.dumps(items, ensure_ascii=False, separators=(",", ":"))
 
