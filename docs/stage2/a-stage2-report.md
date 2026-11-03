@@ -86,3 +86,4 @@ C 于当天交付 `12_permissions` / `13c` / `run_migration` / `regression` 与 
   - 待 C 把 `tests/stage2/run-all.ps1` 补上 `common` 一行，并把 `app/auth/dao.py` 的临时适配器收成一次 `query_procedure_sets` 调用。
 
 真实迁移仍未在 A 本机跑：C 已有 `run_migration` 全回滚与临时 11b 桩的证据，完整链路等 B 的真实 `11b` 与顾客三过程。
+- **OI-10 四条联合边界出提案**：契约新增 §1.7，每条给选项、代价与推荐（外送只开自取、响应丢失不伪装恢复、员工凭据采纳进程内存 8 小时并改计划口径、`cust_app` 共享非身份账户）。回执齐后 §1 冻结；未回执前 OI-10 保持 open。
