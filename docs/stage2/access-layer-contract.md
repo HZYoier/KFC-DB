@@ -2,19 +2,24 @@
 
 > 版本：2026-10-28（草案，待 B/C 按各自域的实际调用核对；随 2.2 冻结一并定稿）
 >
-> 用途：计划 §6.3 要求 A 在共享契约里定义四个 Python 签名。本文是那四个名字的落点、调用口径和边界；实现在 `app/common/db.py`、`tx.py`、`errors.py`、`log.py`。**B、C 的 `dao.py` 只按本文调用，不 import pyodbc、不自己连库、不自己开事务、不新增错误码。**
+> 用途：计划 §6.3 要求 A 在共享契约里定义 Python 签名（2026-11-03 因 OI-14 增补多结果集入口，四个变五个）。本文是那四个名字的落点、调用口径和边界；实现在 `app/common/db.py`、`tx.py`、`errors.py`、`log.py`。**B、C 的 `dao.py` 只按本文调用，不 import pyodbc、不自己连库、不自己开事务、不新增错误码。**
 
-## 1. 四个签名（冻结面）
+## 1. 五个签名（冻结面）
 
 | 签名 | 落点 | 语义 |
 | --- | --- | --- |
 | `open_connection(session=None, *, autocommit=True, config=None) -> pyodbc.Connection` | `db.py` | 唯一开连接的地方。默认 `autocommit=True` |
 | `query(session, sql, params=()) -> list[dict]` | `db.py` | 只读查询，`sql` 必须是 `dao.py` 里的常量 |
-| `query_procedure(session, name, params=()) -> list[dict]` | `db.py` | 调返回结果集的查询过程（§2.2 那批） |
+| `query_procedure(session, name, params=()) -> list[dict]` | `db.py` | 调返回结果集的查询过程（§2.2 那批）；只回**第一个非空集** |
+| `query_procedure_sets(session, name, params=()) -> list[list[dict]]` | `db.py` | 调多结果集过程；按过程返回的顺序给出**全部**结果集，空集也占位 |
 | `execute_procedure(session, name, params=()) -> list[dict]` | `db.py` | 调写过程；过程自持事务，这里不再包 |
 | `run_in_transaction(session, callback) -> Any` | `tx.py` | 同一身份同一连接上跑多个过程，全成功才提交 |
 
 返回行统一是 `dict`（列名 → 值，列名取 `cursor.description`）；`DECIMAL` 原样回 `Decimal`，出 JSON 前过 `db.jsonable(rows)` 或 `db.as_json_value(value)`——金额转字符串，**不转 float**。
+
+**结果集口径（2026-11-03 起）：** 单结果集过程用 `query_procedure`，多结果集过程必须用 `query_procedure_sets`——位置就是契约（C 的 `sp_get_current_employee_context` 是「员工头 / 业务角色 / 权限码」三集，B 的支付详情与配餐是两集）。空结果集**保留占位**，不能因为某一集没行就把后面的集前移；调用方按契约用下标取，不靠「第一个非空」。
+
+**错误口径：** `nextset()` 抛出的异常一律冒泡并走 §5 映射。旧实现把它吞掉后返回已读到的行，等于「返回了行、错误却不见了」——多结果集过程的后半段失败会被当成成功（OI-14）。
 
 ## 2. `session` 的形状
 
@@ -76,6 +81,8 @@ p_bit(value) / p_decimal(value, precision, scale) / p_datetime(value)
 
 已验（2026-10-28，本机 `localhost`，信任连接）：`tests/stage2/check_app_common.py` 9 条 PASS——应用工厂可建、配置不含口令、视图可查、DAO 模板可跑、`DECIMAL` 转字符串、空名被应用层挡为 `E_INPUT`、库侧 `51004` 归 `E_FORBIDDEN`、口令被抹除。证据待随 2.3 一并归档到 `result/stage2/`。
 
+**2026-11-03 补多结果集（OI-14）：** `tests/stage2/common/run_common_tests.py` 13 条——单集原样返回、三集/两集保持顺序、空集占位、无结果集返回空表、`query_procedure` 仍取第一个非空集、`nextset` 异常分别归 `E_RULE`/`E_TX`、出错时连接照样关闭、执行阶段错误先于任何行返回、非法过程名不连库。本机用临时过程实测：三集 `[1, 0, 1]`（中间空集未被跳过），先 `SELECT` 后 `THROW 50000` 的过程抛 `E_RULE` 而不是返回行；验完已删临时过程，库回到 42 过程 / 25 表。
+
 待办：① C 的 `run.py` 与 `app/auth`（包里给出 `bp` 即被应用工厂自动注册，不用改 `app/__init__.py`）；② B 用 `sp_create_order` 与一次故障回滚核对事务 helper 的提交/回滚语义；③ C 定顾客端 `cust_app` 的凭据交付方式（OI-10）。
 
 ## 9. 变更记录
@@ -83,3 +90,4 @@ p_bit(value) / p_decimal(value, precision, scale) / p_datetime(value)
 | 日期 | 变更 |
 | --- | --- |
 | 2026-10-28 | 建立本文：A 按计划 §6.3 交出 `app/common/` 底座，固定四个签名、`session` 形状、参数定型、事务口径、错误码映射与日志字段；本机冒烟 9 条 PASS |
+| 2026-11-03 | 增补 `query_procedure_sets` 与结果集口径（OI-14）：多集按序返回、空集占位、`nextset` 异常冒泡；新增 13 条测试与本机实测。C 的 `app/auth/dao.py` 适配器可以改为一次 `query_procedure_sets` 调用 |

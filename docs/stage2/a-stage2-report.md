@@ -74,3 +74,15 @@
 - **给 C**：`11a` 由 `run_migration.sql` 在 `11b` 之前 `:r`；`13a` 要放在 `SchemaVersion('v1.0')` 提交之后读 `batch_id`；四个过程的 `GRANT` 清单见契约 §2.4.5；`533xx` 是 `11a` 的部署段，不进应用调用路径。
 - **给 B**：收银下单页取商品价走 `sp_list_sale_products`（`@take` 1..200），但**展示价不替代订单快照**，落单金额仍由 `sp_create_order` 记录；`sp_find_customer_for_order` 无结果返回空集合而非报错；`sp_register_customer_for_order` 自身无结果集，得回查取 `customer_id`。
 - **下一步（A）**：契约定 §1 并合入 OI-10 剩余四条联合边界（顾客外送凭据、下单结果未知的恢复、服务端员工凭据生命周期、`cust_app` 登录映射）；写 `user-manual.md` 的 A 域一节；真实迁移跑通后归档 `13a` 证据到 `result/stage2/`。
+
+## 6. 补记：2026-11-03 冻结日
+
+C 于当天交付 `12_permissions` / `13c` / `run_migration` / `regression` 与 `app/auth`、`app/inventory`，A 侧两件事随之落地：
+
+- **OI-13 回执**：`12_permissions.sql` 的白名单行、四条 `GRANT` 与角色种子同契约 §2.4.5 逐条比对一致（`sp_list_master_records` → `role_store_manager`，其余三个 → `role_cashier`），A 侧无偏差。
+- **OI-14 修复**：C 指出 `app/common/db.py` 只取首个非空结果集、且 `nextset()` 抛错时把已读到的行当成功。已拆成 `_read_sets`（按序读完、空集占位）+ `_first_non_empty`，新增 `query_procedure_sets`，`nextset` 异常一律冒泡并走 §5 映射；`query_procedure` / `execute_procedure` 语义不变，B/C 现有调用不用改。
+  - 新测试 `tests/stage2/common/run_common_tests.py` **13 PASS / 0 FAIL**（两集与三集顺序、空集占位、`E_RULE`/`E_TX` 映射、出错仍关连接、非法过程名不连库）。
+  - 本机临时过程实测：三集返回 `[1, 0, 1]`（中间空集未被跳过），「先 `SELECT` 后 `THROW 50000`」的过程抛 `E_RULE` 而非返回行；验完删过程，库回到 42 过程 / 25 表。
+  - 待 C 把 `tests/stage2/run-all.ps1` 补上 `common` 一行，并把 `app/auth/dao.py` 的临时适配器收成一次 `query_procedure_sets` 调用。
+
+真实迁移仍未在 A 本机跑：C 已有 `run_migration` 全回滚与临时 11b 桩的证据，完整链路等 B 的真实 `11b` 与顾客三过程。

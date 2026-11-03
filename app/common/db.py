@@ -1,7 +1,8 @@
 """唯一的连接与参数绑定入口（计划 §6.3）。
 
-对外四个名字冻结：open_connection / query_procedure / execute_procedure /
-run_in_transaction（在 tx.py）。其余模块不得 import pyodbc，也不得自己拼 SQL 值。
+对外五个名字冻结：open_connection / query_procedure / execute_procedure /
+query_procedure_sets / run_in_transaction（在 tx.py）。其余模块不得 import pyodbc，
+也不得自己拼 SQL 值。
 
 身份口径：员工侧过程按 USER_NAME() 映射 EmployeeAccount，所以每个员工的请求必须用
 他自己的数据库登录连接。session 里带 db_login / db_password 就用它，
@@ -113,21 +114,26 @@ def _bind(cursor, params: Sequence[SqlParam]) -> list[Any]:
     return values
 
 
-def _rows(cursor) -> list[dict[str, Any]]:
-    """取第一个非空结果集；过程都只回一个结果集，其余集合读掉再返回。"""
-    rows: list[dict[str, Any]] = []
+def _read_sets(cursor) -> list[list[dict[str, Any]]]:
+    """按过程返回的顺序读完全部结果集；空集也占一个位置。
+
+    nextset() 的异常必须冒泡：它通常是后段语句报的错（前半段已经把行发出来了），
+    吞掉就等于把失败当成功——返回了行、错误却不见了。
+    """
+    sets: list[list[dict[str, Any]]] = []
     while True:
         if cursor.description:
             columns = [column[0] for column in cursor.description]
-            fetched = [dict(zip(columns, row)) for row in cursor.fetchall()]
-            if fetched:
-                return fetched
-            rows = fetched
-        try:
-            if not cursor.nextset():
-                return rows
-        except pyodbc.Error:
+            sets.append([dict(zip(columns, row)) for row in cursor.fetchall()])
+        if not cursor.nextset():
+            return sets
+
+
+def _first_non_empty(sets: list[list[dict[str, Any]]]) -> list[dict[str, Any]]:
+    for rows in sets:
+        if rows:
             return rows
+    return []
 
 
 def query(session: Session | None, sql: str, params: Sequence[SqlParam] = ()) -> list[dict[str, Any]]:
@@ -136,7 +142,7 @@ def query(session: Session | None, sql: str, params: Sequence[SqlParam] = ()) ->
     try:
         cursor = conn.cursor()
         cursor.execute(sql, _bind(cursor, params))
-        return _rows(cursor)
+        return _first_non_empty(_read_sets(cursor))
     except pyodbc.Error as exc:
         raise errors.from_exception(exc) from exc
     finally:
@@ -144,8 +150,18 @@ def query(session: Session | None, sql: str, params: Sequence[SqlParam] = ()) ->
 
 
 def query_procedure(session: Session | None, name: str, params: Sequence[SqlParam] = ()) -> list[dict[str, Any]]:
-    """调用返回结果集的查询过程（§2.2 那批）。"""
+    """调用返回结果集的查询过程（§2.2 那批）。只回第一个非空集；要多集用 query_procedure_sets。"""
     return _call(session, name, params)
+
+
+def query_procedure_sets(session: Session | None, name: str, params: Sequence[SqlParam] = ()) -> list[list[dict[str, Any]]]:
+    """调用多结果集过程，按过程返回的顺序给出全部结果集（空集也占位）。
+
+    位置就是契约：C 的 sp_get_current_employee_context 是「员工头 / 业务角色 / 权限码」
+    三集，B 的支付详情与配餐是两集；用第几个集回答哪个问题，由调用方按契约取，
+    这里只保证顺序、空集不被吃掉、后段的错照样抛。
+    """
+    return _call_sets(session, name, params)
 
 
 def execute_procedure(session: Session | None, name: str, params: Sequence[SqlParam] = ()) -> list[dict[str, Any]]:
@@ -154,6 +170,10 @@ def execute_procedure(session: Session | None, name: str, params: Sequence[SqlPa
 
 
 def _call(session: Session | None, name: str, params: Sequence[SqlParam]) -> list[dict[str, Any]]:
+    return _first_non_empty(_call_sets(session, name, params))
+
+
+def _call_sets(session: Session | None, name: str, params: Sequence[SqlParam]) -> list[list[dict[str, Any]]]:
     if not _IDENT.match(name or ""):
         raise ValueError("过程名不合法：%r" % (name,))
     placeholders = ", ".join("?" for _ in params)
@@ -162,7 +182,7 @@ def _call(session: Session | None, name: str, params: Sequence[SqlParam]) -> lis
     try:
         cursor = conn.cursor()
         cursor.execute(sql, _bind(cursor, params))
-        return _rows(cursor)
+        return _read_sets(cursor)
     except pyodbc.Error as exc:
         raise errors.from_exception(exc) from exc
     finally:
