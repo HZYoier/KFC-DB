@@ -204,6 +204,23 @@ v0.1 的 25 张表还原为 **25 个实体、35 条物理外键**，按域拆成
 
 完整执行证据见 [`result/`](result/)，实验过程与结论见 [第一阶段测试报告](docs/stage1/test-report.md) 和 [第一阶段成员 B 报告](docs/stage1/b-stage-report.md)。
 
+### 第二阶段：迁到 v1.0 并启动应用
+
+前提：v0.1 已按上面三步整跑通过，应用**停写**并已备份。依次执行（仓库根目录）：
+
+```powershell
+sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/stage2/capture_baseline.sql" -v SourceBaseline="<v0.1 提交号>" -v ConfirmAppStopped=YES
+sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -I -i "sql/stage2/run_migration.sql"
+sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -I -i "sql/stage2/regression.sql"
+```
+
+- 第二步在**一个外层事务**里串 `11a → 11b → 11c → 12`，任一步失败整体回滚，库仍是 v0.1（预检码 `53500`–`53503`）。
+- 第三步必须在提交后跑，按 `SchemaVersion('v1.0')` 取批次号，期望 **37 条**（`13a` 10 + `13b` 5 + `13b` 8 + `13c` 14）。
+- 应用侧：复制 `config.example.env` 为 `.env` 填本机实例名，`python run.py` 启动；员工必须用**自己的数据库登录**（管理员按 `sql/stage2/provision_employee.template.ps1` 建），操作步骤见[操作手册](docs/stage2/user-manual.md)。
+- 测试汇总入口：`powershell -ExecutionPolicy Bypass -File tests/stage2/run-all.ps1`。
+
+迁移协议与回滚细则见[迁移指南](docs/stage2/migration-guide.md)；A 域的实测结果见[第二阶段 A 报告](docs/stage2/a-stage2-report.md)。
+
 ## 文档索引
 
 - [**第一阶段阶段报告**](docs/stage1/阶段报告.md) — 总报告：经营场景与数据边界、表设计（主码 / 候选码 / 外码）、角色与权限正反例、部署与验收
@@ -212,11 +229,12 @@ v0.1 的 25 张表还原为 **25 个实体、35 条物理外键**，按域拆成
 - [业务流程](docs/业务流程.md) — 业务主线 8 步（含异常路径），建库与设计依据
 - [跨域接口契约](docs/stage1/cross-domain-interface-contract.md) — 三域之间的冻结接口：对象名、参数顺序与类型、返回列、种子常量，以及只读检查器 `sql/contract_interface_check.sql` 的校验口径
 - [第一阶段三人协作实施计划](docs/stage1/three-person-implementation-plan.md) — 对象、接口、角色和验收标准
-- [第二阶段三人协作实施计划](docs/stage2-three-person-implementation-plan.md) — ER 重建、规范化迁移与应用开发分工；含员工数据库身份、岗位查询接口、原子迁移/恢复、文件属主和修订自查。当前为待实施计划，第一阶段 SQL 仍为 v0.1
-- 第二阶段过程文档：[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（§2 的八写六查定于 2026-11-03 冻结，顾客端三过程仍为草案）、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-12 的状态与决议唯一入口）、[业务规则映射](docs/stage2/business-rule-mapping.md)（35 条外键的基数与实现机制）、[重构方案](docs/stage2/refactoring-design.md)、[事务边界](docs/stage2/transaction-boundaries.md)、[访问层接口](docs/stage2/access-layer-contract.md)（`app/common/` 的四个签名与错误码映射）
+- [第二阶段三人协作实施计划](docs/stage2-three-person-implementation-plan.md) — ER 重建、规范化迁移与应用开发分工；含员工数据库身份、岗位查询接口、原子迁移/恢复、文件属主和修订自查。2.2 迁移与应用层已按该计划实施（v1.0 迁移脚本、`app/` 三层与测试入口已交付）
+- 第二阶段过程文档：[操作手册](docs/stage2/user-manual.md)（启动、迁移顺序、七岗位入口与当前交付状态）、[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（§2 八写六查已冻结，§2.4 四个查询/注册接口 2026-11-01 补入；顾客端三过程仍为草案）、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-15 的状态与决议唯一入口）、[业务规则映射](docs/stage2/business-rule-mapping.md)（35 条外键的基数与实现机制）、[重构方案](docs/stage2/refactoring-design.md)、[事务边界](docs/stage2/transaction-boundaries.md)、[访问层接口](docs/stage2/access-layer-contract.md)（`app/common/` 的五个签名、多结果集口径与错误码映射）
 - 三域分析：[A 域](docs/stage2/a-issues.md)问题清单 / [规范化](docs/stage2/a-normalization.md)、[B 域](docs/stage2/b-issues.md)问题清单 / [规范化](docs/stage2/b-normalization.md)、[C 域](docs/stage2/c-issues.md)问题清单 / [规范化](docs/stage2/c-normalization.md)、[命名口径](docs/stage2/naming.md)
 - [ER 图](docs/er/) — [图例](docs/er/legend.md)与三域子图（[主数据](docs/er/a-master.svg)、[订单](docs/er/b-order.svg)、[库存权限](docs/er/c-inventory-security.svg)）；合并总图（25 实体 35 联系）
 - [主数据数据字典](docs/主数据数据字典.md)、[订单履约数据字典](docs/订单履约数据字典.md)、[库存权限数据字典](docs/库存权限数据字典.md)
 - [第一阶段测试报告](docs/stage1/test-report.md)
+- 第二阶段成员报告：[成员 A](docs/stage2/a-stage2-report.md)（主数据域迁移与应用落地）
 - 第一阶段成员分工报告：[成员 A](docs/stage1/a-stage-report.md)（主数据与定价）、[成员 B](docs/stage1/b-stage-report.md)（订单与履约）、[成员 C](docs/stage1/c-stage-report.md)（库存、权限与集成）
 - [AI使用记录](docs/AI使用记录.md)
