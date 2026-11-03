@@ -65,6 +65,33 @@ class BaselineSnapshotTests(unittest.TestCase):
                 source = conn.execute("SELECT c.name,TYPE_NAME(c.user_type_id),c.max_length,c.precision,c.scale,c.is_nullable,c.is_identity FROM sys.columns c WHERE c.object_id=OBJECT_ID(?) ORDER BY c.column_id", 'dbo.'+table).fetchall()
                 self.assertEqual([tuple(x) for x in actual[1:]], [tuple(x) for x in source], table+' types')
             conn.execute('COMMIT TRANSACTION;')
+            write_check = (ROOT / 'sql/stage2/13b_order_write_contract_check.sql').read_text(encoding='utf-8-sig')
+            order_source = (ROOT / 'sql/05_order_constraints_crud.sql').read_text(encoding='utf-8-sig')
+            headers = re.findall(r'^CREATE PROCEDURE dbo\.sp_.*?^AS\s*$', order_source, re.M | re.S)
+            self.assertEqual(len(headers), 8)
+            for header in headers:
+                conn.execute(header + '\nBEGIN RETURN 0; END;')
+            conn.execute(write_check)
+            create_order = next(header for header in headers if header.startswith('CREATE PROCEDURE dbo.sp_create_order\n'))
+            conn.execute(create_order.replace('CREATE PROCEDURE', 'ALTER PROCEDURE', 1)
+                         .replace('@order_no VARCHAR(50)', '@order_no VARCHAR(40)') + '\nBEGIN RETURN 0; END;')
+            with self.assertRaises(pyodbc.Error) as signature_drift:
+                conn.execute(write_check)
+            self.assertIn('(51963)', str(signature_drift.exception))
+            check = (ROOT / 'sql/stage2/13b_order_baseline_check.sql').read_text(encoding='utf-8-sig')
+            conn.execute("CREATE TABLE dbo.SchemaVersion (version_code VARCHAR(20), batch_id BIGINT);"
+                         "CREATE TABLE dbo.MigrationBatch (batch_id BIGINT, batch_status VARCHAR(20));"
+                         "INSERT dbo.SchemaVersion VALUES ('v1.0',101);"
+                         "INSERT dbo.MigrationBatch VALUES (101,'COMPLETED');")
+            conn.execute(check)
+            conn.execute("BEGIN TRANSACTION; UPDATE dbo.SalesOrder SET order_no = LOWER(order_no);")
+            try:
+                with self.assertRaises(pyodbc.Error) as drift:
+                    conn.execute(check)
+                self.assertIn('(51962)', str(drift.exception))
+            finally:
+                conn.execute('IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;')
+            conn.execute(check)
             denial_count = conn.execute("SELECT COUNT(*) FROM sys.database_permissions p JOIN sys.objects o ON o.object_id=p.major_id WHERE o.name LIKE 'Baseline[_]%' AND p.grantee_principal_id=DATABASE_PRINCIPAL_ID('public') AND p.state='D' AND p.permission_name IN ('SELECT','INSERT','UPDATE','DELETE')").fetchval()
             self.assertEqual(denial_count, 20)
             # New batch works; old completed values remain stable even after source changes.
