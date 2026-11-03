@@ -1,0 +1,83 @@
+# Signature three-path low-privilege acceptance — 2026-11-03
+
+## Scope
+
+- Database: fresh v0.1 deployment (`sql/run_all.sql`, exit 0) in KFC_DB.
+- Real objects: the three role-sync procedures from `sql/06` and their
+  `cert_role_sync` signatures from `sql/08`.
+- No dependency on B's `11b` or on 12's re-signature; this is the v0.1
+  signature baseline required by the plan. The 12 re-signature path was tested
+  separately in the partial migration drill.
+- Low-privilege subject: `test_store_manager` (member of `role_store_manager`);
+  ordinary subject: `test_cashier` (no EXECUTE on the role-sync procedure).
+- Fixture: assign the `waiter` business role to `test_store_manager`; every
+  successful call is rolled back, so no role membership/mapping/audit persists.
+
+## Phase 1 — first-round differences and attribution
+
+1. **Diagnostic PRINT with a subquery (Msg 1046).**
+   The first diagnostic printed a `SELECT COUNT(*) FROM sys.crypt_properties`
+   subquery directly in `PRINT`; SQL Server rejected the batch. Fixed by
+   assigning the count to a variable (H10). This was a test-harness defect,
+   not a product defect.
+
+2. **Target-employee metadata visibility.**
+   The first unsigned-call probe targeted `test_cashier`; after the signature
+   was removed, the low-privilege store manager could not see that principal
+   in `sys.database_principals`, so the procedure stopped at its
+   "target employee has no database user" guard. Attribution: SQL Server
+   metadata visibility, which itself depends on the signature-provided
+   `ALTER ANY USER` permission. The probe was moved to the manager's own
+   visible account (`test_store_manager`), which reaches the role lookup and
+   the dynamic `ALTER ROLE` path.
+
+3. **Unsigned-call symptom is 50000, not 15151.**
+   With the signature removed, the store manager's call failed at the
+   procedure's "corresponding database role does not exist" guard with
+   **50000** (the role metadata is invisible without the signature-granted
+   permission). After rollback restored the signature, the same call
+   succeeded. The acceptance asserts that exact error/message, not a generic
+   "some error". This is a signature dependency even though the guard fires
+   before `ALTER ROLE`.
+
+## Phase 2 — correction list
+
+- Test harness only: assign signature counts to variables before `PRINT`
+  (H10); target the manager's own visible account for the unsigned probe;
+  assert the observed 50000 + `数据库角色不存在` symptom.
+- No A/B/C production file changed for this acceptance.
+
+## Phase 3 — final green output
+
+Command:
+
+```bash
+sqlcmd -S '.\SQLEXPRESS' -E -C -f 65001 -b -I -d KFC_DB \
+  -i 'D:\DBLab\_kfcdb_tmp\check_signature_three_paths_20261103.sql'
+```
+
+Output:
+
+```text
+PASS: path1 ALTER -> unsigned fail -> ROLLBACK restore -> signed success
+PASS: path2 ALTER -> re-sign -> signed success -> ROLLBACK restore -> signed success
+PASS: path3 ALTER -> re-sign -> COMMIT -> signed success; ordinary role 229
+RESULT: pass=3 fail=0
+```
+
+Path meanings:
+
+1. **ALTER 后回滚**：ALTER dropped the signature (0); unsigned store-manager
+   call failed 50000; ROLLBACK restored the signature (1); the same store-manager
+   call then succeeded.
+2. **重签后回滚**：ALTER -> ADD SIGNATURE -> signed call succeeded; ROLLBACK
+   restored the original signature; signed call succeeded again.
+3. **重签后提交**：ALTER -> ADD SIGNATURE -> COMMIT; signed store-manager call
+   succeeded; `test_cashier` calling the same procedure was denied with **229**.
+
+## Boundary
+
+This evidence covers the signature mechanism on a fresh v0.1 database. It does
+not cover `11b` (still absent), `12_permissions` re-signature in the full path,
+or any customer procedure. It is not a full v1.0 acceptance. KFC_DB was dropped
+after the drill.

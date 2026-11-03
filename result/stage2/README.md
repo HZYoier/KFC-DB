@@ -56,6 +56,8 @@
 - （2026-11-03 增补）`scripts/check_11c_extension_rollback_20261103.sql`：11a→11c 外层事务回滚夹具；`scripts/check_11a_11c_commit_20261103.sql`：部分迁移提交与 v1.0 标记夹具。
 - （2026-11-03 增补）`c-12-13c-runmigration-2026-11-03.txt`：`12_permissions`（缺 11b 时 53404 门禁、临时桩下授权/签名）、`13c`（14/0）、`regression`（37/0）与 `run_migration`（缺 11b 全回滚、临时 11b 桩提交）证据；明确为部分迁移，不含 B 真实 11b/顾客过程。
 - （2026-11-03 增补）`scripts/check_12_stubs_20261103.sql`：12/13c 测试用的临时 B/顾客过程桩（只证明脚本机制，不证明 11b 或 OI-10 已交付）。
+- （2026-11-03 增补）`c-signature-three-paths-2026-11-03.txt`：真实 v0.1 上三路径签名验收（ALTER 后失败/回滚恢复、重签后成功/回滚恢复、重签提交 + 普通岗位 229；3/0），及未签名调用 50000 + 元数据可见性归因。
+- （2026-11-03 增补）`scripts/check_signature_three_paths_20261103.sql`：签名三路径低权限验收脚本。
 
 ## SHA-256
 
@@ -96,6 +98,8 @@ A09E0E9E15C6E82FF04F32295FB703291A71A8E30F108601D1EE0659EFB7CA13  scripts/check_
 35F484FCCBD5AD33D9164EFA8954E7087ED8D31109F9D503164BF7D98F244CA6  scripts/check_11a_11c_commit_20261103.sql
 D0A6C3327D0CFED5A94FB9A3A3F57AEAF51AF9B653AC99905E8D5E6759DAAF20  c-12-13c-runmigration-2026-11-03.txt
 E00AAB5340DA954E3B21D478D30D7E1525C98DFFDCFBC64F8C20AD28C2C83D2B  scripts/check_12_stubs_20261103.sql
+FAE1A1AA9B5C57E106076C02B5FA5DD5A3CB34C1A82DD5B9EFFCD111454144F7  c-signature-three-paths-2026-11-03.txt
+62ECD20C7FB8A1CE7FDF97A20884BEDF480F4D8D6AFE3C0DBDD972C3FF67A27E  scripts/check_signature_three_paths_20261103.sql
 1AEF13C7D3459FC3AE623E5B723AE9D8C47D1CC6EE2099431FB19DC925490E7B  ../sql/stage2/12_permissions.sql
 9AFD6C80DACA4CF3EB6D5C1593657355FC2125156546431A86065B528B33E034  ../sql/stage2/13c_inventory_security_regression.sql
 8947E914630DA170DF924696F7B7FB1AD3FDBF3C291C1ED4F0710FFE2D311CA9  ../sql/stage2/run_migration.sql
