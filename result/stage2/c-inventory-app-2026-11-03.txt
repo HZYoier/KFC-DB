@@ -1,0 +1,70 @@
+# 2.3 C 侧库存域应用骨架 — 2026-11-03
+
+## Scope
+
+- Added `app/inventory/` routes/service/dao and `app/templates/inventory/index.html`
+  for inventory dashboard, movement history, replenishment suggestions,
+  approval/rejection, and receiving.
+- Reads use C's four existing views:
+  `v_inventory_available`, `v_inventory_movement_history`,
+  `v_replenishment_dashboard`, `v_order_inventory_trace`; writes use the
+  existing C self-transaction procedures. No new DB objects, no base-table
+  SELECT.
+- Added `tests/stage2/inventory/` (10 fake-DB tests) and
+  `tests/stage2/run-all.ps1`.
+- Added `sql/stage2/provision_employee.template.ps1` (SQL login + database user
+  + EmployeeAccount mapping; password is prompted, never stored in the file).
+
+## Phase 1 — first-round differences and attribution
+
+The first inventory test run was **6/9**. The three failures were test-fixture
+issues, not application behavior:
+
+1. Tests patched `app.inventory.dao.db.execute_procedure`, but the DAO imports
+   `execute_procedure`/`query` directly from `app.common.db`; the patch target
+   did not exist. Fixed the patch target to `app.inventory.dao.execute_procedure`.
+2. `execute_procedure` takes `(session, name, params)`, so unpacking
+   `call_args.args` as two values raised `ValueError`. Fixed to `_, name, params`.
+
+No A/B file was modified. The deployment template was parsed with the
+PowerShell parser; it was not run against a real instance in this evidence.
+
+## Phase 2 — correction list
+
+- Test-only patch/unpacking corrections as above.
+- No production SQL changes; no A/B file changes.
+- Employee-role UI remains pending because `sp_list_employee_roles` is not in
+  the current v1.0 object set; this is recorded as a remaining interface gap,
+  not silently substituted with base-table access.
+
+## Phase 3 — final green output
+
+```text
+conda run -n py_env3.11 python tests/stage2/inventory/run_inventory_tests.py
+...
+OK
+RESULT: pass=10 fail=0 skip=0 total=10
+```
+
+Aggregate entry:
+
+```text
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/stage2/run-all.ps1
+...
+=== inventory ===
+RESULT: pass=10 fail=0 skip=0 total=10
+RESULT: run-all files=4 failed=0
+```
+
+The same aggregate run also re-ran auth (9/0), master (36/0), and orders
+(18/0). PowerShell parser on `provision_employee.template.ps1`: `PowerShell
+parse ok`.
+
+## Boundary
+
+Inventory tests use fake DAO/session objects; they do not prove the real views,
+procedure guards, or a real employee login. The deployment template has not
+been executed against the live instance; it requires mixed-mode authentication
+and an operator-supplied password. Customer pages remain blocked by OI-10; the
+employee-role page remains blocked by the missing `sp_list_employee_roles`
+interface. OI-14 is still open.

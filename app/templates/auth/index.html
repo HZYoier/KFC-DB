@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>员工首页 · KFC-DB</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, "Microsoft YaHei", sans-serif; }
+    body { margin: 0; background: #f4f1ea; color: #2b2b2b; }
+    main { width: min(92vw, 760px); margin: 40px auto; }
+    .card { padding: 26px; border-radius: 16px; background: #fff; box-shadow: 0 12px 36px rgba(50,35,20,.12); }
+    h1 { margin: 0 0 4px; font-size: 24px; }
+    .muted { color: #777; font-size: 13px; }
+    .role { display: inline-block; margin: 3px 6px 3px 0; padding: 3px 9px; border-radius: 999px; background: #f1eee7; font-size: 12px; }
+    .actions { display: flex; gap: 10px; margin: 22px 0 8px; flex-wrap: wrap; }
+    .actions a, .actions button { padding: 9px 14px; border-radius: 8px; border: 1px solid #d7d0c4; background: #fff; color: #2b2b2b; text-decoration: none; font: inherit; cursor: pointer; }
+    .actions a.primary { background: #b3261e; border-color: #b3261e; color: #fff; }
+    details { margin-top: 20px; }
+    summary { cursor: pointer; color: #555; }
+    ul { columns: 2; padding-left: 20px; font-size: 13px; }
+    code { font-size: 12px; }
+  </style>
+</head>
+<body>
+  {% set role_codes = identity.roles | map(attribute='role_code') | list %}
+  <main>
+    <section class="card">
+      <h1>{{ identity.employee.employee_name }}</h1>
+      <p class="muted">登录名 {{ identity.employee.database_user_name }} · 岗位 {{ identity.employee.job_code }}</p>
+      <p>
+        {% for role in identity.roles %}
+          <span class="role">{{ role.role_name }}（{{ role.role_code }}）</span>
+        {% else %}
+          <span class="muted">没有 ACTIVE 业务角色</span>
+        {% endfor %}
+      </p>
+      <div class="actions">
+        {% if 'store_manager' in role_codes %}
+          <a class="primary" href="{{ url_for('master.index') }}">主数据管理</a>
+        {% endif %}
+        <form method="post" action="{{ url_for('auth.logout') }}">
+          <button type="submit">退出登录</button>
+        </form>
+      </div>
+      <details>
+        <summary>权限码（{{ identity.permissions | length }}）</summary>
+        <ul>
+          {% for permission in identity.permissions %}
+            <li><code>{{ permission.permission_code }}</code> {{ permission.permission_name }}</li>
+          {% endfor %}
+        </ul>
+      </details>
+    </section>
+  </main>
+</body>
+</html>

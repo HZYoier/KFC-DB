@@ -1,0 +1,11 @@
+"""员工登录与请求身份（C 域）。
+
+蓝图由 `app/__init__.py` 的 `BLUEPRINT_MODULES` 自动注册；A 的 `app/master` 通过
+`current_employee_session()` 取得本请求的员工数据库凭据。密码只保存在本进程的
+服务端内存里，Flask 会话只放随机 token——不把口令写进签名 cookie。
+"""
+
+from app.auth.routes import bp
+from app.auth.service import current_employee_session, current_identity, login_required
+
+__all__ = ["bp", "current_employee_session", "current_identity", "login_required"]

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>员工登录 · KFC-DB</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, "Microsoft YaHei", sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4f1ea; color: #2b2b2b; }
+    .card { width: min(92vw, 360px); padding: 28px; border-radius: 16px; background: #fff; box-shadow: 0 12px 36px rgba(50,35,20,.14); }
+    h1 { margin: 0 0 6px; font-size: 22px; }
+    .hint { margin: 0 0 20px; color: #777; font-size: 13px; line-height: 1.5; }
+    label { display: block; margin: 12px 0; font-size: 14px; }
+    input { box-sizing: border-box; width: 100%; margin-top: 6px; padding: 10px 12px; border: 1px solid #d7d0c4; border-radius: 8px; font: inherit; }
+    button { width: 100%; margin-top: 16px; padding: 11px; border: 0; border-radius: 8px; background: #b3261e; color: #fff; font: inherit; cursor: pointer; }
+    .error { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; background: #fdecea; color: #8c1d18; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>KFC-DB 员工登录</h1>
+    <p class="hint">使用你的数据库登录名和口令。系统会用该登录连接数据库，并按 USER_NAME() 校验员工身份。</p>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="post" action="{{ url_for('auth.login_submit') }}">
+      <input type="hidden" name="next" value="{{ next }}">
+      <label>数据库登录名
+        <input name="login" value="{{ login }}" autocomplete="username" required maxlength="128" autofocus>
+      </label>
+      <label>口令
+        <input type="password" name="password" autocomplete="current-password" required maxlength="256">
+      </label>
+      <button type="submit">登录</button>
+    </form>
+  </main>
+</body>
+</html>

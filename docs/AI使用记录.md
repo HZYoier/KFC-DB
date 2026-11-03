@@ -601,3 +601,35 @@
 **核对结果：** `RESULT: pass=3 fail=0`；证据 `result/stage2/c-signature-three-paths-2026-11-03.txt`，脚本 `result/stage2/scripts/check_signature_three_paths_20261103.sql`。测试后删库。边界：仅真实 v0.1 签名基线，不含 B `11b`/12 完整迁移后的重签路径。
 
 **我的处理：** 本轮改动留在工作区，等待我决定是否 commit；push 仍由我手动。
+
+---
+
+## （2026-11-03 续）—— 2.3 C 侧认证骨架（C）
+
+**聊了什么：** 我要求继续推进不依赖 B `11b` 的 C 侧工作；AI 选择先落 `app/auth`、`run.py` 与认证测试。
+
+**AI 做了什么：**
+1. 新增 `app/auth/`：登录/注销/身份首页、`current_employee_session()` 供 A 的 `app/master` 复用。员工用自己的数据库登录连接；口令只在进程内存，Flask 签名 cookie 只放随机 token，不落口令。
+2. 新增 `app/auth/dao.py`：调用 `sp_get_current_employee_context` 并显式迭代三个结果集；因 A 的 `app/common` 当前只取首个非空结果集且可能吞 `nextset` 错误，登记 OI-14，未改 A 文件。
+3. 新增 `run.py`（读 `.env`、`create_app`、可配 host/port/debug）；新增登录/身份首页模板和 9 条不连库单元测试（fake 三结果集、登录/注销/安全 next、cookie 不含口令、DAO 三结果集）。
+4. 使用 `py_env3.11`（补装 Flask 3.1.3、pyodbc 5.3.0）验证：auth **9/0**；A 的 master **36/0**、B 的 orders **18/0** 回归通过。身份页当前只展示员工/角色/权限；库存、顾客页仍待后续。
+
+**核对结果：** auth 9/0、master 36/0、orders 18/0；未连真实员工 SQL 登录，认证真实联调待 `provision_employee.template.ps1` 与 SQL 登录部署。OI-14（Common 多结果集/nextset）仍 open。
+
+**我的处理：** 本轮改动留在工作区，未授权 commit；push 仍由我手动。下一步按 C 计划做 `app/inventory/` 三层与真实登录/部署模板。
+
+---
+
+## （2026-11-03 续）—— 2.3 C 侧库存域骨架与测试汇总（C）
+
+**聊了什么：** 继续推进 2.3 的 C 侧可独立完成部分，随后本轮一并 commit。
+
+**AI 做了什么：**
+1. 新增 `app/inventory/` 三层与库存页：库存看板、流水、补货建议、调整/提交/审批/驳回/收货；查询只用 C 的四个视图，写入只用既有自持事务过程，不读基表、不新造数据库对象。按岗位显示操作入口，实际授权仍由数据库过程守卫兜底。
+2. 新增 10 条不连库测试，覆盖数量/精度边界、`p_decimal`/`p_bigint` 参数定型、收货可空参数、视图 SQL、登录门、模板渲染与岗位入口；首轮 6/9 的 3 个失败均为测试 patch 目标/参数解包错误，已修正并如实归档。
+3. 新增 `tests/stage2/run-all.ps1`：auth 9 + master 36 + orders 18 + inventory 10，四套全绿；新增 `sql/stage2/provision_employee.template.ps1`（SQL 登录/同名用户/EmployeeAccount 映射，口令由操作者输入，不写入脚本），PowerShell 解析通过但未在真实实例执行。
+4. 登记 OI-15：计划 §6.2 的员工角色页需要 `sp_list_employee_roles`，当前 v1.0 对象集没有；不开放基表 SELECT，员工角色页暂缓。顾客页仍受 OI-10 阻塞。
+
+**核对结果：** auth 9/0、inventory 10/0、master 36/0、orders 18/0，run-all 4 套 0 失败；模板 PowerShell parse ok。真实视图/过程、真实员工登录与模板执行尚未联调；OI-14/OI-15 仍 open。
+
+**我的处理：** 本轮改动随后由我授权 commit；push 仍由我手动。下一步等 B `11b` 做完整 2.2，并处理 OI-14/15 与顾客页。

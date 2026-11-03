@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>库存与补货 · KFC-DB</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, "Microsoft YaHei", sans-serif; }
+    body { margin: 0; background: #f4f1ea; color: #2b2b2b; }
+    main { width: min(96vw, 1200px); margin: 28px auto 48px; }
+    .top { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    h1 { margin: 0 0 4px; font-size: 24px; }
+    h2 { margin: 28px 0 10px; font-size: 18px; }
+    .muted { color: #777; font-size: 13px; }
+    .role { display: inline-block; margin: 3px 6px 3px 0; padding: 3px 9px; border-radius: 999px; background: #f1eee7; font-size: 12px; }
+    .links a, .links button { margin-left: 8px; padding: 7px 10px; border: 1px solid #d7d0c4; border-radius: 7px; background: #fff; color: #2b2b2b; text-decoration: none; font: inherit; cursor: pointer; }
+    .notice { margin: 14px 0; padding: 10px 12px; border-radius: 8px; background: #e8f4ea; color: #1f6b34; }
+    .error { margin: 14px 0; padding: 10px 12px; border-radius: 8px; background: #fdecea; color: #8c1d18; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; font-size: 13px; }
+    th, td { padding: 8px 9px; border-bottom: 1px solid #eee9df; text-align: left; white-space: nowrap; }
+    th { background: #faf8f3; font-weight: 600; }
+    tr.low td { background: #fff3e8; }
+    .form { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; margin: 10px 0; padding: 12px; border-radius: 10px; background: #fff; }
+    .form label { display: grid; gap: 4px; font-size: 12px; color: #555; }
+    input, select, button { font: inherit; }
+    input { width: 120px; padding: 7px 8px; border: 1px solid #d7d0c4; border-radius: 6px; }
+    .form button, .row-actions button { padding: 7px 10px; border: 0; border-radius: 6px; background: #b3261e; color: #fff; cursor: pointer; }
+    .row-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+    .row-actions form { display: flex; gap: 4px; }
+    .row-actions input { width: 85px; }
+    .sub { color: #777; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top">
+      <div>
+        <h1>库存与补货</h1>
+        <div class="muted">{{ identity.employee.employee_name }} · {{ identity.employee.database_user_name }} · {{ identity.employee.job_code }}</div>
+        <div>{% for role in identity.roles %}<span class="role">{{ role.role_name }}（{{ role.role_code }}）</span>{% endfor %}</div>
+      </div>
+      <div class="links">
+        <a href="{{ url_for('auth.index') }}">我的首页</a>
+        {% if 'store_manager' in identity.roles | map(attribute='role_code') | list %}<a href="{{ url_for('master.index') }}">主数据管理</a>{% endif %}
+        <form method="post" action="{{ url_for('auth.logout') }}" style="display:inline"><button type="submit">退出登录</button></form>
+      </div>
+    </div>
+
+    {% if notice %}<div class="notice">{{ notice }}</div>{% endif %}
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+    <h2>库存看板</h2>
+    <table>
+      <thead><tr><th>原料</th><th>单位</th><th>现有量</th><th>锁定量</th><th>可售量</th><th>安全线</th><th>低库存</th><th>状态</th></tr></thead>
+      <tbody>
+      {% for row in inventory %}
+        <tr class="{% if row.is_low_stock %}low{% endif %}">
+          <td>{{ row.ingredient_name }} <span class="sub">#{{ row.ingredient_id }}</span></td>
+          <td>{{ row.unit_name }}</td>
+          <td>{{ row.on_hand_qty }}</td>
+          <td>{{ row.locked_qty }}</td>
+          <td>{{ row.available_qty }}</td>
+          <td>{{ row.safety_stock_qty }}</td>
+          <td>{{ '是' if row.is_low_stock else '否' }}</td>
+          <td>{{ row.ingredient_status }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="muted">没有可显示的库存数据（或当前岗位没有视图权限）。</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    {% if allowed.adjust %}
+    <h2>库存调整（店长）</h2>
+    <form class="form" method="post" action="{{ url_for('inventory.adjust') }}">
+      <label>原料 ID<input name="ingredient_id" type="number" min="1" required></label>
+      <label>变动量（可负）<input name="on_hand_delta" type="number" step="0.001" required placeholder="例如 -2.500"></label>
+      <label>原因<input name="reason" maxlength="50" required></label>
+      <button type="submit">提交调整</button>
+    </form>
+    {% endif %}
+
+    <h2>库存流水</h2>
+    <form class="form" method="get" action="{{ url_for('inventory.index') }}">
+      <label>原料 ID（可空）<input name="ingredient_id" type="number" min="1" value="{{ ingredient_id }}"></label>
+      <button type="submit">筛选</button>
+    </form>
+    <table>
+      <thead><tr><th>时间</th><th>原料</th><th>类型</th><th>现有量变动</th><th>锁定量变动</th><th>单据</th></tr></thead>
+      <tbody>
+      {% for row in movements %}
+        <tr>
+          <td>{{ row.moved_at }}</td>
+          <td>{{ row.ingredient_name }} <span class="sub">#{{ row.ingredient_id }}</span></td>
+          <td>{{ row.movement_type }}</td>
+          <td>{{ row.on_hand_delta }}</td>
+          <td>{{ row.locked_delta }}</td>
+          <td>{{ row.reference_no or '-' }} <span class="sub">{{ row.reference_type }}</span></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="muted">没有流水。</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    <h2>补货建议与采购</h2>
+    {% if allowed.create %}
+    <form class="form" method="post" action="{{ url_for('inventory.create_suggestion') }}">
+      <label>原料 ID<input name="ingredient_id" type="number" min="1" required></label>
+      <label>建议数量<input name="suggested_qty" type="number" step="0.001" min="0.001" required></label>
+      <button type="submit">创建建议</button>
+    </form>
+    {% endif %}
+    <table>
+      <thead><tr><th>ID</th><th>原料</th><th>现有/建议</th><th>状态</th><th>采购单</th><th>已收/订购/未收</th><th>操作</th></tr></thead>
+      <tbody>
+      {% for row in suggestions %}
+        <tr>
+          <td>{{ row.replenishment_suggestion_id }}</td>
+          <td>{{ row.ingredient_name }} <span class="sub">#{{ row.ingredient_id }}</span></td>
+          <td>{{ row.current_qty }} / {{ row.suggested_qty }}</td>
+          <td>{{ row.suggestion_status }}</td>
+          <td>{{ row.purchase_order_no or '-' }} <span class="sub">{{ row.purchase_status or '' }}</span></td>
+          <td>{{ row.received_qty if row.received_qty is not none else '-' }} / {{ row.ordered_qty if row.ordered_qty is not none else '-' }} / {{ row.outstanding_qty if row.outstanding_qty is not none else '-' }}</td>
+          <td>
+            <div class="row-actions">
+              {% if allowed.update and row.suggestion_status == 'PENDING' %}
+              <form method="post" action="{{ url_for('inventory.update_suggestion', suggestion_id=row.replenishment_suggestion_id) }}">
+                <input name="suggested_qty" type="number" step="0.001" min="0.001" required>
+                <button type="submit">调整</button>
+              </form>
+              {% endif %}
+              {% if allowed.submit and row.suggestion_status == 'PENDING' %}
+              <form method="post" action="{{ url_for('inventory.submit_suggestion', suggestion_id=row.replenishment_suggestion_id) }}"><button type="submit">提交</button></form>
+              {% endif %}
+              {% if allowed.approve and row.suggestion_status == 'SUBMITTED' %}
+              <form method="post" action="{{ url_for('inventory.approve_suggestion', suggestion_id=row.replenishment_suggestion_id) }}"><button type="submit">审批</button></form>
+              {% endif %}
+              {% if allowed.reject and row.suggestion_status == 'SUBMITTED' %}
+              <form method="post" action="{{ url_for('inventory.reject_suggestion', suggestion_id=row.replenishment_suggestion_id) }}">
+                <input name="reason" maxlength="50" placeholder="驳回原因" required>
+                <button type="submit">驳回</button>
+              </form>
+              {% endif %}
+              <span class="sub">{{ row.created_by_name or '' }}</span>
+            </div>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="muted">没有补货建议。</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    {% if allowed.receive %}
+    <h2>采购收货（值班经理）</h2>
+    <form class="form" method="post" action="{{ url_for('inventory.receive') }}">
+      <label>采购单 ID<input name="purchase_order_id" type="number" min="1" required></label>
+      <label>本次收货量（可空）<input name="received_qty" type="number" step="0.001" min="0.001"></label>
+      <button type="submit">收货</button>
+    </form>
+    {% endif %}
+  </main>
+</body>
+</html>

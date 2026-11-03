@@ -1,0 +1,52 @@
+# 2.3 C 侧认证骨架测试 — 2026-11-03
+
+## Scope
+
+- Environment: conda `py_env3.11`, Python 3.11.15, Flask 3.1.3, pyodbc 5.3.0.
+- New C files: `app/auth/` (routes/service/dao), `run.py`,
+  `tests/stage2/auth/`.
+- The auth adapter consumes the real three-result-set contract of
+  `sp_get_current_employee_context` through `db.open_connection`; it does not use
+  A's `query_procedure` because that currently returns only the first non-empty
+  result set (OI-14).
+
+## Phase 1 — first-round difference and attribution
+
+The first auth run produced **8/9**; only `test_09_dao_three_result_sets`
+failed because `setUp` had already patched `dao.fetch_employee_context` with a
+fake context. The test was therefore exercising the patched function, not the
+real three-result-set adapter, and its fake connection was never closed.
+Attribution: test fixture design, not production auth code. Fixed by capturing
+the real function before the patch and calling it in test 09.
+
+## Phase 2 — correction list
+
+- Test-only correction as above. No A/B file modified.
+- A Common's multi-result limitation is registered as OI-14; C's adapter is an
+  explicit temporary boundary, not a claim that A's layer is fixed.
+
+## Phase 3 — final green output
+
+```text
+conda run -n py_env3.11 python tests/stage2/auth/run_auth_tests.py
+...
+OK
+RESULT: pass=9 fail=0 skip=0 total=9
+```
+
+Regression of existing app layers after the auth blueprint was registered:
+
+```text
+conda run -n py_env3.11 python tests/stage2/master/run_master_tests.py
+RESULT: pass=36 fail=0 skip=0 total=36
+
+conda run -n py_env3.11 python tests/stage2/orders/run_tests.py --sql-server '.\SQLEXPRESS'
+RESULT: pass=18 fail=0 skip=0 total=18
+```
+
+## Boundary
+
+These tests use fake DB contexts; they do **not** prove a real employee SQL
+login, real `sp_get_current_employee_context` result sets, or inventory/customer
+pages. Real login needs the C deployment template and server SQL login
+mapping; the full 2.2 path still waits for B's `11b`. OI-14 remains open.
