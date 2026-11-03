@@ -2,9 +2,11 @@
 -- 11c_inventory_security_migration.sql — C 域 v0.1 -> v1.0 迁移（成员 C；2026-10-31）
 -- 由 run_migration.sql 在外层事务内 :r 执行：不得 BEGIN/COMMIT/ROLLBACK 外层事务，
 -- 不得切连接；失败由入口回滚外层并 THROW。
--- 落实：I-C12 Permission 拆分 + 白名单迁位/扩展（46 -> 53）；
+-- 落实：I-C12 Permission 拆分 + 白名单迁位/扩展（46 -> 57；
+--       B 六查询 + C 身份上下文 + A 四查询/注册接口）；
 --       I-C13 UQ_PurchaseOrder_replenishment_suggestion_id；
---       v1.0 新增 sp_get_current_employee_context（七个业务角色在 12 授权）。
+--       v1.0 新增 sp_get_current_employee_context（七个业务角色在 12 授权）；
+--       A 的 11a 四个新过程同步进白名单，实际 GRANT 由 12 落。
 -- 依据：docs/stage2/migration-guide.md §5/§5.1、refactoring-design.md §7、
 --       application-contract.md §2.2、b-freeze-receipt.md §2。
 -- ============================================================================
@@ -51,7 +53,7 @@ IF (SELECT COUNT(*) FROM dbo.BusinessRole
 GO
 
 -- ---------------------------------------------------------------------------
--- 2. Permission 目录（固定枚举白名单 53 码；旧 46 + 新 7）
+-- 2. Permission 目录（固定枚举白名单 57 码；旧 46 + 新 11）
 -- ---------------------------------------------------------------------------
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -84,11 +86,14 @@ CREATE TABLE dbo.Permission (
             'v_pickup_board', 'v_inventory_available',
             'v_inventory_movement_history', 'v_replenishment_dashboard',
             'v_order_inventory_trace',
-            -- v1.0 新增 7 码（六个员工查询 + 身份上下文）
+            -- v1.0 新增 11 码（B 六查询 + C 身份上下文 + A 四接口）
             'sp_list_orders_for_payment', 'sp_get_order_for_payment',
             'sp_get_order_operation_status', 'sp_list_orders_for_packing',
             'sp_list_my_deliveries', 'sp_list_deliveries_available_for_pickup',
-            'sp_get_current_employee_context'
+            'sp_get_current_employee_context',
+            -- A 的 11a 四个查询/注册接口（2026-11-03 补入）
+            'sp_list_master_records', 'sp_list_sale_products',
+            'sp_find_customer_for_order', 'sp_register_customer_for_order'
         )
     )
 );
@@ -113,9 +118,13 @@ INSERT INTO dbo.Permission (permission_code, permission_name) VALUES
     (N'sp_list_orders_for_packing',                 N'配餐队列查询'),
     (N'sp_list_my_deliveries',                      N'我的配送单查询'),
     (N'sp_list_deliveries_available_for_pickup',    N'可认领配送单查询'),
-    (N'sp_get_current_employee_context',            N'当前员工身份上下文');
-IF (SELECT COUNT(*) FROM dbo.Permission) <> 53
-    THROW 53209, N'11c: Permission must contain 53 codes after extension.', 1;
+    (N'sp_get_current_employee_context',            N'当前员工身份上下文'),
+    (N'sp_list_master_records',                     N'主数据记录查询'),
+    (N'sp_list_sale_products',                      N'收银商品查询'),
+    (N'sp_find_customer_for_order',                 N'收银顾客检索'),
+    (N'sp_register_customer_for_order',             N'收银顾客建档');
+IF (SELECT COUNT(*) FROM dbo.Permission) <> 57
+    THROW 53209, N'11c: Permission must contain 57 codes after extension.', 1;
 
 -- 迁移前确认旧授权行全部能连到目录
 IF EXISTS (SELECT 1 FROM dbo.RolePermission rp
@@ -129,7 +138,7 @@ ALTER TABLE dbo.RolePermission WITH CHECK
     ADD CONSTRAINT FK_RolePermission_Permission
         FOREIGN KEY (permission_code) REFERENCES dbo.Permission(permission_code);
 
--- 14 条新角色映射（B 冻结回执 §2 + C 身份上下文；Roles 已确认 7 个 ACTIVE）
+-- 18 条新角色映射（B 冻结回执 §2 + C 身份上下文 + A 四接口；Roles 已确认 7 个 ACTIVE）
 INSERT INTO dbo.RolePermission (business_role_id, permission_code, status)
 SELECT br.business_role_id, s.permission_code, N'ACTIVE'
 FROM (VALUES
@@ -146,11 +155,16 @@ FROM (VALUES
     (N'rider',          N'sp_get_current_employee_context'),
     (N'waiter',         N'sp_get_current_employee_context'),
     (N'shift_manager',  N'sp_get_current_employee_context'),
-    (N'store_manager',  N'sp_get_current_employee_context')
+    (N'store_manager',  N'sp_get_current_employee_context'),
+    -- A 的 11a 四个查询/注册接口（契约 §2.4.5）
+    (N'store_manager',  N'sp_list_master_records'),
+    (N'cashier',        N'sp_list_sale_products'),
+    (N'cashier',        N'sp_find_customer_for_order'),
+    (N'cashier',        N'sp_register_customer_for_order')
 ) AS s(role_code, permission_code)
 JOIN dbo.BusinessRole br ON br.role_code = s.role_code AND br.status = N'ACTIVE';
-IF (SELECT COUNT(*) FROM dbo.RolePermission) <> 66
-    THROW 53211, N'11c: RolePermission must contain 52 + 14 = 66 rows.', 1;
+IF (SELECT COUNT(*) FROM dbo.RolePermission) <> 70
+    THROW 53211, N'11c: RolePermission must contain 52 + 18 = 70 rows.', 1;
 
 -- I-C13：业务候选码补声明（先输出重复键，不静默保留一行）
 IF EXISTS (SELECT 1 FROM sys.key_constraints
@@ -225,10 +239,10 @@ GO
 -- ---------------------------------------------------------------------------
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
-IF (SELECT COUNT(*) FROM dbo.Permission) <> 53
-    THROW 53214, N'11c: final Permission count != 53.', 1;
-IF (SELECT COUNT(*) FROM dbo.RolePermission) <> 66
-    THROW 53215, N'11c: final RolePermission count != 66.', 1;
+IF (SELECT COUNT(*) FROM dbo.Permission) <> 57
+    THROW 53214, N'11c: final Permission count != 57.', 1;
+IF (SELECT COUNT(*) FROM dbo.RolePermission) <> 70
+    THROW 53215, N'11c: final RolePermission count != 70.', 1;
 IF EXISTS (SELECT 1 FROM dbo.RolePermission rp
            WHERE NOT EXISTS (SELECT 1 FROM dbo.Permission p WHERE p.permission_code = rp.permission_code))
     THROW 53216, N'11c: final RolePermission has a code outside Permission.', 1;

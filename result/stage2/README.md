@@ -1,6 +1,6 @@
 # stage2 证据（C 侧）
 
-隔离实验执行日期：2026-10-13（重跑捕获；实验首做于 2026-10-10，本次为归档要求下的完整复现）；文档对账证据增补于 2026-10-15；ER 子图复核证据增补于 2026-10-17；合并总图对账、B 图复核与契约授权核对增补于 2026-10-27；2.2 基线采集框架证据增补于 2026-10-30。
+隔离实验执行日期：2026-10-13（重跑捕获；实验首做于 2026-10-10，本次为归档要求下的完整复现）；文档对账证据增补于 2026-10-15；ER 子图复核证据增补于 2026-10-17；合并总图对账、B 图复核与契约授权核对增补于 2026-10-27；2.2 基线采集框架证据增补于 2026-10-30；真实 25 表采集、11c 扩展与 12/13c/run_migration 部分演练证据增补于 2026-11-03。
 
 实例：`.\SQLEXPRESS`（SQL Server 2025 Express 17.0.1000.7；混合模式；Windows 身份验证部署登录）
 
@@ -50,6 +50,12 @@
 
 - （2026-10-31 增补）`c-11c-migration-check-2026-10-31.txt`：11c（Permission 拆分、白名单 46→53、RolePermission 52→66、UQ PurchaseOrder、身份上下文过程）的外层事务回滚/提交实测；旧 52 行与名称保真、签名不变、上下文 51004/正例三结果集。
 - （2026-10-31 增补）`scripts/check_11c_rollback_20261031.sql` / `check_11c_commit_20261031.sql`：11c 回滚还原与提交终态/上下文验证脚本。
+- （2026-11-03 增补）`c-real-capture-2026-11-03.txt`：真实 A/B/C `baseline_*` 文件的 25 表采集（batch 1 COMPLETED、178 行、摘要）与逐表逐值双向校验（25 PASS / 0 FAIL；H20 三段式，首轮即无差异）。
+- （2026-11-03 增补）`scripts/check_capture_real_20261103.sql`：真实采集后的 25 表快照 ↔ 业务表双向 `EXCEPT` 校验脚本。
+- （2026-11-03 增补）`c-11c-extension-2026-11-03.txt`：A 的 `11a` 四接口补入 `11c` 后的 57 码/70 行回滚（18/0）、部分迁移提交（57/70、六 UQ）、A `13a`（10/0）与 B `13b`（baseline 5/0、write 8/8）证据；H20 三段式含三个首轮差异归因。
+- （2026-11-03 增补）`scripts/check_11c_extension_rollback_20261103.sql`：11a→11c 外层事务回滚夹具；`scripts/check_11a_11c_commit_20261103.sql`：部分迁移提交与 v1.0 标记夹具。
+- （2026-11-03 增补）`c-12-13c-runmigration-2026-11-03.txt`：`12_permissions`（缺 11b 时 53404 门禁、临时桩下授权/签名）、`13c`（14/0）、`regression`（37/0）与 `run_migration`（缺 11b 全回滚、临时 11b 桩提交）证据；明确为部分迁移，不含 B 真实 11b/顾客过程。
+- （2026-11-03 增补）`scripts/check_12_stubs_20261103.sql`：12/13c 测试用的临时 B/顾客过程桩（只证明脚本机制，不证明 11b 或 OI-10 已交付）。
 
 ## SHA-256
 
@@ -83,4 +89,15 @@ B63C349044115A63E0458E3539F731C8D05FBDFF239EF2F64A63B14CD0B1B18C  scripts/check_
 C74A2BE06C7B5C49D4667EFF6B0D2FF0E229069196A2A21482732D38ED4EDD7C  c-er-oi09-followup-2026-10-27.txt
 3B8CF7CBD6DB7E9A748A6CFC37DF9716713AAC362443BDA935431E8D9E6E044E  scripts/gen_c_er.py
 71D4946CFE2151946FE828F36C5B9D0ECF0B3A33EE59DE88626D2C25F5B6DCF6  scripts/check_c_er_collide.py
+FCE7DF547BDC6BF98C8328BDC2A2F95B2B59A75BA00543AEE63C8CF44945BD07  c-real-capture-2026-11-03.txt
+57FB7919918DECC100BBA3D4CBE404BB5CDB62946E18725E89D58A3045F34F19  scripts/check_capture_real_20261103.sql
+B8AF6861786260BCFE820203A8EA4626CF72FB49AB6D226A3D4DB9C08A460163  c-11c-extension-2026-11-03.txt
+A09E0E9E15C6E82FF04F32295FB703291A71A8E30F108601D1EE0659EFB7CA13  scripts/check_11c_extension_rollback_20261103.sql
+35F484FCCBD5AD33D9164EFA8954E7087ED8D31109F9D503164BF7D98F244CA6  scripts/check_11a_11c_commit_20261103.sql
+D0A6C3327D0CFED5A94FB9A3A3F57AEAF51AF9B653AC99905E8D5E6759DAAF20  c-12-13c-runmigration-2026-11-03.txt
+E00AAB5340DA954E3B21D478D30D7E1525C98DFFDCFBC64F8C20AD28C2C83D2B  scripts/check_12_stubs_20261103.sql
+1AEF13C7D3459FC3AE623E5B723AE9D8C47D1CC6EE2099431FB19DC925490E7B  ../sql/stage2/12_permissions.sql
+9AFD6C80DACA4CF3EB6D5C1593657355FC2125156546431A86065B528B33E034  ../sql/stage2/13c_inventory_security_regression.sql
+8947E914630DA170DF924696F7B7FB1AD3FDBF3C291C1ED4F0710FFE2D311CA9  ../sql/stage2/run_migration.sql
+7D94AF59A659ADD012D6D3E340ACAC7308F9CE160CE7C64A85430C9C35E72D03  ../sql/stage2/regression.sql
 ```

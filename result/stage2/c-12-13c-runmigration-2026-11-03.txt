@@ -1,0 +1,167 @@
+# 12 / 13c / run_migration partial drill — 2026-11-03
+
+## Scope and boundary
+
+- Context: A's `11a` and C's `11c` (extended to 57/70) were delivered; B's real
+  `11b_order_migration.sql` is **not yet present**.
+- `12_permissions.sql` was written and tested in two modes:
+  1. on the partial v1.0 without B's six procedures -> explicit 53404 failure;
+  2. with temporary B/customer procedure stubs -> grants, `cust_app`, and
+     role-sync re-signature verified.
+- `13c_inventory_security_regression.sql` was written and run on the partial
+  v1.0 with A/B/customer stubs: **14 PASS / 0 FAIL**.
+- `regression.sql` was written and run on that same partial DB:
+  `13a 10 + 13b baseline 5 + 13b write 8 + 13c 14 = 37 / 0`.
+- `run_migration.sql` was written. Without a real `11b` file it fails at that
+  `:r` and the open outer transaction rolls back completely. With a temporary
+  six-procedure `11b` stub it commits and writes v1.0 (57/70).
+- **No claim of full v1.0 acceptance**: the real B `11b`, real B queries, and
+  the three customer procedures (OI-10) are not present. Rerun the full path
+  when `11b` arrives; `13c-7` must fail until the customer procedures exist.
+  KFC_DB was dropped after the drill.
+
+## Phase 1 — first-round differences and attribution
+
+1. **12 without 11b correctly refused.**
+   `12: required v1.0 procedures are missing ...` (53404). This is the intended
+   gate, not a defect: the six B queries are part of the 57-code whitelist and
+   must exist before grants can be verified.
+
+2. **13c alias compile error (4104).**
+   Four `SchemaVersion` selects used `sv.batch_id` without an `AS sv` alias.
+   Attribution: C's new 13c draft; fixed by adding the alias in all four batches.
+
+3. **13c EXCEPT collation conflict (468).**
+   `sys.database_principals.name` (Latin1_General_CI_AS_KS_WS) vs the expected
+   table (Chinese_PRC_CI_AS) in the 70-pair grant comparison. Fixed with
+   `COLLATE DATABASE_DEFAULT` on the three actual-side expressions in both
+   `EXCEPT` directions.
+
+4. **13c EXEC expression syntax error (102).**
+   `@ordered_at = SYSDATETIME()` was written directly in an `EXEC` argument;
+   SQL Server rejects expressions in that position. Fixed by assigning
+   `@ctx_now DATETIME2(0) = SYSDATETIME()` first.
+
+5. **13c cust_app 229 fixture reported 3930.**
+   The expected permission failures were caught inside an explicit transaction;
+   `SET XACT_ABORT ON` made the transaction uncommittable, and the subsequent
+   `REVERT` raised 3930. Actual errors were 229/229. Fixed by following H16:
+   `ROLLBACK` first, `REVERT` second, then assert. This is a fixture correction,
+   not a permission leak.
+
+6. **run_migration without 11b.**
+   `:r sql/stage2/11b_order_migration.sql` returned "文件名无效" and sqlcmd
+   exited; the open transaction rolled back 11a/11c/12. Verified after exit:
+   `RolePermission=52`, no `Permission`, no `UQ_Category_category_name`,
+   only `v0.1` in `SchemaVersion`. This is the intended safe failure.
+
+## Phase 2 — correction list
+
+- Added `sql/stage2/12_permissions.sql` (57/70 preconditions, 18 employee-side
+  grants, `cust_app` WITHOUT LOGIN + three customer grants when present,
+  role-sync re-signature, 18-pair grant check).
+- Added `sql/stage2/13c_inventory_security_regression.sql` (14 assertions:
+  directory/name/row preservation, new-code mapping, exact 70 role grants,
+  `cust_app`, 229, context, UQ, ledger, suggestion/PO shape, signatures, views).
+- Added `sql/stage2/regression.sql` (13a -> 13b baseline -> 13b write -> 13c;
+  explicit `SET QUOTED_IDENTIFIER ON` for B's baseline check).
+- Added `sql/stage2/run_migration.sql` (preflight, app lock, outer transaction,
+  11a -> 11b -> 11c -> 12, checks, v1.0 marker, commit).
+- Fixed 13c alias/collation/EXEC/H16 fixture defects; no A/B file was modified.
+
+## Phase 3 — final outputs
+
+### 12 with temporary stubs
+
+```text
+12: cust_app grants applied (3 customer procedures).
+12: employee grants, cust_app, and role-sync signatures verified.
+```
+
+### 12 without 11b (expected gate)
+
+```text
+Msg 53404: 12: required v1.0 procedures are missing (11a/11b/11c incomplete):
+sp_list_orders_for_payment, sp_get_order_for_payment,
+sp_get_order_operation_status, sp_list_orders_for_packing,
+sp_list_my_deliveries, sp_list_deliveries_available_for_pickup
+```
+
+### 13c on partial v1.0 with stubs
+
+```text
+PASS: 13c-1 Permission 57 / RolePermission 70 / 新增码集合一致
+PASS: 13c-2 旧 46 码名称保真
+PASS: 13c-3 旧 52 行保真
+PASS: 13c-4 新增 18 行（context 7 / A 4 / B 6）
+PASS: 13c-5 白名单 = Permission = RolePermission 码集合
+PASS: 13c-6 70 对 role_* GRANT 与映射逐对相等
+PASS: 13c-7 cust_app 仅三个顾客过程、无角色成员
+PASS: 13c-8 cust_app 直调员工过程/基表均 229
+PASS: 13c-9 身份上下文 51004 + test_cashier 三结果集正例
+PASS: 13c-10 同建议单第二张采购单被唯一约束拒绝
+PASS: 13c-11 库存非负、锁定/现有量双向勾稽
+PASS: 13c-12 开放建议唯一、采购单恰好一条明细
+PASS: 13c-13 三个角色同步过程各一条签名
+PASS: 13c-14 C 域四视图 QUOTED_IDENTIFIER/ANSI_NULLS 均为 ON
+RESULT: pass=14 fail=0
+```
+
+### regression on the same partial v1.0
+
+```text
+RESULT: pass=10 fail=0
+RESULT 13b baseline: pass=5 fail=0 total=5
+RESULT 13b write signatures: pass=8 fail=0 total=8
+RESULT: pass=14 fail=0
+RESULT: regression files=4 expected_pass=37 fail=0
+```
+
+### run_migration with temporary 11b stub
+
+```text
+11b stub procedures created
+12: WARNING: customer procedures absent; cust_app grants skipped (13c must fail until OI-10 delivery).
+12: employee grants, cust_app, and role-sync signatures verified.
+RESULT: migration committed (v1.0 marker written; 11a/11b/11c/12).
+```
+
+Post-commit state:
+
+```text
+permission_count = 57
+rolepermission_count = 70
+SchemaVersion: v0.1 (batch 1), v1.0 (batch 1)
+cust_app exists; customer grants skipped (procedures absent)
+```
+
+### run_migration without 11b
+
+```text
+“sql/stage2/11b_order_migration.sql”: 文件名无效。
+run_migration exit=1
+```
+
+Post-exit verification:
+
+```text
+RolePermission = 52
+no dbo.Permission
+UQ_Category_category_name absent (11a rolled back)
+SchemaVersion: only v0.1 (batch 1)
+```
+
+## Boundary / next rerun
+
+The stub 11b has only six empty procedures, not B's real signatures or
+semantics. The stub `run_migration` result proves the runner's transaction and
+v1.0 marker path, not B's `11b`. When B delivers the real
+`11b_order_migration.sql`, rerun:
+
+```bash
+sqlcmd -S '.\SQLEXPRESS' -E -C -f 65001 -b -I -i sql/stage2/run_migration.sql
+sqlcmd -S '.\SQLEXPRESS' -E -C -f 65001 -b -I -i sql/stage2/regression.sql
+```
+
+The full `13c` must then pass the real B query permissions and the real
+customer procedures; until then this evidence is explicitly **partial**.

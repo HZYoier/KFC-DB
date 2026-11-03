@@ -1,0 +1,137 @@
+# 11c extension after A's 11a — 2026-11-03
+
+## Scope
+
+- Trigger: A delivered `11a_master_migration.sql` (2026-11-01) with four new
+  query/registration procedures. The frozen `11c` whitelist still had 53 codes
+  and could not represent them under the invariant
+  `Permission = whitelist = role_* GRANT targets`.
+- A's four procedures and contract grants (`application-contract.md` §2.4.5):
+  - `sp_list_master_records` -> `role_store_manager`
+  - `sp_list_sale_products` -> `role_cashier`
+  - `sp_find_customer_for_order` -> `role_cashier`
+  - `sp_register_customer_for_order` -> `role_cashier`
+- C's `11c` was extended from **53 / 66** to **57 codes / 70 RolePermission
+  rows** (four `Permission` rows and four role mappings). The actual GRANTs
+  remain in `12_permissions.sql`.
+- The drill used a real v0.1 deployment and a real 25-table capture batch 1
+  (A/B/C baseline files); no domain stub was used.
+
+## Phase 1 — first-round differences and attribution
+
+1. **D1 — whitelist gap.** The A procedures were absent from the 53-code
+   `CK_Permission_permission_code` list. Attribution: A's `11a` arrived after
+   the 2026-10-31 freeze inputs; the 10-31 list covered only B's six queries and
+   C's context. Fix: add four codes, their names, four role mappings, and update
+   the terminal counts to 57/70.
+
+2. **D2 — rollback fixture false 3930.** The first rollback harness put the
+   expected-failure `EXEC dbo.sp_get_current_employee_context` (THROW 51004)
+   inside the outer migration transaction. `THROW` + `XACT_ABORT` made the
+   outer transaction uncommittable; a later statement reported Msg 3930.
+   Attribution: fixture design, not `11a`/`11c`; H16. Fix: move the negative
+   case outside the outer transaction. A separate check on the committed
+   partial v1.0 confirms 51004.
+
+3. **D3 — B 13b execution context.** `13b_order_baseline_check.sql` has no
+   `USE KFC_DB` and uses `FOR XML PATH`/filtered-index metadata, so running it
+   without `-d KFC_DB -I` produced 51960 (master) or Msg 1934
+   (`QUOTED_IDENTIFIER`). Attribution: B's file intentionally says "run in the
+   target database" and does not set the option; C's regression runner must set
+   `QUOTED_IDENTIFIER ON` / `-I`. Fix: rerun with `-d KFC_DB -I`; 5/0.
+
+## Phase 2 — correction list
+
+- Extended `sql/stage2/11c_inventory_security_migration.sql`:
+  - whitelist 46 -> 57, `Permission` 53 -> 57;
+  - `RolePermission` 66 -> 70 (four new rows);
+  - A codes/names and role mappings added;
+  - terminal checks updated to 57/70.
+- Updated `docs/stage2/migration-guide.md` §5.1, `docs/stage2/c-issues.md`
+  I-C12, `docs/stage2/open-issues.md` OI-13, and
+  `result/stage2/scripts/check_*_20261103.sql`.
+- No A/B file was modified.
+
+## Phase 3 — final green output
+
+### 3.1 11a + 11c rollback (18 PASS / 0 FAIL)
+
+Command:
+
+```bash
+sqlcmd -S '.\SQLEXPRESS' -E -C -f 65001 -b \
+  -i 'D:\DBLab\_kfcdb_tmp\check_11c_extension_rollback_20261103.sql'
+```
+
+Output tail:
+
+```text
+RESULT: pass=18 fail=0
+```
+
+The rollback restored v0.1: no `Permission`, `RolePermission` 52,
+`permission_name` and the old CHECK back, and all new procedures/UQs removed.
+
+### 3.2 Partial commit path (11a + 11c, v1.0 marker)
+
+Command:
+
+```bash
+sqlcmd -S '.\SQLEXPRESS' -E -C -f 65001 -b \
+  -i 'D:\DBLab\_kfcdb_tmp\check_11a_11c_commit_20261103.sql'
+```
+
+Output:
+
+```text
+PASS: partial v1.0 shape (57/70, six UQs)
+PASS: context dbo rejection = 51004
+RESULT: partial-migration pass=2 fail=0
+```
+
+### 3.3 A's 13a on the partial v1.0
+
+```text
+PASS: A1 UQ_Category_category_name 拒绝重复
+PASS: A2 UQ_Product_product_name 拒绝重复
+PASS: A3 UQ_Ingredient_name_unit 拒绝重复
+PASS: A4 UQ_MemberLevel_threshold_points 拒绝重复
+PASS: A5 UQ_MemberLevel_level_name 拒绝重复
+PASS: A6 期初 offset 与基线一致（3 位顾客）
+PASS: A7 EFFECTIVE 流水事实与基线一致（2 笔）
+PASS: A8 等级停用后成员等级置空
+PASS: A9 调门槛与加档都不回溯已有顾客
+PASS: A10 同窗两档价取高优先级
+RESULT: pass=10 fail=0
+```
+
+### 3.4 B's 13b checks on the partial v1.0
+
+```text
+PASS 13b baseline SalesOrder
+PASS 13b baseline SalesOrderItem
+PASS 13b baseline Payment
+PASS 13b baseline Delivery
+PASS 13b baseline PointLedger
+RESULT 13b baseline: pass=5 fail=0 total=5
+
+RESULT 13b write signatures: pass=8 fail=0 total=8
+```
+
+Commands (target database and session option explicit):
+
+```bash
+sqlcmd -S '.\SQLEXPRESS' -E -C -f 65001 -b -d KFC_DB -I \
+  -i 'D:\DBLab\KFC-DB\sql\stage2\13b_order_baseline_check.sql'
+sqlcmd -S '.\SQLEXPRESS' -E -C -f 65001 -b -d KFC_DB \
+  -i 'D:\DBLab\KFC-DB\sql\stage2\13b_order_write_contract_check.sql'
+```
+
+## Boundary
+
+This is a **partial** migration drill: `11a` + `11c` only. B's `11b`, C's
+`12_permissions`, `13c`, `run_migration.sql`, and `regression.sql` were not
+part of it. It does not claim the full v1.0 migration passes. A's `13a` and
+B's `13b` pass here only on the partial schema; they must be rerun after the
+full path (including `11b`/`12`) exists. KFC_DB was dropped after this drill
+to leave the checkout in the agreed no-database state.

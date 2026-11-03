@@ -573,4 +573,19 @@
 **我的处理：** 本轮由我授权 AI 代 commit、**push 仍由我手动**；A/B 11x 到齐后再做 12/13c/run_migration 与真实迁移演练。
 
 ---
+---
 
+## （2026-11-03）—— A 交付到货、真实 25 表采集与 11c 扩展（C）
+
+**聊了什么：** 我 pull 到 `593112d`（A 的 `baseline_a/11a/13a`、`app/master` 与测试；B 的 `13b` 两个检查，B 的 `11b` 仍缺），要求继续推进可做的 C 侧工作。
+
+**AI 做了什么：**
+1. 用 A/B/C 三份真实 `baseline_*` 文件在全新 v0.1 上跑 `capture_baseline.sql`：batch 1 COMPLETED、25 表 / 178 行；随后 25 表逐值双向 `EXCEPT` 全相等，**25 PASS / 0 FAIL**；证据 `result/stage2/c-real-capture-2026-11-03.txt`。
+2. 核对 A 的 `11a` 时发现四个新过程（`sp_list_master_records`、`sp_list_sale_products`、`sp_find_customer_for_order`、`sp_register_customer_for_order`）不在原 53 码白名单；登记 OI-13，按契约 §2.4.5 把 `11c` 扩为 **57 码 / 70 行**，并更新 `migration-guide` §5.1、`c-issues` I-C12、`open-issues`。
+3. 实测 `11a→11c` 回滚 **18/0**、部分迁移提交（57/70、六 UQ）、A `13a` **10/0**、B `13b` baseline **5/0** + write **8/8**；证据 `result/stage2/c-11c-extension-2026-11-03.txt`。
+4. 落稿 `12_permissions.sql`、`13c_inventory_security_regression.sql`、`regression.sql`、`run_migration.sql`：`12` 缺 11b 时以 53404 明确拒绝，临时桩下 18 对授权/签名/cust_app 通过；`13c` **14/0**；`regression` **37/0**；`run_migration` 缺 11b 时整事务回滚，临时 11b 桩提交并写 v1.0（57/70）。证据 `result/stage2/c-12-13c-runmigration-2026-11-03.txt`。
+5. 交付后删库；未改 A/B 文件。
+
+**核对结果：** 真实采集 25/0；11c 扩展 57/70；部分迁移 13a 10/0、13b 5/0+8/8、13c 14/0、regression 37/0。**边界：B 的真实 `11b` 与顾客三过程（OI-10）仍未到；不宣称完整 v1.0 迁移/回归通过。**
+
+**我的处理：** 本轮改动留在工作区，未授权 commit；push 仍由我手动。A/B 复核 `11c` 新增 4 行角色映射与 `12` 的 GRANT 后再做完整迁移与签名三路径验收。

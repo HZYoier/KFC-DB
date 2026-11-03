@@ -87,6 +87,7 @@
 6. **重复运行**：新建批次；`previous_batch_id` 自动指向最近一批（含失败批），也可显式指定；`COMPLETED` 不改写、不复用；迁移只接受指定完整批次。
 7. **漂移**：采集时记录 `schema_digest`；迁移前重算现场摘要，与批次不等即停止并重新备份/采集。迁移前再次核对各快照 `row_count` 与现场；任何不一致按漂移处理。`MigrationBaseline` 的 `row_count/content_checksum` 只做定位辅助，正式对账必须逐值比较。
 8. **退出与输出**：所有 SQL 以 `:ON ERROR EXIT`/`-b` + `-f 65001` 执行并检查进程退出码；对账输出至少含 `batch_id/table/key/column/old/new/rule_id`；断言收尾 `RESULT: pass=… fail=…`，失败非零退出；日志同时识别 `Msg`、`消息`、`Sqlcmd: Error` 与 `FAIL`。
+9. **会话 SET 选项**：B 的 `13b_order_baseline_check.sql` 使用 `FOR XML PATH` 与过滤索引元数据，要求 `QUOTED_IDENTIFIER ON`；`regression.sql` 运行器须显式 `SET QUOTED_IDENTIFIER ON`（或 sqlcmd `-I`）。A 的 `13a` 已在文件内自带完整 SET 选项；C 的 `13c` 同样自带，不依赖调用者。
 
 ## 4. 摘要口径
 
@@ -110,12 +111,12 @@
 - 白名单 `CHECK` 随拆分**迁至 `Permission.permission_code`**（约束名改为 `CK_Permission_permission_code`），仍为固定枚举；`11c` **同时**执行：① `ALTER` 扩展该 CHECK（加入 v1.0 冻结清单中的新对象码）；② 向 `Permission` 插入新增目录行（名称取自冻结清单）；③ 重建 `RolePermission` 并授给相应角色（业务映射种子）；④ 加 FK、删旧列、补 `UQ_PurchaseOrder_replenishment_suggestion_id`。
 - **为什么不用纯目录/FK 替代白名单**：计划 §5.1 要求 `11c` 更新白名单 CHECK、§6.5 把白名单列为不变量；固定枚举是显式最小权限门，避免将来任意 INSERT 目录行即扩权。目录表提供名称规范化，FK 提供引用完整性，`CHECK` 继续提供"哪些对象可被业务角色授权"的冻结清单；三者职责不同。
 - **新增码的边界**：`Permission`/`RolePermission` 只覆盖**业务角色可授权对象**；`cust_app` 的三个顾客过程按契约 §1.5 仅做显式 `GRANT`，**不进入** `Permission`/`RolePermission` 白名单，由 `12_permissions` 按契约清单单独核对（否则会破坏"每个白名单码至少授予一个角色"的 t9 不变量）。`sp_get_current_employee_context` 若按冻结矩阵授予业务角色，则进白名单和 `RolePermission`。
-- **当前预期数量（以冻结清单为准）**：v0.1 白名单 46 码 → v1.0 增加 6 个查询过程 + `sp_get_current_employee_context` = **53 码**；`RolePermission` 行数按冻结的角色×过程矩阵计算，不硬编码。`13c` 断言：白名单 = `Permission` 行集 = `sys.database_permissions` 中 `role_*` 的 EXECUTE/SELECT 目标集，`cust_app` 三过程单独核对且不得出现在业务角色 GRANT 中。
+- **当前预期数量（以冻结清单为准）**：v0.1 白名单 46 码 → v1.0 增加 6 个查询过程 + `sp_get_current_employee_context` + A 四接口 = **57 码**；`RolePermission` 行数按冻结的角色×过程矩阵计算，不硬编码。`13c` 断言：白名单 = `Permission` 行集 = `sys.database_permissions` 中 `role_*` 的 EXECUTE/SELECT 目标集，`cust_app` 三过程单独核对且不得出现在业务角色 GRANT 中。
 - **名称保真**：`baseline_c.sql` 捕获 `RolePermission(business_role_id, permission_code, permission_name, status)` 全量；`11c` 搬 `DISTINCT (code,name)` 前先检查同码多名（有则拒绝并输出码），`13c` 用 `Permission ⋈ RolePermission` 回旧关系逐行比对名称与状态。
 
 ### 5.1 v1.0 新增权限码与角色映射（冻结输入，2026-10-31）
 
-来源：`application-contract.md` §2.2 的六个员工查询（参数/岗位由 B 的 [`b-freeze-receipt.md`](b-freeze-receipt.md) §2 复核）+ C 的 `sp_get_current_employee_context`（T1 #6）。**本表是 11c/12 的输入；冻结日确认后按此执行，B 调整岗位时以共同 §2.2 + B 矩阵重算。**
+来源：`application-contract.md` §2.2 的六个员工查询（参数/岗位由 B 的 [`b-freeze-receipt.md`](b-freeze-receipt.md) §2 复核）+ C 的 `sp_get_current_employee_context`（T1 #6）+ A 的 `11a` 四个查询/注册接口（`application-contract.md` §2.4.5，2026-11-01 到货）。**本表是 11c/12 的输入；冻结日确认后按此执行，B 调整岗位时以共同 §2.2 + B 矩阵重算。**
 
 | 新对象 | 权限码 | 11c `RolePermission` 种子 / 12 `GRANT` 角色 |
 | --- | --- | --- |
@@ -126,9 +127,13 @@
 | `sp_list_my_deliveries` | `sp_list_my_deliveries` | rider |
 | `sp_list_deliveries_available_for_pickup` | `sp_list_deliveries_available_for_pickup` | rider |
 | `sp_get_current_employee_context`（C） | `sp_get_current_employee_context` | 七个业务角色（chef / cashier / packer / rider / waiter / shift_manager / store_manager；C 拟定，随冻结确认） |
+| `sp_list_master_records`（A） | `sp_list_master_records` | store_manager |
+| `sp_list_sale_products`（A） | `sp_list_sale_products` | cashier |
+| `sp_find_customer_for_order`（A） | `sp_find_customer_for_order` | cashier |
+| `sp_register_customer_for_order`（A） | `sp_register_customer_for_order` | cashier |
 
-- **白名单**：46 → **53** 码（7 个新增）；`Permission` 同步 7 行。
-- **RolePermission**：52 → **66** 行（新增 14 行：1+1+2+1+1+1+7）；11c 写种子，12 的 `GRANT` 必须与之逐项相等。
+- **白名单**：46 → **57** 码（11 个新增：B 六查询 + C 上下文 + A 四接口）；`Permission` 同步 11 行。
+- **RolePermission**：52 → **70** 行（新增 18 行：1+1+2+1+1+1+7+4）；11c 写种子，12 的 `GRANT` 必须与之逐项相等。2026-11-03 因 A 的 `11a` 到货补入 A 四接口，原 53/66 已更新；证据见 `result/stage2/c-11c-extension-2026-11-03.txt`。
 - **cust_app**：三个顾客过程仍按契约 §1.5 **显式 GRANT**，不进 `Permission`/`RolePermission` 白名单；12 单独核对，13c 以 `EXECUTE AS USER='cust_app'` 直调员工过程/基表 SELECT 均 229 验证。
 - **错误码**：六个新查询的 SQL 错误码由 B 在冻结清单提出、C 登记；未登记前不写 529xx 生产码。
 - **13c**：断言白名单 = `Permission` 行 = `sys.database_permissions` 中 `role_*` 的目标集；`cust_app` 三过程单独断言；任何新增/遗漏都失败。
@@ -163,4 +168,6 @@
 ## 9. 验证记录（本轮）
 
 - 本文为**设计冻结件**；`capture_baseline.sql` 与 `baseline_c.sql` 的实跑证据见 `result/stage2/c-baseline-protocol-check-2026-10-30.txt`（首轮差异/修正/终轮输出按 H20 三段式）。A/B 的 `baseline_a/b.sql` 尚未交付时，端到端采集不宣称通过；框架以仓库外临时桩验证状态机与回滚，证据日志注明边界。
-- （2026-10-31 增补）`11c` 已按 §5/§5.1 落地并实测：外层事务回滚完整还原 v0.1；提交终态 Permission 53 / RolePermission 66、旧 52 行与名称保真、三签名不变、身份上下文 51004 + 三结果集正例。证据 `result/stage2/c-11c-migration-check-2026-10-31.txt`。`12_permissions`/`13c`/`run_migration` 仍待 A/B 的 `11a/11b` 与冻结日。
+- （2026-10-31 增补）`11c` 已按 §5/§5.1 落地并实测：外层事务回滚完整还原 v0.1；提交终态 Permission 53 / RolePermission 66、旧 52 行与名称保真、三签名不变、身份上下文 51004 + 三结果集正例。证据 `result/stage2/c-11c-migration-check-2026-10-31.txt`。
+- （2026-11-03 增补）A 的 `11a` 到货后核对出四个新过程未在原 53 码白名单内，按 §5.1 冻结口径补入 `11c`：白名单 **57 码 / RolePermission 70 行**，A 四接口分别授 store_manager（主数据查询）与 cashier（商品、顾客检索、顾客建档）。回滚夹具 18 PASS / 0 FAIL，提交路径与 A 的 `13a`（10/0）、B 的 `13b`（baseline 5/0、write signatures 8/8）在部分迁移库上实测；证据 `result/stage2/c-11c-extension-2026-11-03.txt`。
+- （2026-11-03 增补）`12_permissions.sql`、`13c_inventory_security_regression.sql`、`regression.sql`、`run_migration.sql` 已落稿。`12` 在缺 `11b` 时以 53404 明确拒绝；临时桩下授权/签名通过。`13c` 14/0、`regression` 37/0（13a 10 + 13b 5 + 13b 8 + 13c 14）。`run_migration` 缺 `11b` 时在外层事务内失败并完整回滚（11a/11c/12 均未留下）；临时 11b 桩下提交并写 v1.0（57/70）。**完整结论仍待 B 的真实 `11b` 与顾客三过程**；证据 `result/stage2/c-12-13c-runmigration-2026-11-03.txt`。

@@ -1,0 +1,106 @@
+# Real 25-table baseline capture — 2026-11-03
+
+## Scope and environment
+
+- Repository: D:\DBLab\KFC-DB
+- Source revision: 593112d (v0.1 stage-1 files unchanged)
+- Instance: .\SQLEXPRESS, SQL Server 2025 Express, Windows authentication, compat 170
+- Database: KFC_DB, freshly deployed with `sql/run_all.sql` (exit 0)
+- Capture entry: `sql/stage2/capture_baseline.sql`
+- Real domain files: `baseline_a.sql` (A), `baseline_b.sql` (B), `baseline_c.sql` (C)
+- Capture variables: `SourceBaseline=593112d`, `ConfirmAppStopped=YES`
+- Batch: `batch_id=1`, status `COMPLETED`
+- Schema digest: `EAFFB31DBB7C9078CCA25EDD85ACA15BA4F833496F8548170868C210B87B9ECF`
+
+## Phase 1 — first-round differences
+
+The first real capture completed with 25 metadata rows and 178 total snapshot rows
+(A 10 tables / 46 rows; B 5 tables / 11 rows; C 10 tables / 121 rows).
+The subsequent exact comparison of every snapshot with its live table in both
+directions (business columns, `batch_id` excluded) produced 0 differences:
+
+```text
+RESULT: pass=25 fail=0
+```
+
+No difference required attribution or correction.
+
+## Phase 2 — correction list
+
+None. The capture used the real A/B/C baseline files; no stub or synthetic
+replacement was used.
+
+## Phase 3 — final green output
+
+Command (repository root, `-C` and `-f 65001` are mandatory):
+
+```bash
+sqlcmd -S '.\SQLEXPRESS' -E -C -f 65001 -b \
+  -i 'D:\DBLab\KFC-DB\sql\stage2\capture_baseline.sql' \
+  -v SourceBaseline="593112d" -v ConfirmAppStopped=YES
+```
+
+Captured output:
+
+```text
+已将数据库上下文更改为 "KFC_DB"。
+PASS: baseline batch completed.
+batch_id             schema_digest
+-------------------- ----------------------------------------------------------------
+                   1 EAFFB31DBB7C9078CCA25EDD85ACA15BA4F833496F8548170868C210B87B9ECF
+```
+
+Batch metadata:
+
+```text
+batch_id|batch_status|source_baseline|schema_digest|app_stop_confirmed
+--------|------------|---------------|-------------|------------------
+1|COMPLETED|593112d|EAFFB31DBB7C9078CCA25EDD85ACA15BA4F833496F8548170868C210B87B9ECF|1
+meta_tables|total_rows
+25|178
+domain_code|tables|rows
+A|10|46
+B|5|11
+C|10|121
+version_code|batch_id|object_digest
+v0.1|1|EAFFB31DBB7C9078CCA25EDD85ACA15BA4F833496F8548170868C210B87B9ECF
+```
+
+Exact comparison output (script `scripts/check_capture_real_20261103.sql`):
+
+```text
+PASS: AuditLog (13 rows, exact both ways)
+PASS: BusinessRole (7 rows, exact both ways)
+PASS: Category (2 rows, exact both ways)
+PASS: ComboComponent (3 rows, exact both ways)
+PASS: Customer (3 rows, exact both ways)
+PASS: Delivery (1 rows, exact both ways)
+PASS: EmployeeAccount (7 rows, exact both ways)
+PASS: EmployeeBusinessRole (7 rows, exact both ways)
+PASS: Ingredient (6 rows, exact both ways)
+PASS: Inventory (6 rows, exact both ways)
+PASS: InventoryMovement (26 rows, exact both ways)
+PASS: MemberLevel (3 rows, exact both ways)
+PASS: Payment (2 rows, exact both ways)
+PASS: PointLedger (2 rows, exact both ways)
+PASS: Product (6 rows, exact both ways)
+PASS: ProductBom (12 rows, exact both ways)
+PASS: ProductCategory (8 rows, exact both ways)
+PASS: Promotion (1 rows, exact both ways)
+PASS: PromotionProductRule (2 rows, exact both ways)
+PASS: PurchaseOrder (1 rows, exact both ways)
+PASS: PurchaseOrderItem (1 rows, exact both ways)
+PASS: ReplenishmentSuggestion (1 rows, exact both ways)
+PASS: RolePermission (52 rows, exact both ways)
+PASS: SalesOrder (3 rows, exact both ways)
+PASS: SalesOrderItem (3 rows, exact both ways)
+RESULT: pass=25 fail=0
+```
+
+## Boundary
+
+This evidence covers the real pre-migration capture only. It does not claim
+that `run_migration.sql`, `11a`/`11b`/`11c`, `12_permissions`, or
+`13a`/`13b`/`13c` have passed; those are separate migration and regression
+checks. The database was left with batch 1 available for the next drill, then
+removed after the drill.
