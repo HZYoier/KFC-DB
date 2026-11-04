@@ -29,45 +29,6 @@ def _context_sets():
     ]
 
 
-class _FakeCursor:
-    def __init__(self, result_sets):
-        self._sets = result_sets
-        self._index = -1
-        self.description = None
-        self._rows = []
-
-    def execute(self, _sql):
-        self._index = 0
-        self._load()
-
-    def _load(self):
-        columns, rows = self._sets[self._index]
-        self.description = [(name,) for name in columns]
-        self._rows = rows
-
-    def fetchall(self):
-        return self._rows
-
-    def nextset(self):
-        if self._index + 1 >= len(self._sets):
-            return False
-        self._index += 1
-        self._load()
-        return True
-
-
-class _FakeConnection:
-    def __init__(self, result_sets):
-        self._cursor = _FakeCursor(result_sets)
-        self.closed = False
-
-    def cursor(self):
-        return self._cursor
-
-    def close(self):
-        self.closed = True
-
-
 class AuthTests(unittest.TestCase):
     def setUp(self):
         service.reset_store()
@@ -156,18 +117,21 @@ class AuthTests(unittest.TestCase):
         self.assertEqual(current["role"], "cashier")
 
     def test_09_dao_three_result_sets(self):
-        connection = _FakeConnection([
-            (["employee_id", "database_user_name", "employee_name", "job_code"], [(3, "test_cashier", "测试收银员", "CASHIER")]),
-            (["business_role_id", "role_code", "role_name"], [(3, "cashier", "收银员")]),
-            (["permission_code", "permission_name"], [("sp_create_order", "创建订单")]),
-        ])
-        with patch("app.auth.dao.db.open_connection", return_value=connection):
+        with patch("app.auth.dao.db.query_procedure_sets", return_value=_context_sets()) as fetch:
             result = self.real_fetch({"db_login": "test_cashier", "db_password": "secret", "role": ""})
+        fetch.assert_called_once_with(
+            {"db_login": "test_cashier", "db_password": "secret", "role": ""},
+            "sp_get_current_employee_context",
+        )
         self.assertEqual(len(result), 3)
         self.assertEqual(result[0][0]["employee_id"], 3)
         self.assertEqual(result[1][0]["role_code"], "cashier")
         self.assertEqual(result[2][0]["permission_code"], "sp_create_order")
-        self.assertTrue(connection.closed)
+
+    def test_10_stale_identity_detection(self):
+        self.assertTrue(service.is_stale_identity(AppError("E_FORBIDDEN", sql_number=51004)))
+        self.assertTrue(service.is_stale_identity(AppError("E_DB", sql_number=18456)))
+        self.assertFalse(service.is_stale_identity(AppError("E_FORBIDDEN", sql_number=229)))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,58 @@
+# OI-14 Common multi-result integration — 2026-11-04
+
+## Scope
+
+- Pulled A's `0cbb594` (`fix(common): return every result set and stop swallowing nextset errors`).
+- C removed the temporary `open_connection`/manual `nextset` adapter from
+  `app/auth/dao.py`; it now calls A's `db.query_procedure_sets`.
+- C added identity-invalid handling in `app/auth/service.py`
+  (`is_stale_identity` / `clear_if_stale`) and wired inventory pages to clear
+  the server-side session and redirect to login on 51004/18456/4060.
+- C added A's `tests/stage2/common` suite as the fifth line of
+  `tests/stage2/run-all.ps1`.
+- C replied to OI-10's four proposals and registered OI-16 (A's Common still
+  does not pass `pooling=False`); `run.py` sets the process-level fallback.
+
+## Phase 1 — first-round differences
+
+No production defect was found in the refactor. The only test change was
+C's `test_09_dao_three_result_sets`: it previously exercised the temporary
+`open_connection` adapter with a fake cursor; it now asserts one call to
+`db.query_procedure_sets` and the three returned sets. The adapter's old fake
+cursor classes were removed.
+
+The PowerShell aggregate runner could not be executed in this session because
+the environment policy rejected `-ExecutionPolicy Bypass`; its syntax was
+parsed successfully, and the same five suites were run directly instead.
+
+## Phase 2 — correction list
+
+- `app/auth/dao.py`: use `query_procedure_sets`; no manual result-set loop.
+- `app/auth/service.py`: stale-identity detection and session clearing.
+- `app/inventory/routes.py`: clear session/redirect on stale identity errors.
+- `tests/stage2/run-all.ps1`: add `common` as the fifth suite.
+- `run.py`: `pyodbc.pooling = False` process-level fallback for OI-16.
+- Docs: OI-14 closed, OI-10 C receipt, OI-16 registered.
+
+## Phase 3 — final green output
+
+Direct five-suite run (the aggregate runner's equivalent):
+
+```text
+common:     RESULT: pass=13 fail=0 skip=0 total=13
+auth:       RESULT: pass=10 fail=0 skip=0 total=10
+master:     RESULT: pass=36 fail=0 skip=0 total=36
+orders:     RESULT: pass=18 fail=0 skip=0 total=18
+inventory:  RESULT: pass=10 fail=0 skip=0 total=10
+```
+
+`tests/stage2/run-all.ps1` is updated to `files=5`; PowerShell parser:
+`run-all.ps1 parse ok`.
+
+## Boundary
+
+These tests use fake DB sessions for C's auth/inventory and A's common tests
+use their own fakes; no real employee SQL login or real
+`sp_get_current_employee_context` call was exercised. `pooling=False` is still
+only a C entry-point fallback; OI-16 remains open for A. B's `11b` remains the
+blocker for full 2.2. KFC_DB was not created for this round.

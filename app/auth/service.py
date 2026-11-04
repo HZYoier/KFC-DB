@@ -144,6 +144,24 @@ def logout() -> None:
     flask_session.clear()
 
 
+def is_stale_identity(err: errors.AppError | None) -> bool:
+    """账户停用/删除或口令失效：下一次过程调用返回 51004 或连接错误。"""
+    if err is None:
+        return False
+    return (
+        (err.code == "E_FORBIDDEN" and err.sql_number == 51004)
+        or (err.code == "E_DB" and err.sql_number in (18456, 4060))
+    )
+
+
+def clear_if_stale(err: errors.AppError | None) -> bool:
+    """身份已失效时清掉服务端会话；调用方随后跳登录页。"""
+    if not is_stale_identity(err):
+        return False
+    logout()
+    return True
+
+
 def login_required(view):
     """请求级登录门；未登录跳登录页，保留安全的站内 next。"""
 

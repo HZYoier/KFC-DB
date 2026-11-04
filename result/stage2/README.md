@@ -60,6 +60,7 @@
 - （2026-11-03 增补）`scripts/check_signature_three_paths_20261103.sql`：签名三路径低权限验收脚本。
 - （2026-11-03 增补）`c-auth-2026-11-03.txt`：2.3 C 侧 `app/auth`/`run.py` 的 9/0 单测与 master 36/0、orders 18/0 回归；含首轮 test_09 夹具归因与 OI-14 多结果集边界。
 - （2026-11-03 增补）`c-inventory-app-2026-11-03.txt`：2.3 C 侧 `app/inventory` 三层（库存/流水/补货/收货）10/0 单测、`run-all.ps1` 四套汇总与部署模板解析；含首轮测试夹具归因、真实 DB/员工角色页边界。
+- （2026-11-04 增补）`c-common-oi14-2026-11-04.txt`：A Common 多结果集修复后的 C 侧集成（auth 改 `query_procedure_sets`、身份失效清会话、run-all 五套 13/10/36/18/10）；OI-14 关闭、OI-16 登记。
 
 ## SHA-256
 
@@ -104,6 +105,7 @@ FAE1A1AA9B5C57E106076C02B5FA5DD5A3CB34C1A82DD5B9EFFCD111454144F7  c-signature-th
 62ECD20C7FB8A1CE7FDF97A20884BEDF480F4D8D6AFE3C0DBDD972C3FF67A27E  scripts/check_signature_three_paths_20261103.sql
 442DC5DD8AA540B78CAC744AE8B99AAEDE9FB3E3CADB3363195FF13670223B0B  c-auth-2026-11-03.txt
 F9CFACE4F3A2011FA7433467B484C13651F0D68A3E3E2C6958BEFF550F9D18E6  c-inventory-app-2026-11-03.txt
+3AB44BC0E3E4B4953AA225E67999F1CD16FB7CC3225A227E193476DA15DA0A2D  c-common-oi14-2026-11-04.txt
 1AEF13C7D3459FC3AE623E5B723AE9D8C47D1CC6EE2099431FB19DC925490E7B  ../sql/stage2/12_permissions.sql
 9AFD6C80DACA4CF3EB6D5C1593657355FC2125156546431A86065B528B33E034  ../sql/stage2/13c_inventory_security_regression.sql
 8947E914630DA170DF924696F7B7FB1AD3FDBF3C291C1ED4F0710FFE2D311CA9  ../sql/stage2/run_migration.sql

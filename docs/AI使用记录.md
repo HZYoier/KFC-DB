@@ -633,3 +633,20 @@
 **核对结果：** auth 9/0、inventory 10/0、master 36/0、orders 18/0，run-all 4 套 0 失败；模板 PowerShell parse ok。真实视图/过程、真实员工登录与模板执行尚未联调；OI-14/OI-15 仍 open。
 
 **我的处理：** 本轮改动随后由我授权 commit；push 仍由我手动。下一步等 B `11b` 做完整 2.2，并处理 OI-14/15 与顾客页。
+
+---
+
+## （2026-11-04）—— A 的 Common 多结果集修复与 C 侧集成（C）
+
+**聊了什么：** pull 到 A 的 `0cbb594`（Common 多结果集/OI-14 修复）和 `1.7` 四边界提案，按建议继续推进 C 侧集成。
+
+**AI 做了什么：**
+1. 将 `app/auth/dao.py` 从临时 `open_connection`+手写 `nextset` 适配器改为 A 的 `db.query_procedure_sets`；auth 测试同步改为断言一次调用，9→10 条（新增身份失效判定），**10/0**。
+2. A 的 `tests/stage2/common` **13/0**；在 `tests/stage2/run-all.ps1` 增加 common，成为五套。
+3. 补身份失效清理：`app/auth/service.py` 的 `is_stale_identity`/`clear_if_stale`，库存页遇 51004/18456/4060 清会话回登录页；`run.py` 设 `pyodbc.pooling = False` 作为 A Common 未显式 `pooling=False` 的入口兜底。
+4. 关闭 OI-14（A 修复、C 复核）；登记 OI-16（A Common 未显式 `pooling=False`）；对 OI-10 四条提案回 C 选择（全选 A 推荐，附加身份失效与 OI-16 条件），待 B 回执。
+5. 直接跑五套：common 13/0、auth 10/0、master 36/0、orders 18/0、inventory 10/0；`run-all.ps1` 因当前命令策略不能带 `-ExecutionPolicy Bypass` 执行，语法解析通过，等价子套件已直接跑完。
+
+**核对结果：** OI-14 关闭；OI-10 仍待 B 回执；OI-16 open。真实员工登录/`pooling=False` 实际行为未联调；B `11b` 仍缺。
+
+**我的处理：** 本轮 C 改动留在工作区，等待我决定 commit；push 仍由我手动。

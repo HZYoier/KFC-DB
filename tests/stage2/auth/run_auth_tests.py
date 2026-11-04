@@ -6,7 +6,7 @@ import sys
 import unittest
 from pathlib import Path
 
-EXPECTED = 9
+EXPECTED = 10
 
 
 def main() -> int:

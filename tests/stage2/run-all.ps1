@@ -22,10 +22,11 @@ function Invoke-PythonSuite {
     }
 }
 
+Invoke-PythonSuite 'common' @('tests/stage2/common/run_common_tests.py')
 Invoke-PythonSuite 'auth' @('tests/stage2/auth/run_auth_tests.py')
 Invoke-PythonSuite 'master' @('tests/stage2/master/run_master_tests.py')
 Invoke-PythonSuite 'orders' @('tests/stage2/orders/run_tests.py', '--sql-server', $SqlServer)
 Invoke-PythonSuite 'inventory' @('tests/stage2/inventory/run_inventory_tests.py')
 
-Write-Host 'RESULT: run-all files=4 failed=0'
+Write-Host 'RESULT: run-all files=5 failed=0'
 exit 0

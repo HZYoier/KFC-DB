@@ -5,6 +5,7 @@ from __future__ import annotations
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from app.auth import current_employee_session, current_identity, login_required
+from app.auth import service as auth_service
 from app.common.errors import AppError
 from app.inventory import service
 
@@ -22,6 +23,8 @@ def _render(identity, session, *, error=None, notice=None, ingredient_id=None):
         suggestions = service.list_replenishment(session)
         load_error = None
     except AppError as err:
+        if auth_service.clear_if_stale(err):
+            return redirect(url_for("auth.login", next=request.path))
         inventory, movements, suggestions = [], [], []
         load_error = err.user_message
 
@@ -42,6 +45,8 @@ def _after_action(identity, session, action, *, ingredient_id=None):
     try:
         action()
     except AppError as err:
+        if auth_service.clear_if_stale(err):
+            return redirect(url_for("auth.login", next=request.path))
         return _render(identity, session, error=err.user_message, ingredient_id=ingredient_id), err.http_status
     return redirect(url_for("inventory.index", ok=1))
 
