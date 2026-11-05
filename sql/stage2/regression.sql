@@ -35,5 +35,5 @@ PRINT N'=== regression: 13b order write contract ===';
 PRINT N'=== regression: 13c inventory security ===';
 :r sql/stage2/13c_inventory_security_regression.sql
 
-PRINT N'RESULT: regression files=4 expected_pass=37 fail=0 (13a 10 + 13b 5 + 13b 8 + 13c 14)';
+PRINT N'RESULT: regression files=4 expected_pass=38 fail=0 (13a 10 + 13b 5 + 13b 8 + 13c 15)';
 GO

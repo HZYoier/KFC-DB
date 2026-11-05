@@ -151,6 +151,21 @@ def reject_suggestion(suggestion_id: int):
     )
 
 
+@bp.get("/roles")
+@login_required
+def roles():
+    identity = current_identity()
+    session = current_employee_session()
+    try:
+        rows = service.list_employee_roles(session)
+        error = None
+    except AppError as err:
+        if auth_service.clear_if_stale(err):
+            return redirect(url_for("auth.login", next=request.path))
+        rows, error = [], err.user_message
+    return render_template("inventory/roles.html", identity=identity, rows=rows, error=error)
+
+
 @bp.post("/receive")
 @login_required
 def receive():

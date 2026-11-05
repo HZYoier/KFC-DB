@@ -103,6 +103,28 @@ class InventoryServiceTests(unittest.TestCase):
         self.assertIn("生菜", html)
         self.assertIn("库存调整", html)
 
+    def test_11_list_employee_roles_uses_proc(self):
+        with patch("app.inventory.dao.query_procedure", return_value=[]) as query_proc:
+            self.assertEqual(service.list_employee_roles({}), [])
+        query_proc.assert_called_once_with({}, "sp_list_employee_roles")
+
+    def test_12_roles_template_renders(self):
+        app = create_app(DbConfig(driver="ODBC Driver 18 for SQL Server", server="localhost", database="KFC_DB"))
+        identity = {
+            "employee": {"employee_name": "测试店长", "database_user_name": "test_store_manager", "job_code": "STORE_MANAGER"},
+            "roles": [{"role_code": "store_manager", "role_name": "店长"}],
+            "permissions": [],
+        }
+        rows = [{
+            "employee_id": 1, "employee_name": "测试店长", "database_user_name": "test_store_manager",
+            "login_name": "test_store_manager", "job_code": "STORE_MANAGER", "status": "ACTIVE",
+            "role_code": "store_manager", "role_name": "店长", "assigned_at": None,
+        }]
+        with app.test_request_context("/inventory/roles"):
+            html = render_template("inventory/roles.html", identity=identity, rows=rows, error=None)
+        self.assertIn("员工角色", html)
+        self.assertIn("测试店长", html)
+
 
 if __name__ == "__main__":
     unittest.main()

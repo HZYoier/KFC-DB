@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>员工角色 · KFC-DB</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, "Microsoft YaHei", sans-serif; }
+    body { margin: 0; background: #f4f1ea; color: #2b2b2b; }
+    main { width: min(96vw, 1100px); margin: 28px auto 48px; }
+    h1 { margin: 0 0 4px; font-size: 24px; }
+    .muted { color: #777; font-size: 13px; }
+    .links a, .links button { margin-left: 8px; padding: 7px 10px; border: 1px solid #d7d0c4; border-radius: 7px; background: #fff; color: #2b2b2b; text-decoration: none; font: inherit; cursor: pointer; }
+    .error { margin: 14px 0; padding: 10px 12px; border-radius: 8px; background: #fdecea; color: #8c1d18; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; font-size: 13px; }
+    th, td { padding: 8px 9px; border-bottom: 1px solid #eee9df; text-align: left; }
+    th { background: #faf8f3; font-weight: 600; }
+    .role { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 8px; border-radius: 999px; background: #f1eee7; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="links" style="float:right">
+      <a href="{{ url_for('inventory.index') }}">库存与补货</a>
+      <a href="{{ url_for('auth.index') }}">我的首页</a>
+      <form method="post" action="{{ url_for('auth.logout') }}" style="display:inline"><button type="submit">退出登录</button></form>
+    </div>
+    <h1>员工角色</h1>
+    <p class="muted">{{ identity.employee.employee_name }} · 仅店长可查看；角色分配仍由数据库签名过程校验。</p>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <table>
+      <thead><tr><th>员工 ID</th><th>姓名</th><th>数据库用户</th><th>登录名</th><th>岗位</th><th>状态</th><th>业务角色</th><th>分配时间</th></tr></thead>
+      <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>{{ row.employee_id }}</td>
+          <td>{{ row.employee_name }}</td>
+          <td>{{ row.database_user_name }}</td>
+          <td>{{ row.login_name }}</td>
+          <td>{{ row.job_code }}</td>
+          <td>{{ row.status }}</td>
+          <td>{% if row.role_code %}<span class="role">{{ row.role_name }}（{{ row.role_code }}）</span>{% else %}<span class="muted">未分配</span>{% endif %}</td>
+          <td>{{ row.assigned_at if row.assigned_at is not none else '-' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="muted">没有员工角色数据（或当前账号没有查询权限）。</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

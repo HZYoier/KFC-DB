@@ -90,10 +90,10 @@ DECLARE @batch_id BIGINT = (SELECT sv.batch_id FROM dbo.SchemaVersion AS sv
                             WHERE sv.version_code = N'v0.1');
 IF @batch_id IS NULL
     THROW 53516, N'run_migration: v0.1 batch_id disappeared before the v1.0 marker.', 1;
-IF (SELECT COUNT(*) FROM dbo.Permission) <> 57
-    THROW 53510, N'run_migration: Permission != 57 after 11c.', 1;
-IF (SELECT COUNT(*) FROM dbo.RolePermission) <> 70
-    THROW 53511, N'run_migration: RolePermission != 70 after 11c.', 1;
+IF (SELECT COUNT(*) FROM dbo.Permission) <> 58
+    THROW 53510, N'run_migration: Permission != 58 after 11c.', 1;
+IF (SELECT COUNT(*) FROM dbo.RolePermission) <> 71
+    THROW 53511, N'run_migration: RolePermission != 71 after 11c.', 1;
 IF (SELECT COUNT(*) FROM sys.key_constraints WHERE name IN
     (N'UQ_MemberLevel_threshold_points', N'UQ_Category_category_name',
      N'UQ_Product_product_name', N'UQ_Ingredient_name_unit',
@@ -106,8 +106,8 @@ IF (SELECT COUNT(*) FROM sys.procedures
        N'sp_list_orders_for_payment', N'sp_get_order_for_payment',
        N'sp_get_order_operation_status', N'sp_list_orders_for_packing',
        N'sp_list_my_deliveries', N'sp_list_deliveries_available_for_pickup',
-       N'sp_get_current_employee_context')) <> 11
-    THROW 53513, N'run_migration: expected eleven v1.0 procedures.', 1;
+       N'sp_get_current_employee_context', N'sp_list_employee_roles')) <> 12
+    THROW 53513, N'run_migration: expected twelve v1.0 procedures.', 1;
 IF (SELECT COUNT(*) FROM sys.crypt_properties WHERE class = 1 AND major_id IN
     (OBJECT_ID(N'dbo.sp_assign_employee_business_role'),
      OBJECT_ID(N'dbo.sp_revoke_employee_business_role'),

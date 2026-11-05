@@ -662,3 +662,20 @@
 **核对结果：** B 测试 20/20、静态核对 445/445。新查询测试验证应用调用契约，不是实际 11b 存储过程验收。
 
 **我的处理：** 验证后推送 B 文件；错误码仍由 C 登记，不改 A/C 文件或共同状态表。
+
+---
+
+## （2026-11-05）—— OI-15：员工角色查询与 11c 58/71（C）
+
+**聊了什么：** pull 到 B 的 `d70c5bd`（orders/Common 适配，orders 20 条）后，继续完成 C 侧唯一独立功能缺口 OI-15，并准备本轮 commit。
+
+**AI 做了什么：**
+1. `11c` 扩为 **58 码/71 行**：新增 `sp_list_employee_roles`（仅 `STORE_MANAGER` 守卫，LEFT JOIN 员工/业务角色），加入固定 CHECK、`Permission`、`RolePermission` 与终态检查；`12` 增加第 19 对 GRANT 并同步对象清单，`run_migration` 同步 58/71 与 12 个过程。
+2. `13c` 增加员工角色查询正反断言（店长可读、普通岗位 229），总断言 15 条；`regression` 预期总数 38。
+3. `app/inventory` 增加 `/inventory/roles` 页面（DAO `query_procedure`、service、route、模板），库存页增加店长入口；inventory 测试 12/0。
+4. 实测：11c 外层事务回滚 **9/0**；临时 `11b`/顾客桩下 `run_migration` 提交、13a **10/0**、13b baseline **5/0** + write **8/8**、13c **15/0**、regression **38/0**；真实角色过程店长返回 7 员工、`test_cashier` 229。
+5. 五套应用测试：common 13/0、auth 10/0、master 36/0、orders 20/0、inventory 12/0；`run-all.ps1` 语法解析通过。测试后删库。
+
+**核对结果：** OI-15 closed；OI-10 仍待 B 回执；OI-16（A Common `pooling=False`）仍 open；B 的真实 `11b` 仍缺。桩迁移不能替代完整 2.2。
+
+**我的处理：** 本轮改动随后 commit；push 仍由我手动。

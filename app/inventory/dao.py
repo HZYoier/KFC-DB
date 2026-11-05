@@ -11,6 +11,7 @@ from app.common.db import (
     p_decimal,
     p_varchar,
     query,
+    query_procedure,
 )
 
 _SQL_INVENTORY = """
@@ -124,3 +125,7 @@ def receive_inventory(session, purchase_order_id: int, employee_id: int, receive
         "sp_receive_inventory",
         [p_bigint(purchase_order_id), p_bigint(employee_id), p_decimal(received_qty, 12, 3)],
     )
+
+
+def list_employee_roles(session):
+    return query_procedure(session, "sp_list_employee_roles")

@@ -1,0 +1,68 @@
+# 11c employee-role extension (OI-15) — 2026-11-05
+
+## Scope
+
+- Extended `11c` from 57/70 to **58 codes / 71 RolePermission rows**:
+  - added `sp_list_employee_roles` to `Permission` and the fixed CHECK;
+  - granted it only to `store_manager`;
+  - created the procedure (store-manager guard, employee/role left join).
+- Updated `12_permissions.sql` (19 new grants), `run_migration.sql` (58/71,
+  twelve v1.0 procedures), `13c` (58/71, 19 new rows, 15 assertions) and
+  `regression.sql` (expected total 38).
+- Added `app/inventory` employee-role page (`/inventory/roles`), DAO/service
+  call, template, and two tests; inventory suite is now 12/0.
+- A/B files were not modified. The employee-role page is readable only by the
+  store manager; ordinary roles get 229 from the database.
+
+## Phase 1 — first-round differences
+
+The first 11c rollback harness reported **pass=9 fail=0** but asserted an
+expected count of **8**. Attribution: the harness undercounted its own checks
+(it has nine independent assertions, not eight); fixed the expected count.
+No production SQL defect was found.
+
+## Phase 2 — correction list
+
+- 11c: employee-role code/name/mapping/procedure + counts 58/71.
+- 12: prechecks 58/71, required procedure list, 19th grant, expected grant table.
+- run_migration: 58/71 and twelve procedures.
+- 13c: 58/71, new-code set, 19 new rows, 71 expected grants, 13c-15 positive/229.
+- regression: 13c denominator 15 and total 38.
+- inventory: roles DAO/service/route/template + tests 11/12.
+- Docs/evidence: counts, OI-15 closure, README/SHA.
+
+## Phase 3 — final green output
+
+11c rollback on a fresh v0.1:
+
+```text
+RESULT: pass=9 fail=0
+```
+
+Stub migration (`11a` -> `11b` stub -> `11c` -> `12`) committed:
+
+```text
+12: cust_app grants applied (3 customer procedures).
+12: employee grants, cust_app, and role-sync signatures verified.
+RESULT: migration committed (v1.0 marker written; 11a/11b/11c/12).
+```
+
+Post-migration checks:
+
+```text
+13a: RESULT: pass=10 fail=0
+13b baseline: RESULT 13b baseline: pass=5 fail=0 total=5
+13b write: RESULT 13b write signatures: pass=8 fail=0 total=8
+13c: RESULT: pass=15 fail=0
+regression: RESULT: regression files=4 expected_pass=38 fail=0
+```
+
+Employee-role procedure as store manager returned the seven seeded employees;
+as `test_cashier` it returned **229**.
+
+## Boundary
+
+The migration used a temporary `11b`/customer stub; B's real
+`11b_order_migration.sql` is still absent. No real employee SQL login or real
+B query was exercised. The 11c evidence proves C's 58/71 extension and the
+stubbed integration path, not full 2.2. KFC_DB was dropped after the drill.

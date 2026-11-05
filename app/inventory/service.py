@@ -76,6 +76,10 @@ def list_replenishment(session):
     return dao.list_replenishment(session)
 
 
+def list_employee_roles(session):
+    return dao.list_employee_roles(session)
+
+
 def adjust_inventory(session, employee_id, ingredient_id, on_hand_delta, reason):
     return dao.adjust_inventory(
         session,

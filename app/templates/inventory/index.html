@@ -41,7 +41,7 @@
       </div>
       <div class="links">
         <a href="{{ url_for('auth.index') }}">我的首页</a>
-        {% if 'store_manager' in identity.roles | map(attribute='role_code') | list %}<a href="{{ url_for('master.index') }}">主数据管理</a>{% endif %}
+        {% if 'store_manager' in identity.roles | map(attribute='role_code') | list %}<a href="{{ url_for('master.index') }}">主数据管理</a><a href="{{ url_for('inventory.roles') }}">员工角色</a>{% endif %}
         <form method="post" action="{{ url_for('auth.logout') }}" style="display:inline"><button type="submit">退出登录</button></form>
       </div>
     </div>

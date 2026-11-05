@@ -58,19 +58,20 @@ INSERT @new_codes VALUES
  (N'sp_list_orders_for_payment'), (N'sp_get_order_for_payment'),
  (N'sp_get_order_operation_status'), (N'sp_list_orders_for_packing'),
  (N'sp_list_my_deliveries'), (N'sp_list_deliveries_available_for_pickup'),
- (N'sp_get_current_employee_context'), (N'sp_list_master_records'),
+ (N'sp_get_current_employee_context'), (N'sp_list_employee_roles'),
+ (N'sp_list_master_records'),
  (N'sp_list_sale_products'), (N'sp_find_customer_for_order'),
  (N'sp_register_customer_for_order');
 BEGIN TRY
-    IF (SELECT COUNT(*) FROM dbo.Permission) <> 57
-        THROW 51941, N'13c-1：Permission 不是 57 码。', 1;
-    IF (SELECT COUNT(*) FROM dbo.RolePermission) <> 70
-        THROW 51941, N'13c-1：RolePermission 不是 70 行。', 1;
+    IF (SELECT COUNT(*) FROM dbo.Permission) <> 58
+        THROW 51941, N'13c-1：Permission 不是 58 码。', 1;
+    IF (SELECT COUNT(*) FROM dbo.RolePermission) <> 71
+        THROW 51941, N'13c-1：RolePermission 不是 71 行。', 1;
     IF (SELECT COUNT(*) FROM dbo.Permission
-        WHERE permission_code IN (SELECT permission_code FROM @new_codes)) <> 11
-        THROW 51941, N'13c-1：新增 11 码未全部进入 Permission。', 1;
+        WHERE permission_code IN (SELECT permission_code FROM @new_codes)) <> 12
+        THROW 51941, N'13c-1：新增 12 码未全部进入 Permission。', 1;
     UPDATE #counters SET pass = pass + 1;
-    PRINT N'PASS: 13c-1 Permission 57 / RolePermission 70 / 新增码集合一致';
+    PRINT N'PASS: 13c-1 Permission 58 / RolePermission 71 / 新增码集合一致';
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0 ROLLBACK;
@@ -86,7 +87,8 @@ INSERT @new_codes VALUES
  (N'sp_list_orders_for_payment'), (N'sp_get_order_for_payment'),
  (N'sp_get_order_operation_status'), (N'sp_list_orders_for_packing'),
  (N'sp_list_my_deliveries'), (N'sp_list_deliveries_available_for_pickup'),
- (N'sp_get_current_employee_context'), (N'sp_list_master_records'),
+ (N'sp_get_current_employee_context'), (N'sp_list_employee_roles'),
+ (N'sp_list_master_records'),
  (N'sp_list_sale_products'), (N'sp_find_customer_for_order'),
  (N'sp_register_customer_for_order');
 BEGIN TRY
@@ -120,7 +122,8 @@ INSERT @new_codes VALUES
  (N'sp_list_orders_for_payment'), (N'sp_get_order_for_payment'),
  (N'sp_get_order_operation_status'), (N'sp_list_orders_for_packing'),
  (N'sp_list_my_deliveries'), (N'sp_list_deliveries_available_for_pickup'),
- (N'sp_get_current_employee_context'), (N'sp_list_master_records'),
+ (N'sp_get_current_employee_context'), (N'sp_list_employee_roles'),
+ (N'sp_list_master_records'),
  (N'sp_list_sale_products'), (N'sp_find_customer_for_order'),
  (N'sp_register_customer_for_order');
 BEGIN TRY
@@ -148,18 +151,19 @@ BEGIN CATCH
 END CATCH;
 GO
 
--- 4. 新增 18 行：context 7、A 四、B 六
+-- 4. 新增 19 行：context 7、A 四、B 六、C 员工角色查询
 DECLARE @new_codes TABLE (permission_code VARCHAR(50) PRIMARY KEY);
 INSERT @new_codes VALUES
  (N'sp_list_orders_for_payment'), (N'sp_get_order_for_payment'),
  (N'sp_get_order_operation_status'), (N'sp_list_orders_for_packing'),
  (N'sp_list_my_deliveries'), (N'sp_list_deliveries_available_for_pickup'),
- (N'sp_get_current_employee_context'), (N'sp_list_master_records'),
+ (N'sp_get_current_employee_context'), (N'sp_list_employee_roles'),
+ (N'sp_list_master_records'),
  (N'sp_list_sale_products'), (N'sp_find_customer_for_order'),
  (N'sp_register_customer_for_order');
 BEGIN TRY
-    IF (SELECT COUNT(*) FROM dbo.RolePermission WHERE permission_code IN (SELECT permission_code FROM @new_codes)) <> 18
-        THROW 51941, N'13c-4：新增 RolePermission 不是 18 行。', 1;
+    IF (SELECT COUNT(*) FROM dbo.RolePermission WHERE permission_code IN (SELECT permission_code FROM @new_codes)) <> 19
+        THROW 51941, N'13c-4：新增 RolePermission 不是 19 行。', 1;
     IF (SELECT COUNT(*) FROM dbo.RolePermission WHERE permission_code = N'sp_get_current_employee_context') <> 7
         THROW 51941, N'13c-4：身份上下文不是 7 个角色。', 1;
     IF (SELECT COUNT(*) FROM dbo.RolePermission WHERE permission_code IN
@@ -175,8 +179,14 @@ BEGIN TRY
                          N'sp_find_customer_for_order', N'sp_register_customer_for_order')
                      AND br.role_code = N'cashier') <> 3
         THROW 51941, N'13c-4：A 四接口角色映射与契约 §2.4.5 不符。', 1;
+    IF OBJECT_ID(N'dbo.sp_list_employee_roles', N'P') IS NULL
+       OR (SELECT COUNT(*) FROM dbo.RolePermission rp JOIN dbo.BusinessRole br
+                   ON br.business_role_id = rp.business_role_id
+                   WHERE rp.permission_code = N'sp_list_employee_roles'
+                     AND br.role_code = N'store_manager') <> 1
+        THROW 51941, N'13c-4：员工角色查询未创建或未映射到 store_manager。', 1;
     UPDATE #counters SET pass = pass + 1;
-    PRINT N'PASS: 13c-4 新增 18 行（context 7 / A 4 / B 6）';
+    PRINT N'PASS: 13c-4 新增 19 行（context 7 / A 4 / B 6 / C 1）';
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0 ROLLBACK;
@@ -187,8 +197,8 @@ GO
 
 -- 5. 白名单 = 目录 = RolePermission 码集合
 BEGIN TRY
-    IF (SELECT COUNT(DISTINCT permission_code) FROM dbo.Permission) <> 57
-        THROW 51941, N'13c-5：Permission 去重码不是 57。', 1;
+    IF (SELECT COUNT(DISTINCT permission_code) FROM dbo.Permission) <> 58
+        THROW 51941, N'13c-5：Permission 去重码不是 58。', 1;
     IF EXISTS (SELECT permission_code FROM dbo.Permission
                EXCEPT SELECT permission_code FROM dbo.RolePermission)
        OR EXISTS (SELECT permission_code FROM dbo.RolePermission
@@ -214,8 +224,8 @@ BEGIN TRY
     JOIN dbo.BusinessRole br ON br.business_role_id = rp.business_role_id AND br.status = N'ACTIVE'
     JOIN sys.objects o ON o.name = rp.permission_code AND o.schema_id = SCHEMA_ID(N'dbo')
     WHERE o.type IN ('P', 'V');
-    IF (SELECT COUNT(*) FROM @expected) <> 70
-        THROW 51941, N'13c-6：RolePermission 对应的期望 GRANT 不是 70 对。', 1;
+    IF (SELECT COUNT(*) FROM @expected) <> 71
+        THROW 51941, N'13c-6：RolePermission 对应的期望 GRANT 不是 71 对。', 1;
     IF EXISTS (
         SELECT role_name, object_name, permission_name FROM @expected
         EXCEPT
@@ -239,7 +249,7 @@ BEGIN TRY
     )
         THROW 51941, N'13c-6：实际 role_* GRANT 与 RolePermission 映射不相等。', 1;
     UPDATE #counters SET pass = pass + 1;
-    PRINT N'PASS: 13c-6 70 对 role_* GRANT 与映射逐对相等';
+    PRINT N'PASS: 13c-6 71 对 role_* GRANT 与映射逐对相等';
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0 ROLLBACK;
@@ -460,12 +470,50 @@ BEGIN CATCH
 END CATCH;
 GO
 
+-- 15. 员工角色查询正反权限（仅店长；普通岗位 229）
+BEGIN TRY
+    DECLARE @role_err INT = NULL;
+    BEGIN TRY
+        EXECUTE AS USER = N'test_store_manager';
+        EXEC dbo.sp_list_employee_roles;
+        REVERT;
+    END TRY
+    BEGIN CATCH
+        SET @role_err = ERROR_NUMBER();
+        IF XACT_STATE() <> 0 ROLLBACK;
+        IF USER_NAME() <> N'dbo' REVERT;
+    END CATCH;
+    IF @role_err IS NOT NULL
+        THROW 51941, N'13c-15：店长调用员工角色查询失败。', 1;
+    SET @role_err = NULL;
+    BEGIN TRY
+        EXECUTE AS USER = N'test_cashier';
+        EXEC dbo.sp_list_employee_roles;
+    END TRY
+    BEGIN CATCH
+        SET @role_err = ERROR_NUMBER();
+        IF XACT_STATE() <> 0 ROLLBACK;
+        IF USER_NAME() <> N'dbo' REVERT;
+    END CATCH;
+    IF @role_err IS NULL OR @role_err <> 229
+        THROW 51941, N'13c-15：普通岗位未被 229 拒绝。', 1;
+    UPDATE #counters SET pass = pass + 1;
+    PRINT N'PASS: 13c-15 员工角色查询仅店长可读、普通岗位 229';
+END TRY
+BEGIN CATCH
+    IF XACT_STATE() <> 0 ROLLBACK;
+    IF USER_NAME() <> N'dbo' REVERT;
+    UPDATE #counters SET fail = fail + 1;
+    PRINT N'FAIL: 13c-15 ' + ERROR_MESSAGE();
+END CATCH;
+GO
+
 -- 收尾
 DECLARE @pass INT = (SELECT pass FROM #counters);
 DECLARE @fail INT = (SELECT fail FROM #counters);
 PRINT N'RESULT: pass=' + CONVERT(NVARCHAR(10), @pass) + N' fail=' + CONVERT(NVARCHAR(10), @fail);
-IF @pass + @fail <> 14
-    THROW 51999, N'13c：断言计数不足 14，说明有批次静默作废。', 1;
+IF @pass + @fail <> 15
+    THROW 51999, N'13c：断言计数不足 15，说明有批次静默作废。', 1;
 IF @fail > 0
     THROW 51998, N'13c：存在失败断言。', 1;
 GO

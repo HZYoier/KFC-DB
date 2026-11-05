@@ -18,10 +18,10 @@ SET XACT_ABORT ON;
 IF OBJECT_ID(N'dbo.Permission', N'U') IS NULL
    OR OBJECT_ID(N'dbo.RolePermission', N'U') IS NULL
     THROW 53400, N'12: Permission/RolePermission is missing; run 11c first.', 1;
-IF (SELECT COUNT(*) FROM dbo.Permission) <> 57
-    THROW 53401, N'12: Permission must contain 57 v1.0 codes.', 1;
-IF (SELECT COUNT(*) FROM dbo.RolePermission) <> 70
-    THROW 53402, N'12: RolePermission must contain 70 v1.0 rows.', 1;
+IF (SELECT COUNT(*) FROM dbo.Permission) <> 58
+    THROW 53401, N'12: Permission must contain 58 v1.0 codes.', 1;
+IF (SELECT COUNT(*) FROM dbo.RolePermission) <> 71
+    THROW 53402, N'12: RolePermission must contain 71 v1.0 rows.', 1;
 IF (SELECT COUNT(*) FROM dbo.BusinessRole WHERE status = N'ACTIVE'
       AND role_code IN (N'cashier', N'store_manager', N'packer', N'rider',
                         N'chef', N'waiter', N'shift_manager')) <> 7
@@ -35,7 +35,7 @@ FROM (VALUES
     (N'sp_list_orders_for_payment'), (N'sp_get_order_for_payment'),
     (N'sp_get_order_operation_status'), (N'sp_list_orders_for_packing'),
     (N'sp_list_my_deliveries'), (N'sp_list_deliveries_available_for_pickup'),
-    (N'sp_get_current_employee_context')
+    (N'sp_get_current_employee_context'), (N'sp_list_employee_roles')
 ) AS x(name)
 WHERE OBJECT_ID(N'dbo.' + name, N'P') IS NULL;
 IF @missing <> N''
@@ -47,7 +47,7 @@ END;
 GO
 
 -- ---------------------------------------------------------------------------
--- 2. 员工侧授权：只授 v1.0 新增的 18 对（旧 52 对由 08 保留）
+-- 2. 员工侧授权：只授 v1.0 新增的 19 对（旧 52 对由 08 保留）
 -- ---------------------------------------------------------------------------
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -73,6 +73,7 @@ GRANT EXECUTE ON dbo.sp_get_current_employee_context TO role_rider;
 GRANT EXECUTE ON dbo.sp_get_current_employee_context TO role_waiter;
 GRANT EXECUTE ON dbo.sp_get_current_employee_context TO role_shift_manager;
 GRANT EXECUTE ON dbo.sp_get_current_employee_context TO role_store_manager;
+GRANT EXECUTE ON dbo.sp_list_employee_roles TO role_store_manager;
 GO
 
 -- ---------------------------------------------------------------------------
@@ -134,7 +135,7 @@ ADD SIGNATURE TO dbo.sp_update_employee_status BY CERTIFICATE cert_role_sync;
 GO
 
 -- ---------------------------------------------------------------------------
--- 5. 授权核对：新增 18 对实际 GRANT 全在位；重签仍为 3 条
+-- 5. 授权核对：新增 19 对实际 GRANT 全在位；重签仍为 3 条
 -- ---------------------------------------------------------------------------
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -157,7 +158,8 @@ INSERT @expected (role_name, object_name) VALUES
     (N'role_rider', N'sp_get_current_employee_context'),
     (N'role_waiter', N'sp_get_current_employee_context'),
     (N'role_shift_manager', N'sp_get_current_employee_context'),
-    (N'role_store_manager', N'sp_get_current_employee_context');
+    (N'role_store_manager', N'sp_get_current_employee_context'),
+    (N'role_store_manager', N'sp_list_employee_roles');
 
 IF EXISTS (
     SELECT e.role_name, e.object_name
