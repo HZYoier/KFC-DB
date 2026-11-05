@@ -1,6 +1,7 @@
 -- B read-only post-migration check, run in the migrated database before resuming writes.
 -- This is the baseline component of 13b, not the employee/authorization regression.
 SET NOCOUNT ON;
+SET QUOTED_IDENTIFIER ON;
 
 IF OBJECT_ID(N'dbo.SchemaVersion', N'U') IS NULL
    OR OBJECT_ID(N'dbo.MigrationBatch', N'U') IS NULL

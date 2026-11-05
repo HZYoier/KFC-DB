@@ -1,6 +1,6 @@
 """B's deployed employee write interfaces; typed calls through A's Common only.
 
-No query-proposal wrappers are exposed while the new SQL objects are absent.
+Read adapters target the frozen 11b contract; do not wire routes before deployment.
 Fail closed on missing credentials instead of Common's local smoke fallback.
 """
 from collections.abc import Mapping
@@ -20,6 +20,36 @@ def require_employee_session(session):
 def _execute(session, name, params):
     require_employee_session(session)
     return db.execute_procedure(session, name, params)
+
+
+def _read(session, name, params, *, multiple=False):
+    require_employee_session(session)
+    query = db.query_procedure_sets if multiple else db.query_procedure
+    return query(session, name, params)
+
+
+def list_orders_for_payment(session, take=100):
+    return _read(session, 'sp_list_orders_for_payment', [db.p_int(take)])
+
+
+def get_order_for_payment(session, order_id):
+    return _read(session, 'sp_get_order_for_payment', [db.p_bigint(order_id)], multiple=True)
+
+
+def get_order_operation_status(session, *, order_id=None, order_no=None):
+    return _read(session, 'sp_get_order_operation_status', [db.p_bigint(order_id), db.p_varchar(order_no, 50)])
+
+
+def list_orders_for_packing(session, take=100):
+    return _read(session, 'sp_list_orders_for_packing', [db.p_int(take)], multiple=True)
+
+
+def list_my_deliveries(session, take=100):
+    return _read(session, 'sp_list_my_deliveries', [db.p_int(take)])
+
+
+def list_deliveries_available_for_pickup(session, take=100):
+    return _read(session, 'sp_list_deliveries_available_for_pickup', [db.p_int(take)])
 
 
 def create_order(session, customer_id, fulfillment_method, order_no, items_json):

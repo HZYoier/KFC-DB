@@ -60,6 +60,30 @@ class OrdersTests(unittest.TestCase):
         self.assertEqual(self.conn.cur.sizes[3], (db.p_nvarchar('', 0).sql_type, 0, 0))
         self.assertTrue(self.conn.closed)
 
+    def test_frozen_queries_use_single_or_multiple_results_and_typed_arguments(self):
+        cases = [
+            (lambda: self.service.list_orders_for_payment(SESSION), 'sp_list_orders_for_payment', [db.p_int(100)], False),
+            (lambda: self.service.get_order_for_payment(SESSION, 7), 'sp_get_order_for_payment', [db.p_bigint(7)], True),
+            (lambda: self.service.get_order_operation_status(SESSION, order_no='B-007'), 'sp_get_order_operation_status', [db.p_bigint(None), db.p_varchar('B-007', 50)], False),
+            (lambda: self.service.list_orders_for_packing(SESSION, 200), 'sp_list_orders_for_packing', [db.p_int(200)], True),
+            (lambda: self.service.list_my_deliveries(SESSION), 'sp_list_my_deliveries', [db.p_int(100)], False),
+            (lambda: self.service.list_deliveries_available_for_pickup(SESSION), 'sp_list_deliveries_available_for_pickup', [db.p_int(100)], False),
+        ]
+        for call, proc, params, multiple in cases:
+            with self.subTest(proc=proc):
+                path = 'query_procedure_sets' if multiple else 'query_procedure'
+                rows = [[], [{'order_item_id': 7}]] if multiple else [{'order_id': 7}]
+                with patch.object(db, path, return_value=rows) as query:
+                    self.assertEqual(call(), rows)
+                    query.assert_called_once_with(SESSION, proc, params)
+
+    def test_invalid_query_inputs_do_not_connect(self):
+        for take in (None, True, 0, 201):
+            self.reject(lambda: self.service.list_orders_for_packing(SESSION, take))
+        self.reject(lambda: self.service.get_order_operation_status(SESSION))
+        self.reject(lambda: self.service.get_order_operation_status(SESSION, order_id=7, order_no='B-007'))
+        self.reject(lambda: self.service.list_my_deliveries(None), 'E_AUTH')
+
     def test_missing_identity_never_falls_back_to_deployment_connection(self):
         for session in [None, {}, {'role': 'CASHIER'}, {'db_login': 'x'}, {'db_login': '', 'db_password': 'x'}]:
             with self.subTest(session_keys=list(session or {})):

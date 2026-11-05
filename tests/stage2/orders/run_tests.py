@@ -14,7 +14,7 @@ def main():
     root = Path(__file__).resolve().parents[3]
     sys.path.insert(0, str(root))
     suite = unittest.defaultTestLoader.discover(str(Path(__file__).parent), pattern='test_*.py')
-    expected = 18
+    expected = 20
     if suite.countTestCases() != expected:
         print('FAIL test denominator: expected=%d discovered=%d' % (expected, suite.countTestCases()))
         return 1

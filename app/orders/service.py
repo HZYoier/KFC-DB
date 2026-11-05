@@ -28,6 +28,42 @@ def _session(session):
     dao.require_employee_session(session)
 
 
+def list_orders_for_payment(session, take=100):
+    _session(session)
+    return dao.list_orders_for_payment(session, _positive_int(take, 200))
+
+
+def get_order_for_payment(session, order_id):
+    _session(session)
+    return dao.get_order_for_payment(session, _positive_int(order_id))
+
+
+def get_order_operation_status(session, *, order_id=None, order_no=None):
+    _session(session)
+    if (order_id is None) == (order_no is None):
+        raise AppError('E_INPUT')
+    if order_id is not None:
+        _positive_int(order_id)
+    else:
+        _varchar(order_no, 50)
+    return dao.get_order_operation_status(session, order_id=order_id, order_no=order_no)
+
+
+def list_orders_for_packing(session, take=100):
+    _session(session)
+    return dao.list_orders_for_packing(session, _positive_int(take, 200))
+
+
+def list_my_deliveries(session, take=100):
+    _session(session)
+    return dao.list_my_deliveries(session, _positive_int(take, 200))
+
+
+def list_deliveries_available_for_pickup(session, take=100):
+    _session(session)
+    return dao.list_deliveries_available_for_pickup(session, _positive_int(take, 200))
+
+
 def create_order(session, customer_id, fulfillment_method, order_no, items):
     _session(session)
     _positive_int(customer_id)
