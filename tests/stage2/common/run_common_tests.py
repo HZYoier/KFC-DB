@@ -12,7 +12,7 @@ import sys
 import unittest
 from pathlib import Path
 
-EXPECTED = 13
+EXPECTED = 17
 
 
 def main() -> int:

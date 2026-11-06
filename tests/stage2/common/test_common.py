@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
 from app.common import db, errors
+from app.common.config import DbConfig
 
 SESSION = {"db_login": "employee_fixture", "db_password": "test-only-placeholder"}
 
@@ -210,6 +211,61 @@ class ErrorPropagationTests(Base):
         with self.assertRaises(ValueError):
             db.query_procedure_sets(SESSION, "sp_list; DROP TABLE Product")
         self.open_mock.assert_not_called()
+
+
+class ConnectionIdentityTests(unittest.TestCase):
+    """OI-16：驱动池不许把上一个员工的连接交给下一个请求。
+
+    员工身份是连接级属性（过程靠 USER_NAME() 认人），连接串里不含身份，
+    所以池按连接串复用连接时，身份会被静默串位。
+    """
+
+    def setUp(self):
+        # 显式给配置：本类验的是连接怎么开，不该去读本机 .env
+        self.cfg = DbConfig(driver="ODBC Driver 18 for SQL Server", server="test-server", database="KFC_DB")
+        self.original_pooling = pyodbc.pooling
+        pyodbc.pooling = True  # 假装别处把池打开了，看 open_connection 是否兜回来
+        self.addCleanup(setattr, pyodbc, "pooling", self.original_pooling)
+        self.calls = []
+        patcher = patch("app.common.db.pyodbc.connect", side_effect=self._connect)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _connect(self, conn_str, **kwargs):
+        self.calls.append({"conn_str": conn_str, "kwargs": kwargs, "pooling": pyodbc.pooling})
+        return Connection()
+
+    def test_pooling_is_off_before_the_driver_sees_each_connect(self):
+        db.open_connection(SESSION, config=self.cfg)
+        db.open_connection(SESSION, config=self.cfg)
+        self.assertEqual(len(self.calls), 2)
+        self.assertEqual([call["pooling"] for call in self.calls], [False, False])
+        self.assertFalse(pyodbc.pooling)
+
+    def test_each_employee_gets_its_own_connection(self):
+        first = db.open_connection({"db_login": "emp_a", "db_password": "placeholder-a"}, config=self.cfg)
+        second = db.open_connection({"db_login": "emp_b", "db_password": "placeholder-b"}, config=self.cfg)
+        third = db.open_connection({"db_login": "emp_a", "db_password": "placeholder-a"}, config=self.cfg)
+        self.assertEqual(len({id(first), id(second), id(third)}), 3)
+        self.assertEqual([call["kwargs"]["user"] for call in self.calls], ["emp_a", "emp_b", "emp_a"])
+        # 连接串一致才谈得上「池会复用」：身份只能走关键字参数，串里带不出区别
+        self.assertEqual(len({call["conn_str"] for call in self.calls}), 1)
+
+    def test_a_session_without_login_falls_back_to_the_deployment_account(self):
+        db.open_connection(None, config=self.cfg)
+        db.open_connection({"role": "CASHIER"}, config=self.cfg)
+        for call in self.calls:
+            self.assertNotIn("user", call["kwargs"])
+            self.assertNotIn("password", call["kwargs"])
+
+    def test_a_failed_connect_is_mapped_and_leaves_pooling_off(self):
+        with patch("app.common.db.pyodbc.connect", side_effect=pyodbc.OperationalError(
+            "08001", "[SQL Server]登录超时。"
+        )):
+            with self.assertRaises(errors.AppError) as found:
+                db.open_connection(SESSION, config=self.cfg)
+        self.assertEqual(found.exception.code, "E_DB")
+        self.assertFalse(pyodbc.pooling)
 
 
 if __name__ == "__main__":

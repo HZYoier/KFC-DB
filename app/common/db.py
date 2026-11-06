@@ -7,6 +7,9 @@ query_procedure_sets / run_in_transaction（在 tx.py）。其余模块不得 im
 身份口径：员工侧过程按 USER_NAME() 映射 EmployeeAccount，所以每个员工的请求必须用
 他自己的数据库登录连接。session 里带 db_login / db_password 就用它，
 不带则退回 .env 的部署账户（仅本地冒烟，TRUSTED_CONNECTION=yes 时是本机 Windows 身份）。
+
+连接池必须由本模块关闭（OI-16）：驱动池按连接串复用连接，而员工身份是连接级属性。
+池一开，上一个员工的连接就可能被交给下一个请求，库里看到的是上一个人的 USER_NAME()。
 """
 
 from __future__ import annotations
@@ -81,11 +84,24 @@ def _config(config: DbConfig | None = None) -> DbConfig:
         return load_db_config()
 
 
+def _disable_driver_pooling() -> None:
+    """关掉 ODBC 驱动池，每次调用都拿一条新连接（OI-16）。
+
+    pyodbc 只有模块级的 `pyodbc.pooling` 开关，没有 per-connection 参数，所以在这里设：
+    本模块是唯一开连接的地方，不管从哪个入口进来（Flask、测试脚本、将来的批处理）都先过这一道。
+    也刻意每次重置——别处（比如入口的兜底）若把它重新打开，这里要能兜回来。
+    连接开销由「一次请求一次连接」承担，换来的是身份不会被池串到下一个请求。
+    """
+    if pyodbc.pooling:
+        pyodbc.pooling = False
+
+
 def open_connection(session: Session | None = None, *, autocommit: bool = True, config: DbConfig | None = None) -> pyodbc.Connection:
     """开连接。默认 autocommit=True：一次按钮只调一个自持事务的过程，
     这样过程里 @@TRANCOUNT = 0，走「自己开事务」那一支（04 各过程都是这么判的）。
     多过程原子操作走 tx.run_in_transaction，它显式传 autocommit=False。
     """
+    _disable_driver_pooling()
     cfg = _config(config)
     kwargs: dict[str, Any] = {}
     if session:
