@@ -1,6 +1,6 @@
 # stage2 证据（C 侧）
 
-隔离实验执行日期：2026-10-13（重跑捕获；实验首做于 2026-10-10，本次为归档要求下的完整复现）；文档对账证据增补于 2026-10-15；ER 子图复核证据增补于 2026-10-17；合并总图对账、B 图复核与契约授权核对增补于 2026-10-27；2.2 基线采集框架证据增补于 2026-10-30；真实 25 表采集、11c 扩展与 12/13c/run_migration 部分演练证据增补于 2026-11-03。
+隔离实验执行日期：2026-10-13（重跑捕获；实验首做于 2026-10-10，本次为归档要求下的完整复现）；文档对账证据增补于 2026-10-15；ER 子图复核证据增补于 2026-10-17；合并总图对账、B 图复核与契约授权核对增补于 2026-10-27；2.2 基线采集框架证据增补于 2026-10-30；真实 25 表采集、11c 扩展与 12/13c/run_migration 部分演练证据增补于 2026-11-03；OI-16 复核与 OI-17 修复证据增补于 2026-11-06。
 
 实例：`.\SQLEXPRESS`（SQL Server 2025 Express 17.0.1000.7；混合模式；Windows 身份验证部署登录）
 
@@ -62,6 +62,8 @@
 - （2026-11-03 增补）`c-inventory-app-2026-11-03.txt`：2.3 C 侧 `app/inventory` 三层（库存/流水/补货/收货）10/0 单测、`run-all.ps1` 四套汇总与部署模板解析；含首轮测试夹具归因、真实 DB/员工角色页边界。
 - （2026-11-04 增补）`c-common-oi14-2026-11-04.txt`：A Common 多结果集修复后的 C 侧集成（auth 改 `query_procedure_sets`、身份失效清会话、run-all 五套 13/10/36/18/10）；OI-14 关闭、OI-16 登记。
 - （2026-11-05 增补）`c-11c-employee-roles-2026-11-05.txt`：OI-15 的 11c 58/71、`sp_list_employee_roles` 与员工角色页；11c 回滚 9/0、桩迁移提交、13c 15/0、regression 38/0，员工角色页店长正例/普通岗位 229。
+- （2026-11-06 增补）`c-oi16-recheck-2026-11-06.txt`：A 的 OI-16 修复后 C 侧复核（common 17/0、auth 10/0、inventory 12/0；本轮不连 SQL Server）。
+- （2026-11-06 增补）`c-oi17-runall-2026-11-06.txt`：`run-all.ps1 -Python` 五套 95/0 的完整输出（common 17 / auth 10 / master 36 / orders 20 / inventory 12；`RESULT: run-all files=5 failed=0`）。
 
 ## SHA-256
 
@@ -114,4 +116,6 @@ F9CFACE4F3A2011FA7433467B484C13651F0D68A3E3E2C6958BEFF550F9D18E6  c-inventory-ap
 86F23E944E0AD0FF3ED22A7358FDFDA00E410D6FF6DEA675BC87E9F315A8C42B  ../sql/stage2/13c_inventory_security_regression.sql
 5E3FD36546B73BDF57F27B21A76CA056F94C28AA1FDBEAF0A38DC1231DBE9509  ../sql/stage2/run_migration.sql
 9CD4AE2C94D74BB63360E14FCAAE86315160946D34787F8D66D29F75B2E4B3A4  ../sql/stage2/regression.sql
+C45DDF378F7D57098E19586FFD35B9D8FD9FD9CBA41C24E5283EC5A18CE663F8  c-oi16-recheck-2026-11-06.txt
+1E3D1A0AD952F470BE714243EA8276ED5F295E547170D9B1E92AC4451C2A0B71  c-oi17-runall-2026-11-06.txt
 ```

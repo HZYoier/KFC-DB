@@ -2,10 +2,13 @@
 # 用法（仓库根目录）：
 #   powershell -ExecutionPolicy Bypass -File tests/stage2/run-all.ps1
 #   powershell ... -File tests/stage2/run-all.ps1 -SqlServer '.\SQLEXPRESS' -CondaEnv py_env3.11
+#   powershell ... -File tests/stage2/run-all.ps1 -Python '.venv\Scripts\python.exe'
+#   $env:KFC_DB_PYTHON='D:\path\python.exe' 也可直接指定解释器；-Python 优先。
 # 每个子入口自己校验分母并打印 RESULT；任一非零退出即停止。
 param(
     [string]$SqlServer = '.\SQLEXPRESS',
-    [string]$CondaEnv = 'py_env3.11'
+    [string]$CondaEnv = 'py_env3.11',
+    [string]$Python = $env:KFC_DB_PYTHON
 )
 
 $ErrorActionPreference = 'Stop'
@@ -15,7 +18,11 @@ Set-Location $root
 function Invoke-PythonSuite {
     param([string]$Name, [string[]]$Arguments)
     Write-Host "=== $Name ==="
-    & conda run -n $CondaEnv python @Arguments
+    if ($Python) {
+        & $Python @Arguments
+    } else {
+        & conda run -n $CondaEnv python @Arguments
+    }
     if ($LASTEXITCODE -ne 0) {
         Write-Host "FAIL: $Name (exit $LASTEXITCODE)"
         exit $LASTEXITCODE

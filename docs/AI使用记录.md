@@ -679,3 +679,19 @@
 **核对结果：** OI-15 closed；OI-10 仍待 B 回执；OI-16（A Common `pooling=False`）仍 open；B 的真实 `11b` 仍缺。桩迁移不能替代完整 2.2。
 
 **我的处理：** 本轮改动随后 commit；push 仍由我手动。
+## （2026-11-06）—— C 侧：登记 B 11b 错误码、OI-16/17 收口与公开催办（C）
+
+**聊了什么：** pull 到 A 的 `393125f`/`c9dd5ef`（OI-16 修复、契约 §1 冻结）后，确认 B 的 11b 仍缺；按用户要求先在公共区催办，再做 C 侧能做的事并提交。
+
+**AI 做了什么：**
+1. 在 `migration-guide.md` 登记 B 11b 的 `52901`–`52903`（B 原提案；同号 B 部署守卫按对象/文件区分），B 可开写六查询/13b，无需等 11c/12 先执行。
+2. OI-16 C 复核：A 的 `_disable_driver_pooling` 生效；common 17/0、auth 10/0、inventory 12/0；关闭 OI-16。
+3. OI-17 修复：`run-all.ps1` 增加 `-Python`/`$env:KFC_DB_PYTHON`；以 `D:\Miniconda\envs\py_env3.11\python.exe` 实跑五套 95/0（common 17 / auth 10 / master 36 / orders 20 / inventory 12），`RESULT: run-all files=5 failed=0`；证据归档。
+4. 在 `open-issues.md` 登记 **OI-18** 公开催办 B：11b 六查询 + 13b 未到；C 侧 `11c` 58/71、`12` 六 GRANT、错误码均已就绪；顾客 place/list 可先写，完整 13c 等 A 的 `sp_customer_register`。
+5. 更新 C 阶段报告/测试报告/团队分工状态与证据 README。
+
+**核对结果：** 文档/测试入口改动；实跑五套 95/0；未创建 B 文件、未改 A/B 文件；KFC_DB 测试后删除。B 真实 11b 仍缺，完整迁移/13c 不能宣称通过。
+
+**我的处理：** 本轮 C 改动随后 commit；push 仍由我手动。
+
+---

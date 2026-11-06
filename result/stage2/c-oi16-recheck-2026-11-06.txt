@@ -1,0 +1,20 @@
+KFC-DB 第二阶段 OI-16 C 侧复核（2026-11-06）
+环境：Windows 11 / SQL Server 2025 Express .\SQLEXPRESS（本次复核未连 SQL Server）
+Python：D:\Miniconda\envs\py_env3.11\python.exe（Python 3.11.15）
+
+A 侧修复：393125f `fix(common): disable ODBC driver pooling before every connect`
+`app/common/db.py::open_connection` 每次连接前把 `pyodbc.pooling` 置 False；
+`tests/stage2/common` 新增身份隔离/池关闭断言，分母 17。
+
+C 复核命令（仓库根目录）：
+  "D:/Miniconda/envs/py_env3.11/python.exe" -X utf8 tests/stage2/common/run_common_tests.py
+  "D:/Miniconda/envs/py_env3.11/python.exe" -X utf8 tests/stage2/auth/run_auth_tests.py
+  "D:/Miniconda/envs/py_env3.11/python.exe" -X utf8 tests/stage2/inventory/run_inventory_tests.py
+
+结果：
+  RESULT: pass=17 fail=0 skip=0 total=17
+  RESULT: pass=10 fail=0 skip=0 total=10
+  RESULT: pass=12 fail=0 skip=0 total=12
+
+判定：C 侧复核通过；OI-16 可关闭。`run.py` 的进程级 `pyodbc.pooling = False` 保留为入口兜底，
+但不再作为契约依赖。真实多账号交替登录仍需在员工 SQL 登录部署后做联合验收。

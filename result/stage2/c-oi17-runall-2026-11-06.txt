@@ -1,0 +1,131 @@
+=== common ===
+test_a_failed_connect_is_mapped_and_leaves_pooling_off (test_common.ConnectionIdentityTests.test_a_failed_connect_is_mapped_and_leaves_pooling_off) ... ok
+test_a_session_without_login_falls_back_to_the_deployment_account (test_common.ConnectionIdentityTests.test_a_session_without_login_falls_back_to_the_deployment_account) ... ok
+test_each_employee_gets_its_own_connection (test_common.ConnectionIdentityTests.test_each_employee_gets_its_own_connection) ... ok
+test_pooling_is_off_before_the_driver_sees_each_connect (test_common.ConnectionIdentityTests.test_pooling_is_off_before_the_driver_sees_each_connect) ... ok
+test_an_illegal_procedure_name_never_opens_a_connection (test_common.ErrorPropagationTests.test_an_illegal_procedure_name_never_opens_a_connection) ... ok
+test_connection_is_closed_even_when_a_later_set_fails (test_common.ErrorPropagationTests.test_connection_is_closed_even_when_a_later_set_fails) ... ok
+test_execute_error_is_mapped_before_any_row_is_returned (test_common.ErrorPropagationTests.test_execute_error_is_mapped_before_any_row_is_returned) ... ok
+test_nextset_error_is_not_mistaken_for_success (test_common.ErrorPropagationTests.test_nextset_error_is_not_mistaken_for_success) ... ok
+test_nextset_error_propagates_as_an_app_error (test_common.ErrorPropagationTests.test_nextset_error_propagates_as_an_app_error) ... ok
+test_a_procedure_without_result_sets_returns_an_empty_list (test_common.ResultSetTests.test_a_procedure_without_result_sets_returns_an_empty_list) ... ok
+test_an_empty_set_keeps_its_position (test_common.ResultSetTests.test_an_empty_set_keeps_its_position) ... ok
+test_decimal_and_unicode_survive_the_round_trip (test_common.ResultSetTests.test_decimal_and_unicode_survive_the_round_trip) ... ok
+test_execute_procedure_still_returns_the_first_non_empty_set (test_common.ResultSetTests.test_execute_procedure_still_returns_the_first_non_empty_set) ... ok
+test_first_non_empty_is_unchanged_for_single_set_callers (test_common.ResultSetTests.test_first_non_empty_is_unchanged_for_single_set_callers) ... ok
+test_single_result_set_is_returned_whole (test_common.ResultSetTests.test_single_result_set_is_returned_whole) ... ok
+test_three_sets_keep_the_procedure_order (test_common.ResultSetTests.test_three_sets_keep_the_procedure_order) ... ok
+test_two_sets_keep_the_procedure_order (test_common.ResultSetTests.test_two_sets_keep_the_procedure_order) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.004s
+
+OK
+RESULT: pass=17 fail=0 skip=0 total=17
+=== auth ===
+test_01_login_form (test_auth.AuthTests.test_01_login_form) ... ok
+test_02_login_success_and_no_password_in_cookie (test_auth.AuthTests.test_02_login_success_and_no_password_in_cookie) ... ok
+test_03_identity_page (test_auth.AuthTests.test_03_identity_page) ... ok
+test_04_login_failure (test_auth.AuthTests.test_04_login_failure) ... ok
+test_05_input_required (test_auth.AuthTests.test_05_input_required) ... ok
+test_06_logout_clears_session (test_auth.AuthTests.test_06_logout_clears_session) ... ok
+test_07_safe_next (test_auth.AuthTests.test_07_safe_next) ... ok
+test_08_current_employee_session (test_auth.AuthTests.test_08_current_employee_session) ... ok
+test_09_dao_three_result_sets (test_auth.AuthTests.test_09_dao_three_result_sets) ... ok
+test_10_stale_identity_detection (test_auth.AuthTests.test_10_stale_identity_detection) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.097s
+
+OK
+RESULT: pass=10 fail=0 skip=0 total=10
+=== master ===
+test_bom_json_is_bound_as_max_not_truncated (test_master.DaoBindingTests.test_bom_json_is_bound_as_max_not_truncated) ... ok
+test_create_product_parameter_order_and_types (test_master.DaoBindingTests.test_create_product_parameter_order_and_types) ... ok
+test_find_customer_binds_mobile_as_varchar_twenty (test_master.DaoBindingTests.test_find_customer_binds_mobile_as_varchar_twenty) ... ok
+test_ingredient_quantity_keeps_three_decimals (test_master.DaoBindingTests.test_ingredient_quantity_keeps_three_decimals) ... ok
+test_list_master_records_binds_entity_then_status (test_master.DaoBindingTests.test_list_master_records_binds_entity_then_status) ... ok
+test_list_master_records_passes_status_through (test_master.DaoBindingTests.test_list_master_records_passes_status_through) ... ok
+test_list_master_records_rejects_a_status_that_is_not_an_enum (test_master.DaoBindingTests.test_list_master_records_rejects_a_status_that_is_not_an_enum) ... ok
+test_promotion_rule_time_uses_the_time2_type (test_master.DaoBindingTests.test_promotion_rule_time_uses_the_time2_type) ... ok
+test_register_delegates_and_re_reads_the_new_id (test_master.DaoBindingTests.test_register_delegates_and_re_reads_the_new_id) ... ok
+test_sale_products_take_defaults_to_one_hundred (test_master.DaoBindingTests.test_sale_products_take_defaults_to_one_hundred) ... ok
+test_conflict_banner_for_a_duplicate_name (test_master.RouteTests.test_conflict_banner_for_a_duplicate_name) ... ok
+test_database_rejection_becomes_a_banner_not_a_500 (test_master.RouteTests.test_database_rejection_becomes_a_banner_not_a_500) ... ok
+test_empty_form_never_reaches_the_write_procedure (test_master.RouteTests.test_empty_form_never_reaches_the_write_procedure) ... ok
+test_index_lists_all_nine_entities (test_master.RouteTests.test_index_lists_all_nine_entities) ... ok
+test_list_page_renders_rows_from_the_procedure (test_master.RouteTests.test_list_page_renders_rows_from_the_procedure) ... ok
+test_list_page_sends_the_entity_code_not_the_url_slug (test_master.RouteTests.test_list_page_sends_the_entity_code_not_the_url_slug) ... ok
+test_missing_identity_surfaces_as_forbidden_banner (test_master.RouteTests.test_missing_identity_surfaces_as_forbidden_banner) ... ok
+test_successful_action_redirects_back_to_its_list (test_master.RouteTests.test_successful_action_redirects_back_to_its_list) ... ok
+test_unknown_action_is_404 (test_master.RouteTests.test_unknown_action_is_404) ... ok
+test_unknown_entity_is_404_without_touching_the_database (test_master.RouteTests.test_unknown_entity_is_404_without_touching_the_database) ... ok
+test_bom_lines_become_the_json_the_procedure_expects (test_master.ServiceValidationTests.test_bom_lines_become_the_json_the_procedure_expects) ... ok
+test_bom_lines_reject_anything_but_pairs (test_master.ServiceValidationTests.test_bom_lines_reject_anything_but_pairs) ... ok
+test_category_name_is_required_and_bounded (test_master.ServiceValidationTests.test_category_name_is_required_and_bounded) ... ok
+test_clock_must_be_24h (test_master.ServiceValidationTests.test_clock_must_be_24h) ... ok
+test_combo_quantity_must_be_a_positive_integer (test_master.ServiceValidationTests.test_combo_quantity_must_be_a_positive_integer) ... ok
+test_customer_type_is_a_fixed_enum (test_master.ServiceValidationTests.test_customer_type_is_a_fixed_enum) ... ok
+test_empty_bom_text_clears_instead_of_failing (test_master.ServiceValidationTests.test_empty_bom_text_clears_instead_of_failing) ... ok
+test_member_level_threshold_accepts_zero (test_master.ServiceValidationTests.test_member_level_threshold_accepts_zero) ... ok
+test_mobile_must_be_eleven_digits (test_master.ServiceValidationTests.test_mobile_must_be_eleven_digits) ... ok
+test_money_is_positive_with_at_most_two_decimals (test_master.ServiceValidationTests.test_money_is_positive_with_at_most_two_decimals) ... ok
+test_multiplier_rejects_third_decimal (test_master.ServiceValidationTests.test_multiplier_rejects_third_decimal) ... ok
+test_number_fields_reject_non_numeric_and_out_of_range (test_master.ServiceValidationTests.test_number_fields_reject_non_numeric_and_out_of_range) ... ok
+test_product_type_is_a_fixed_enum (test_master.ServiceValidationTests.test_product_type_is_a_fixed_enum) ... ok
+test_promotion_end_must_be_after_start (test_master.ServiceValidationTests.test_promotion_end_must_be_after_start) ... ok
+test_status_is_a_fixed_enum (test_master.ServiceValidationTests.test_status_is_a_fixed_enum) ... ok
+test_take_is_bounded_instead_of_silently_clamped (test_master.ServiceValidationTests.test_take_is_bounded_instead_of_silently_clamped) ... ok
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.165s
+
+OK
+RESULT: pass=36 fail=0 skip=0 total=36
+=== orders ===
+test_rows_types_nulls_batch_immutability_permissions_and_outer_rollback (test_baseline_snapshot.BaselineSnapshotTests.test_rows_types_nulls_batch_immutability_permissions_and_outer_rollback) ... ok
+test_bool_and_out_of_range_ids_are_not_bigints (test_orders.OrdersTests.test_bool_and_out_of_range_ids_are_not_bigints) ... ok
+test_cancellation_reason_is_a_fixed_enum (test_orders.OrdersTests.test_cancellation_reason_is_a_fixed_enum) ... ok
+test_client_price_or_component_fields_are_rejected (test_orders.OrdersTests.test_client_price_or_component_fields_are_rejected) ... ok
+test_dao_itself_rejects_missing_identity (test_orders.OrdersTests.test_dao_itself_rejects_missing_identity) ... ok
+test_database_error_propagates_common_mapping_without_retry (test_orders.OrdersTests.test_database_error_propagates_common_mapping_without_retry) ... ok
+test_decimal_trailing_zero_is_not_fractional_cent_rounding (test_orders.OrdersTests.test_decimal_trailing_zero_is_not_fractional_cent_rounding) ... ok
+test_empty_and_duplicate_top_level_items_fail_before_connection (test_orders.OrdersTests.test_empty_and_duplicate_top_level_items_fail_before_connection) ... ok
+test_frozen_queries_use_single_or_multiple_results_and_typed_arguments (test_orders.OrdersTests.test_frozen_queries_use_single_or_multiple_results_and_typed_arguments) ... ok
+test_invalid_query_inputs_do_not_connect (test_orders.OrdersTests.test_invalid_query_inputs_do_not_connect) ... ok
+test_long_json_is_bound_as_max_not_silently_truncated (test_orders.OrdersTests.test_long_json_is_bound_as_max_not_silently_truncated) ... ok
+test_missing_identity_never_falls_back_to_deployment_connection (test_orders.OrdersTests.test_missing_identity_never_falls_back_to_deployment_connection) ... ok
+test_money_rejects_float_nan_fraction_and_overflow (test_orders.OrdersTests.test_money_rejects_float_nan_fraction_and_overflow) ... ok
+test_nonempty_payment_label_is_not_an_unapproved_ascii_enum (test_orders.OrdersTests.test_nonempty_payment_label_is_not_an_unapproved_ascii_enum) ... ok
+test_order_number_preserved_exactly_for_result_unknown_recovery (test_orders.OrdersTests.test_order_number_preserved_exactly_for_result_unknown_recovery) ... ok
+test_payment_decimal_and_explicit_null_keep_exact_binding (test_orders.OrdersTests.test_payment_decimal_and_explicit_null_keep_exact_binding) ... ok
+test_quantity_and_order_number_boundaries (test_orders.OrdersTests.test_quantity_and_order_number_boundaries) ... ok
+test_rider_and_manager_ids_are_explicit_not_role_impersonation (test_orders.OrdersTests.test_rider_and_manager_ids_are_explicit_not_role_impersonation) ... ok
+test_single_order_actions_use_existing_procedure_names (test_orders.OrdersTests.test_single_order_actions_use_existing_procedure_names) ... ok
+test_valid_order_keeps_snapshot_price_out_of_client_payload (test_orders.OrdersTests.test_valid_order_keeps_snapshot_price_out_of_client_payload) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 4.200s
+
+OK
+RESULT: pass=20 fail=0 skip=0 total=20
+=== inventory ===
+test_01_qty_boundaries (test_inventory.InventoryServiceTests.test_01_qty_boundaries) ... ok
+test_02_adjust_binds_typed_params (test_inventory.InventoryServiceTests.test_02_adjust_binds_typed_params) ... ok
+test_03_create_suggestion_binds (test_inventory.InventoryServiceTests.test_03_create_suggestion_binds) ... ok
+test_04_receive_optional_none (test_inventory.InventoryServiceTests.test_04_receive_optional_none) ... ok
+test_05_reject_requires_reason (test_inventory.InventoryServiceTests.test_05_reject_requires_reason) ... ok
+test_06_list_inventory_uses_view (test_inventory.InventoryServiceTests.test_06_list_inventory_uses_view) ... ok
+test_07_list_movements_filter (test_inventory.InventoryServiceTests.test_07_list_movements_filter) ... ok
+test_08_allowed_actions (test_inventory.InventoryServiceTests.test_08_allowed_actions) ... ok
+test_09_route_requires_login (test_inventory.InventoryServiceTests.test_09_route_requires_login) ... ok
+test_10_template_renders (test_inventory.InventoryServiceTests.test_10_template_renders) ... ok
+test_11_list_employee_roles_uses_proc (test_inventory.InventoryServiceTests.test_11_list_employee_roles_uses_proc) ... ok
+test_12_roles_template_renders (test_inventory.InventoryServiceTests.test_12_roles_template_renders) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.062s
+
+OK
+RESULT: pass=12 fail=0 skip=0 total=12
+RESULT: run-all files=5 failed=0
