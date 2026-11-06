@@ -87,3 +87,12 @@ C 于当天交付 `12_permissions` / `13c` / `run_migration` / `regression` 与 
 
 真实迁移仍未在 A 本机跑：C 已有 `run_migration` 全回滚与临时 11b 桩的证据，完整链路等 B 的真实 `11b` 与顾客三过程。
 - **OI-10 四条联合边界出提案**：契约新增 §1.7，每条给选项、代价与推荐（外送只开自取、响应丢失不伪装恢复、员工凭据采纳进程内存 8 小时并改计划口径、`cust_app` 共享非身份账户）。回执齐后 §1 冻结；未回执前 OI-10 保持 open。
+
+## 7. 补记：2026-11-06 §1 冻结与 OI-16
+
+B（2026-11-05）与 C（2026-11-04）的回执到齐，C 把关闭 OI-10 的条件挂在 OI-16 上，因此当天先修连接池、再定契约：
+
+- **OI-16 修复**：`app/common/db.py::open_connection` 每次连接前把 `pyodbc.pooling` 置 `False`。pyodbc 只有模块级开关、没有 per-connection 参数，所以设在唯一开连接的地方——任何入口都先过这一道，也能把别处（如 `run.py` 的进程级兜底）重新打开的池兜回来。风险是一旦池复用，库里看到的是上一个员工的 `USER_NAME()`，日志里却是新员工，最难查。
+- **测试**：`tests/stage2/common` 13 → **17 PASS / 0 FAIL**，新增四条：`connect` 被调用那一刻池必须已关、三个账号 a/b/a 交替拿到三条不同连接且 `user` 依次正确、无登录会话不传凭据而回落到部署账户、连接失败映射 `E_DB` 且池保持关闭。
+- **实跑**：common 17 / auth 10 / master 36 / orders 20（本机 `localhost`，B 的套件）/ inventory 12 全绿；真驱动冒烟 `check_app_common.py` 9/9。C 的 `run-all.ps1` 在 A 本机跑不起来（固定 `conda run -n py_env3.11`，本机只有 `.venv`），已登记 OI-17。
+- **契约 §1 冻结**：`application-contract.md` §1.7 四条按 A 推荐定稿——顾客端本轮只覆盖自取；响应丢失不自动恢复、不自动重下（幂等键登记 2.4 候选）；员工凭据进程内存 8h TTL、身份失效即清会话；`cust_app` 为共享非身份账户、过程只信 `(mobile, pickup_code)`。OI-10 的状态改 closed 归 C 按登记表维护约定执行；仍缺的是三个顾客过程的实现（待 C 扩 `11c`/`12`）。

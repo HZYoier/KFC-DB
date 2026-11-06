@@ -8,7 +8,7 @@
 
 | 签名 | 落点 | 语义 |
 | --- | --- | --- |
-| `open_connection(session=None, *, autocommit=True, config=None) -> pyodbc.Connection` | `db.py` | 唯一开连接的地方。默认 `autocommit=True` |
+| `open_connection(session=None, *, autocommit=True, config=None) -> pyodbc.Connection` | `db.py` | 唯一开连接的地方。默认 `autocommit=True`；每次调用先把 `pyodbc.pooling` 置 `False`（OI-16） |
 | `query(session, sql, params=()) -> list[dict]` | `db.py` | 只读查询，`sql` 必须是 `dao.py` 里的常量 |
 | `query_procedure(session, name, params=()) -> list[dict]` | `db.py` | 调返回结果集的查询过程（§2.2 那批）；只回**第一个非空集** |
 | `query_procedure_sets(session, name, params=()) -> list[list[dict]]` | `db.py` | 调多结果集过程；按过程返回的顺序给出**全部**结果集，空集也占位 |
@@ -34,6 +34,8 @@
 **每位员工必须用自己的数据库登录连接。** 员工侧过程一律按 `USER_NAME()` 映射 `EmployeeAccount`（要求 `ACTIVE`，多数还要岗位匹配），用共享的部署账户连接会让所有过程落到「操作人未映射」的 `51004`。这条与 `open-issues.md` OI-10 第 3 条（服务端员工凭据生命周期）是同一件事：口令怎么在服务端存在、什么时候丢弃，由 C 定，本文只规定 `session` 的接口形状。
 
 顾客端的 `cust_app` 没有 `EmployeeAccount` 映射，属于另一类连接：它走 §1.1 的 `WITHOUT LOGIN` 用户，服务器端口令由部署模板单独建。应用层怎么把这份凭据交给 `open_connection`，待 OI-10 一并落定。
+
+**连接池必须关（OI-16，2026-11-06 落实）。** 员工身份是连接级属性，而连接串里不写身份（口令走关键字参数、不进串），所以驱动池按连接串复用连接时，池会把上一个员工的连接原样交给下一个请求——库里看到的仍是上一个人的 `USER_NAME()`，日志里却是新员工。pyodbc 没有 per-connection 的 `pooling` 参数，只有模块级的 `pyodbc.pooling`；`open_connection` 每次连接前把它置 `False`，任何入口（Flask、测试脚本、将来的批处理）都先过这一道，也就把别处重新打开的池兜回来。C 的 `run.py` 进程级兜底可以保留，但契约不依赖它。
 
 ## 3. 参数
 
@@ -83,7 +85,9 @@ p_bit(value) / p_decimal(value, precision, scale) / p_datetime(value)
 
 **2026-11-03 补多结果集（OI-14）：** `tests/stage2/common/run_common_tests.py` 13 条——单集原样返回、三集/两集保持顺序、空集占位、无结果集返回空表、`query_procedure` 仍取第一个非空集、`nextset` 异常分别归 `E_RULE`/`E_TX`、出错时连接照样关闭、执行阶段错误先于任何行返回、非法过程名不连库。本机用临时过程实测：三集 `[1, 0, 1]`（中间空集未被跳过），先 `SELECT` 后 `THROW 50000` 的过程抛 `E_RULE` 而不是返回行；验完已删临时过程，库回到 42 过程 / 25 表。
 
-待办：① C 的 `run.py` 与 `app/auth`（包里给出 `bp` 即被应用工厂自动注册，不用改 `app/__init__.py`）；② B 用 `sp_create_order` 与一次故障回滚核对事务 helper 的提交/回滚语义；③ C 定顾客端 `cust_app` 的凭据交付方式（OI-10）。
+**2026-11-06 补连接池（OI-16）：** `open_connection` 增加 `_disable_driver_pooling()`，连接前把 `pyodbc.pooling` 置 `False`。`tests/stage2/common` 由 13 条增到 **17 条**，新增四类：connect 那一刻池必须已关（`connect` 被调用时读到的 `pyodbc.pooling` 是 `False`，即使调用前被人打开过）、三个账号交替（a/b/a）拿到三条不同连接且 `user` 依次正确、无登录会话不传 `user`/`password` 而回落到部署账户、连接失败仍映射 `E_DB` 且池保持关闭。另在同一批验证里跑通 common 17 / auth 10 / master 36 / orders 20（本机 `localhost`，B 的套件）/ inventory 12，以及真驱动冒烟 `tests/stage2/check_app_common.py` **9/9**。
+
+待办：① C 的 `run.py` 与 `app/auth`（包里给出 `bp` 即被应用工厂自动注册，不用改 `app/__init__.py`）；② B 用 `sp_create_order` 与一次故障回滚核对事务 helper 的提交/回滚语义；③ C 定顾客端 `cust_app` 的凭据交付方式（OI-10；契约 §1.7 已于 2026-11-06 定稿，见 `application-contract.md`）。
 
 ## 9. 变更记录
 
@@ -91,3 +95,4 @@ p_bit(value) / p_decimal(value, precision, scale) / p_datetime(value)
 | --- | --- |
 | 2026-10-28 | 建立本文：A 按计划 §6.3 交出 `app/common/` 底座，固定四个签名、`session` 形状、参数定型、事务口径、错误码映射与日志字段；本机冒烟 9 条 PASS |
 | 2026-11-03 | 增补 `query_procedure_sets` 与结果集口径（OI-14）：多集按序返回、空集占位、`nextset` 异常冒泡；新增 13 条测试与本机实测。C 的 `app/auth/dao.py` 适配器可以改为一次 `query_procedure_sets` 调用 |
+| 2026-11-06 | 落实 OI-16：`open_connection` 每次连接前关闭驱动池（`pyodbc.pooling = False`），§1 签名表、§2 身份口径与 §8 现状同步；测试 13 → 17 条 |
