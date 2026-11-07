@@ -8,7 +8,7 @@
 >
 > 范围：只管第二阶段新增或变更的对象。第一阶段已冻结的 `fn_get_effective_product_price`、`sp_apply_customer_points` 仍以 `docs/stage1/cross-domain-interface-contract.md` 为准，本文不重复、也不修改它们。
 >
-> 当前进度：§1 登记 OI-10 的顾客端三个过程（B 的三项待决已合入；四条联合边界 2026-11-03 写成 §1.7 可选方案，B/C 回执已齐，**2026-11-06 按 A 推荐定稿、§1 冻结**）；§2 已合入 B 的写接口签名与新查询提案，并**已按源码逐条核对**（结果见 §2.3），剩 C 侧授权核对与 Common 调用样例。
+> 当前进度：§1 登记 OI-10 的顾客端三个过程（B 的三项待决已合入；四条联合边界 2026-11-03 写成 §1.7 可选方案，B/C 回执已齐，**2026-11-06 按 A 推荐定稿、§1 冻结**）；§1.2 建档 2026-11-07 已实现于 `11a`（签名订正见 OI-19），§1.3 / §1.4 仍待 B 的 `11b`；§2 已合入 B 的写接口签名与新查询提案，并**已按源码逐条核对**（结果见 §2.3），剩 C 侧授权核对与 Common 调用样例。
 
 ## 0. 状态口径
 
@@ -36,19 +36,24 @@
 ```sql
 dbo.sp_customer_register
 (
-    @mobile        VARCHAR(20),
-    @customer_name NVARCHAR(50) = NULL
+    @mobile VARCHAR(20)
 )
 -- 返回单行：customer_id BIGINT, member_level_id BIGINT, is_new BIT
 ```
 
+> **2026-11-07 签名订正（A，待 B/C 回执，OI-19）**：删去初稿的 `@customer_name NVARCHAR(50) = NULL`。`Customer` 表没有姓名列（`01:71-79`），数据边界清单也没把顾客姓名收进来，这个参数收了也无处落地；计划 §6.2 的同一行与 C 的 `check_12_stubs_20261103.sql` 都只写 `@mobile`，初稿是 A 的笔误。实现见 `sql/stage2/11a_master_migration.sql` §5。
+
 约束：
 
-1. `@mobile` 与 `Customer.mobile` 同类型 `VARCHAR(20)`（`01:75`）；NULL、空白或超长按输入错误拒绝。查重与写入都用 `LTRIM(RTRIM(@mobile))`，与 `sp_create_customer` 一致。
+1. `@mobile` 与 `Customer.mobile` 同类型 `VARCHAR(20)`（`01:75`）；NULL、空白、非 11 位数字按 `53000` 拒绝。查重与写入都用 `LTRIM(RTRIM(@mobile))`，与 `sp_create_customer` 一致。**位数是防截断，不是格式洁癖**：参数是 `VARCHAR(20)`，超长入参在绑定时被无声截成 20 位，20 位截断串凑不成 11 位就会被 `53000` 挡住，不会给错人建档（与 `sp_register_customer_for_order` 同一判据）。
 2. **幂等**（2026-10-21 定）：手机号已存在时不覆盖、不抛错，返回既有 `customer_id` 与 `is_new = 0`。理由：顾客端页面无法预知自己建过档没有，抛 `51005` 会让老顾客在建档这一步就卡死。手机号枚举风险可接受——查单还需取餐码。
 3. 只建 `GUEST`，**不开 `@customer_type` 参数**（2026-10-21 定）。不接受等级、初始积分、`status`、`customer_id` 之类的入参；顾客端不该有能表达它们的入口，少一处可被误用的口子。
-4. `current_points = 0`；`member_level_id` 用与 `sp_create_customer`（`04:1398-1410`）**逐字相同**的判据解析：`status = 'ACTIVE' AND threshold_points <= 0`，`ORDER BY threshold_points DESC, member_level_id ASC` 取第一条；解析不到即拒绝建档，不建无等级顾客。
+4. `current_points = 0`；`member_level_id` 用与 `sp_create_customer`（`04:1398-1410`）**逐字相同**的判据解析：`status = 'ACTIVE' AND threshold_points <= 0`，`ORDER BY threshold_points DESC, member_level_id ASC` 取第一条；解析不到即拒绝建档，不建无等级顾客，按 A 域既有的 `51001` 拒绝（与 `sp_create_customer` 同码，`E_NOTFOUND`）。
 5. `status` 固定写 `ACTIVE`。
+6. **身份与授权**：过程不读 `USER_NAME()`（`cust_app` 没有 `EmployeeAccount` 映射），只靠 `12_permissions.sql` 的 `EXECUTE`；该方法在三个顾客过程齐备时才授权，员工角色不得持有本过程。已建档手机号不做任何覆盖——类型、等级、积分、状态原样回读，`is_new = 0`；停用顾客照原样返回，由 §1.3 下单时按 `53002` 拒绝。
+7. **并发**：查重带 `UPDLOCK, HOLDLOCK`（`UQ_Customer_Mobile` 上有键范围锁），同一手机号的并发建档串行化，后到的那笔读到已提交行而不撞 `2627`。
+
+**已实现（2026-11-07）**：`sql/stage2/11a_master_migration.sql` §5。本机 v0.1 开发库上用「临时建过程 + 临时 `cust_app` + 用完即删」的方式实测：新号返回 `is_new = 1` 且落在默认等级；同号再来 `is_new = 0`、`customer_id` 不变、只有一行；NULL / 空白 / 10 位 / 21 位均 `53000`；已建档的 `WOW` 顾客（等级 2、999 分、`INACTIVE`）原样回读；默认等级停用后 `51001`；外层事务回滚后新建的顾客一并消失；以 `cust_app` 身份调用成功。跑完 `Customer` 行数、`sys.procedures` 计数回到探针前（3 行 / 42 个），无残留。
 
 ### 1.3 `sp_customer_place_order`
 
@@ -371,3 +376,4 @@ GRANT EXECUTE ON dbo.sp_register_customer_for_order TO role_cashier;
 | 2026-11-01 | **新增 §2.4：A 域四个 v1.0 查询 / 注册接口并已实现**（计划 §6.2 归 A 的四行）——`sp_list_master_records`（店长，九实体码固定列，无状态列的 BOM / 套餐 / 促销规则传 `@status` 即 `51000`）、`sp_list_sale_products`（收银，`@take` 1..200，价走 `fn_get_effective_product_price`，展示价不替代快照）、`sp_find_customer_for_order`（收银，精确手机号、只回启用顾客、无结果空集合）、`sp_register_customer_for_order`（收银，固定 GUEST / 0 分，委托 `sp_create_customer`，重复号 `51005`，**无结果集**，新 ID 靠回查 §2.4.3 取得）。四个过程落在 `11a`，授权清单交 C 的 `12_permissions`（§2.4.5）；本地 `test_cashier` / `test_store_manager` 双向越权 14 断言全过。签名随 §2 于 2026-11-03 一同冻结 |
 | 2026-11-03 | A 把 §1.6 的四条联合边界写成 §1.7 的可选方案（外送凭据、响应丢失的恢复、员工凭据生命周期、`cust_app` 映射），每条给出选项、代价与推荐；回执齐后 §1 冻结，OI-10 随之关闭 |
 | 2026-11-06 | **§1.7 四条按 A 推荐定稿、§1 冻结**：回执 C 2026-11-04（选 A ×4）、B 2026-11-05（支持 1.7.1/1.7.2）；C 挂的 OI-16（`open_connection` 显式 `pooling=False`）A 当日修复并补 4 条测试（common 17/0）。顾客端本轮只覆盖自取、响应丢失不自动恢复（幂等键登记 2.4 候选）、员工凭据 8h TTL + 身份失效即清会话、`cust_app` 为共享非身份账户。OI-10 状态改 closed 由 C 按维护约定执行 |
+| 2026-11-07 | **§1.2 `sp_customer_register` 落地 `11a` 并订正签名**：删去无落地的 `@customer_name`（`Customer` 无姓名列，计划 §6.2 与 C 的 12 桩都只有 `@mobile`），`@mobile` 加 11 位数字校验（参数 `VARCHAR(20)` 的超长值会被无声截断，靠位数挡住）；补「不覆盖已建档」「`UPDLOCK, HOLDLOCK` 串行化并发」「默认等级缺失按 `51001`」三条口径。本机 v0.1 开发库临时探针实测后清理，行数/对象数复原。签名订正登记 OI-19，待 B/C 回执 |

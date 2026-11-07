@@ -159,9 +159,9 @@ sqlcmd -S localhost -E -C -f 65001 -b -I -i sql/stage2/regression.sql
 
 ## 7. 顾客端
 
-**当前状态：契约 §1 未冻结**（OI-10 四条联合边界仍挂着），`sp_customer_register` **没有**进 `11a`，也没有顾客页面。
+**当前状态：契约 §1 已于 2026-11-06 冻结；`sp_customer_register` 已进 `11a`，顾客页面与下单/查单过程仍未交付**（`sp_customer_place_order` / `sp_customer_list_orders` 归 B 的 `11b`）。
 
-已定的设计口径（冻结后按此操作）：手机号建档固定 `GUEST`、初始 0 分、默认等级，重复手机号按冲突处理；查单要「手机号 + 取餐码」双要素，只返回本人订单且只回订单头；本轮只开放自取（`PICKUP`）。
+已定的口径：手机号建档固定 `GUEST`、初始 0 分、默认等级，**重复手机号不报错**——返回既有 `customer_id` 且 `is_new = 0`，不覆盖类型、等级、积分与状态；查单要「手机号 + 取餐码」双要素，只返回本人订单且只回订单头；本轮只开放自取（`PICKUP`）。`cust_app` 的 `EXECUTE` 由 `12_permissions.sql` 在三个顾客过程齐备时授予。
 
 ## 8. 常见问题
 
