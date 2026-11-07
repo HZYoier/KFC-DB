@@ -87,6 +87,8 @@ p_bit(value) / p_decimal(value, precision, scale) / p_datetime(value)
 
 **2026-11-06 补连接池（OI-16）：** `open_connection` 增加 `_disable_driver_pooling()`，连接前把 `pyodbc.pooling` 置 `False`。`tests/stage2/common` 由 13 条增到 **17 条**，新增四类：connect 那一刻池必须已关（`connect` 被调用时读到的 `pyodbc.pooling` 是 `False`，即使调用前被人打开过）、三个账号交替（a/b/a）拿到三条不同连接且 `user` 依次正确、无登录会话不传 `user`/`password` 而回落到部署账户、连接失败仍映射 `E_DB` 且池保持关闭。另在同一批验证里跑通 common 17 / auth 10 / master 36 / orders 20（本机 `localhost`，B 的套件）/ inventory 12，以及真驱动冒烟 `tests/stage2/check_app_common.py` **9/9**。
 
+**2026-11-07 补顾客端错误码（契约 §1.2）：** `tests/stage2/common` 增到 **18 条**，新增 `CustomerErrorCodeTests`——`53000`/`53001`/`53002` 必须分别是 `E_INPUT`/`E_NOTFOUND`/`E_RULE`。`sp_customer_register` 抛的就是 `53000`，映射缺了它，顾客侧入参错误会退化成 `E_UNKNOWN`，页面拿不到「输入不对」这一档。同批 `run_common_tests.py` 分母改 18，实跑 `pass=18 fail=0 skip=0`。
+
 待办：① C 的 `run.py` 与 `app/auth`（包里给出 `bp` 即被应用工厂自动注册，不用改 `app/__init__.py`）；② B 用 `sp_create_order` 与一次故障回滚核对事务 helper 的提交/回滚语义；③ C 定顾客端 `cust_app` 的凭据交付方式（OI-10；契约 §1.7 已于 2026-11-06 定稿，见 `application-contract.md`）。
 
 ## 9. 变更记录
@@ -96,3 +98,4 @@ p_bit(value) / p_decimal(value, precision, scale) / p_datetime(value)
 | 2026-10-28 | 建立本文：A 按计划 §6.3 交出 `app/common/` 底座，固定四个签名、`session` 形状、参数定型、事务口径、错误码映射与日志字段；本机冒烟 9 条 PASS |
 | 2026-11-03 | 增补 `query_procedure_sets` 与结果集口径（OI-14）：多集按序返回、空集占位、`nextset` 异常冒泡；新增 13 条测试与本机实测。C 的 `app/auth/dao.py` 适配器可以改为一次 `query_procedure_sets` 调用 |
 | 2026-11-06 | 落实 OI-16：`open_connection` 每次连接前关闭驱动池（`pyodbc.pooling = False`），§1 签名表、§2 身份口径与 §8 现状同步；测试 13 → 17 条 |
+| 2026-11-07 | 补顾客端 530xx 映射用例，common 17 → 18 条；§8 记录契约 §1.2 `sp_customer_register` 的整份 `11a` 事务内核验 |

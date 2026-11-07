@@ -53,7 +53,7 @@ dbo.sp_customer_register
 6. **身份与授权**：过程不读 `USER_NAME()`（`cust_app` 没有 `EmployeeAccount` 映射），只靠 `12_permissions.sql` 的 `EXECUTE`；该方法在三个顾客过程齐备时才授权，员工角色不得持有本过程。已建档手机号不做任何覆盖——类型、等级、积分、状态原样回读，`is_new = 0`；停用顾客照原样返回，由 §1.3 下单时按 `53002` 拒绝。
 7. **并发**：查重带 `UPDLOCK, HOLDLOCK`（`UQ_Customer_Mobile` 上有键范围锁），同一手机号的并发建档串行化，后到的那笔读到已提交行而不撞 `2627`。
 
-**已实现（2026-11-07）**：`sql/stage2/11a_master_migration.sql` §5。本机 v0.1 开发库上用「临时建过程 + 临时 `cust_app` + 用完即删」的方式实测：新号返回 `is_new = 1` 且落在默认等级；同号再来 `is_new = 0`、`customer_id` 不变、只有一行；NULL / 空白 / 10 位 / 21 位均 `53000`；已建档的 `WOW` 顾客（等级 2、999 分、`INACTIVE`）原样回读；默认等级停用后 `51001`；外层事务回滚后新建的顾客一并消失；以 `cust_app` 身份调用成功。跑完 `Customer` 行数、`sys.procedures` 计数回到探针前（3 行 / 42 个），无残留。
+**已实现（2026-11-07）**：`sql/stage2/11a_master_migration.sql` §5。整份 `11a` 另在本机 v0.1 开发库的显式事务里 `:r` 跑通后 `ROLLBACK`——5 条 `UQ_*`、5 个过程、`533xx` 守卫全过，回滚后 3 行顾客 / 42 过程 / 0 个新增对象，证明脚本在 `run_migration` 的外层事务形状下不会留下半截。建过程本身的七组用例：新号返回 `is_new = 1` 且落在默认等级；同号再来 `is_new = 0`、`customer_id` 不变、只有一行；NULL / 空白 / 10 位 / 21 位均 `53000`；已建档的 `WOW` 顾客（等级 2、999 分、`INACTIVE`）原样回读；默认等级停用后 `51001`；外层事务回滚后新建的顾客一并消失；以 `cust_app` 身份调用成功。跑完 `Customer` 行数、`sys.procedures` 计数回到探针前（3 行 / 42 个），无残留。
 
 ### 1.3 `sp_customer_place_order`
 

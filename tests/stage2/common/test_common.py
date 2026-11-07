@@ -213,6 +213,17 @@ class ErrorPropagationTests(Base):
         self.open_mock.assert_not_called()
 
 
+class CustomerErrorCodeTests(unittest.TestCase):
+    """顾客端 530xx 必须在映射表里：sp_customer_register 抛的就是 53000。"""
+
+    def test_customer_codes_map_to_their_classes(self):
+        expected = {53000: "E_INPUT", 53001: "E_NOTFOUND", 53002: "E_RULE"}
+        for number, code in expected.items():
+            with self.subTest(number=number):
+                err = errors.from_exception(sql_error("顾客端错误。 (%d)" % number))
+                self.assertEqual(err.code, code)
+
+
 class ConnectionIdentityTests(unittest.TestCase):
     """OI-16：驱动池不许把上一个员工的连接交给下一个请求。
 
