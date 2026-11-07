@@ -695,3 +695,20 @@
 **我的处理：** 本轮 C 改动随后 commit；push 仍由我手动。
 
 ---
+
+## （2026-11-07）—— C 侧：53513 补顾客三过程、common 18 与 96/0（C）
+
+**聊了什么：** pull 到 A 的 `d76bdc1`/`424b86a`/`f6bbc84`/`ccde622`（`sp_customer_register` 进 11a、OI-19 签名订正、common 增加 `530xx` 映射测试）；B 的真实 11b 仍缺。按 OI-19 的要求补齐 C 的迁移门禁，并复跑可跑的五套测试。
+
+**AI 做了什么：**
+1. 审阅 A 的 `sp_customer_register` 与 OI-19：C 侧授权不变（`cust_app` 仅三个顾客过程，三齐才 GRANT）；同意删除无落地的 `@customer_name` 与 11 位数字校验；B 若顾客页要姓名须另走冻结。
+2. `run_migration.sql` 的 53513 过程清单从 12 扩到 15，加入 `sp_customer_register` / `sp_customer_place_order` / `sp_customer_list_orders`，错误文案改 fifteen；避免缺 register/顾客过程时迁移静默成功。
+3. 用 A 真实 11a（含 register）+ C 真实 11c/12 + 仓库外 B 六查询/place/list 临时桩预演：迁移提交，15 个过程、`cust_app` 3 个 EXECUTE、`13c` 15/0；证据 `result/stage2/c-53513-rehearsal-2026-11-07.txt`。明确不是 B 真实 11b 验收。
+4. 复跑 A 的 common 18/0、auth 10/0、master 36/0、orders 20/0、inventory 12/0；`run-all.ps1 -Python` 五套 **96/0**，证据 `result/stage2/c-runall-2026-11-07.txt`。
+5. 更新 OI-18（A register 已到，只等 B place/list）、OI-19 C 回执、团队分工、阶段/测试报告与证据 README。
+
+**核对结果：** 53513 预演只证明门禁与授权机制；B 真实 11b 仍缺，真实迁移/行为验收未做。未创建 B 文件、未改 A/B 文件；测试后 `KFC_DB` 已删除。
+
+**我的处理：** 本轮 C 改动随后 commit；push 仍由我手动。
+
+---

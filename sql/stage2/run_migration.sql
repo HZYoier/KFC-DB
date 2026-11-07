@@ -106,8 +106,9 @@ IF (SELECT COUNT(*) FROM sys.procedures
        N'sp_list_orders_for_payment', N'sp_get_order_for_payment',
        N'sp_get_order_operation_status', N'sp_list_orders_for_packing',
        N'sp_list_my_deliveries', N'sp_list_deliveries_available_for_pickup',
-       N'sp_get_current_employee_context', N'sp_list_employee_roles')) <> 12
-    THROW 53513, N'run_migration: expected twelve v1.0 procedures.', 1;
+       N'sp_customer_register', N'sp_customer_place_order', N'sp_customer_list_orders',
+       N'sp_get_current_employee_context', N'sp_list_employee_roles')) <> 15
+    THROW 53513, N'run_migration: expected fifteen v1.0 procedures.', 1;
 IF (SELECT COUNT(*) FROM sys.crypt_properties WHERE class = 1 AND major_id IN
     (OBJECT_ID(N'dbo.sp_assign_employee_business_role'),
      OBJECT_ID(N'dbo.sp_revoke_employee_business_role'),

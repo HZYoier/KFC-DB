@@ -1,0 +1,32 @@
+KFC-DB 第二阶段 C 侧迁移门禁预演（2026-11-07）
+范围：验证 run_migration.sql 53513 已把三个顾客过程纳入 v1.0 对象清单；
+**不是 B 的真实 11b 验收**：B 六查询与顾客 place/list 使用仓库外临时桩。
+
+前置：
+- 全新 v0.1（sql/run_all.sql exit=0；T1–T14 RESULT: pass=18 fail=0）
+- capture_baseline.sql：batch_id=1，COMPLETED，25 表快照
+- A 的真实 11a（含 sp_customer_register）、C 的真实 11c/12
+- B 六查询 + sp_customer_place_order/sp_customer_list_orders：临时桩
+  D:/DBLab/_kfcdb_tmp/stage2_11b_stub_20261107.sql（不入仓）
+- 预演入口：D:/DBLab/_kfcdb_tmp/run_migration_53513_rehearsal_20261107.sql
+  （仅把 run_migration.sql 的 11b :r 行指向临时桩，其余原文件）
+
+执行与结果：
+  sqlcmd ... -i 'D:/DBLab/_kfcdb_tmp/run_migration_53513_rehearsal_20261107.sql'
+  -> migration exit=0
+  -> 12: cust_app grants applied (3 customer procedures).
+  -> RESULT: migration committed (v1.0 marker written; 11a/11b/11c/12).
+
+迁移后核对（KFC_DB）：
+  v1_procs = 15（A 四接口 + B 六查询 + 三个顾客过程 + C 上下文/员工角色）
+  cust_app_exec = 3
+  SchemaVersion = v0.1(batch 1), v1.0(batch 1)
+
+13c 回归（同一临时 v1.0）：
+  sqlcmd ... -i 'D:/DBLab/KFC-DB/sql/stage2/13c_inventory_security_regression.sql'
+  -> 13c exit=0
+  -> RESULT: pass=15 fail=0
+
+结论：
+  C 的 53513 门禁在 15 个对象齐全时放行，且 12 的三个 cust_app GRANT 与 13c-7/8 均通过；
+  B 真实 11b 到达后仍须重跑，不得把本预演当作 B 六查询/顾客过程的行为验收。

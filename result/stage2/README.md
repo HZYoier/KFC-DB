@@ -1,6 +1,6 @@
 # stage2 证据（C 侧）
 
-隔离实验执行日期：2026-10-13（重跑捕获；实验首做于 2026-10-10，本次为归档要求下的完整复现）；文档对账证据增补于 2026-10-15；ER 子图复核证据增补于 2026-10-17；合并总图对账、B 图复核与契约授权核对增补于 2026-10-27；2.2 基线采集框架证据增补于 2026-10-30；真实 25 表采集、11c 扩展与 12/13c/run_migration 部分演练证据增补于 2026-11-03；OI-16 复核与 OI-17 修复证据增补于 2026-11-06。
+隔离实验执行日期：2026-10-13（重跑捕获；实验首做于 2026-10-10，本次为归档要求下的完整复现）；文档对账证据增补于 2026-10-15；ER 子图复核证据增补于 2026-10-17；合并总图对账、B 图复核与契约授权核对增补于 2026-10-27；2.2 基线采集框架证据增补于 2026-10-30；真实 25 表采集、11c 扩展与 12/13c/run_migration 部分演练证据增补于 2026-11-03；OI-16 复核与 OI-17 修复证据增补于 2026-11-06；A 的 register、53513 预演与 common 18/96 证据增补于 2026-11-07。
 
 实例：`.\SQLEXPRESS`（SQL Server 2025 Express 17.0.1000.7；混合模式；Windows 身份验证部署登录）
 
@@ -64,6 +64,8 @@
 - （2026-11-05 增补）`c-11c-employee-roles-2026-11-05.txt`：OI-15 的 11c 58/71、`sp_list_employee_roles` 与员工角色页；11c 回滚 9/0、桩迁移提交、13c 15/0、regression 38/0，员工角色页店长正例/普通岗位 229。
 - （2026-11-06 增补）`c-oi16-recheck-2026-11-06.txt`：A 的 OI-16 修复后 C 侧复核（common 17/0、auth 10/0、inventory 12/0；本轮不连 SQL Server）。
 - （2026-11-06 增补）`c-oi17-runall-2026-11-06.txt`：`run-all.ps1 -Python` 五套 95/0 的完整输出（common 17 / auth 10 / master 36 / orders 20 / inventory 12；`RESULT: run-all files=5 failed=0`）。
+- （2026-11-07 增补）`c-53513-rehearsal-2026-11-07.txt`：`run_migration.sql` 53513 从 12 扩到 15 个过程后的迁移预演；A 真实 11a（含 register）+ C 真实 11c/12 + 仓库外 B 临时桩，15 过程/3 个 `cust_app` GRANT/`13c` 15/0；明确不是 B 真实 11b 验收。
+- （2026-11-07 增补）`c-runall-2026-11-07.txt`：A 新增 `530xx` 测试后 common 18/0，`run-all.ps1 -Python` 五套 96/0 的完整输出（common 18 / auth 10 / master 36 / orders 20 / inventory 12）。
 
 ## SHA-256
 
@@ -114,8 +116,10 @@ F9CFACE4F3A2011FA7433467B484C13651F0D68A3E3E2C6958BEFF550F9D18E6  c-inventory-ap
 3A4191E1F9FE280EDB6AF2F241C8BE982F3C33B985D914BC4EC45946B8279582  ../sql/stage2/11c_inventory_security_migration.sql
 790AAF8F3021CDD77E1E487886F666F054DC6A87E5C7E3BEDE55665A6F276FEF  ../sql/stage2/12_permissions.sql
 86F23E944E0AD0FF3ED22A7358FDFDA00E410D6FF6DEA675BC87E9F315A8C42B  ../sql/stage2/13c_inventory_security_regression.sql
-5E3FD36546B73BDF57F27B21A76CA056F94C28AA1FDBEAF0A38DC1231DBE9509  ../sql/stage2/run_migration.sql
+E7D3FD93231B680071BABF1620ED8B10F1DE647BD148D3890C659F14780043D1  ../sql/stage2/run_migration.sql
 9CD4AE2C94D74BB63360E14FCAAE86315160946D34787F8D66D29F75B2E4B3A4  ../sql/stage2/regression.sql
 C45DDF378F7D57098E19586FFD35B9D8FD9FD9CBA41C24E5283EC5A18CE663F8  c-oi16-recheck-2026-11-06.txt
 1E3D1A0AD952F470BE714243EA8276ED5F295E547170D9B1E92AC4451C2A0B71  c-oi17-runall-2026-11-06.txt
+A7C8AAC339A4072BD04CA02A699280EFCCA6F73C37E8507AD31119691788999F  c-53513-rehearsal-2026-11-07.txt
+D0436C45472FB30BF6912FBBA400BDA911C1DDF23C5CECE56D7F69DC5337C659  c-runall-2026-11-07.txt
 ```

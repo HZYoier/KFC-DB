@@ -33,7 +33,7 @@
 4. 回归：`13a` / `13b` / `13c`，由 `regression.sql` 汇总；实际断言数入 `RESULT`。
 5. 应用：`app/common` → `app/auth` → 各域页面；员工身份由数据库 `USER_NAME()` 兜底，UI 不缓存“我是谁”。
 
-## 4. 当前交接状态（2026-11-06）
+## 4. 当前交接状态（2026-11-07）
 
 | 项 | 状态 | 下一位 |
 | --- | --- | --- |
@@ -41,10 +41,10 @@
 | A Common 多结果集（OI-14） | 已修复，C 已改用 `query_procedure_sets` | C 已复核 |
 | A Common `pooling=False`（OI-16） | 已修复，C 已复核关闭 | — |
 | B `baseline_b/13b` | 已到；B orders 适配 Common，20/0 | C 已集成 |
-| B 真实 `11b_order_migration.sql` | **未到（OI-18，立即催办）** | B |
-| 顾客三过程/OI-10 | 契约 §1 已冻结；过程未实现，B 可先写 place/list，register 归 A 的 11a | A/B |
-| C `11c` 58/71、`12/13c/run_migration/regression` | 已落稿；真实 11b 未到，迁移为部分/桩证据 | C |
-| C `app/auth`/`app/inventory`/`run.py`/员工角色页 | 已落；auth 10/0、inventory 12/0、run-all 5 套 | C |
+| B 真实 `11b_order_migration.sql` | **未到（OI-18，立即催办）**；A 的 register 已进 11a | B |
+| 顾客三过程/OI-10 | 契约 §1 已冻结；A 的 register 已进 11a，B 的 place/list 未到；C 已补 53513 预演 | B |
+| C `11c` 58/71、`12/13c/run_migration/regression` | 已落稿；53513 已扩到 15 个过程并临时桩预演；真实 11b 未到 | C |
+| C `app/auth`/`app/inventory`/`run.py`/员工角色页 | 已落；auth 10/0、inventory 12/0、run-all 五套 96/0 | C |
 | 真实员工 SQL 登录/部署模板执行 | **未执行** | C + 操作者 |
 
 ## 5. 共享约定
