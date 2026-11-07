@@ -7,10 +7,12 @@
 --   ② 计划 §6.2 的 A 域查询/注册接口 —— sp_list_master_records、sp_list_sale_products、
 --      sp_find_customer_for_order、sp_register_customer_for_order（应用层只经过程取数，
 --      不向岗位开放基表 SELECT）。
+--   ③ 契约 §1.2 的顾客端建档 sp_customer_register（§1 于 2026-11-06 冻结，2026-11-07 补入）；
+--      它不按 USER_NAME() 认人，只授给 C 的 12_permissions 里的 cust_app。
 -- 依据：docs/stage2/a-normalization.md §5、refactoring-design.md §7、
 --       migration-guide.md §3（脚本形状与错误码段 533xx）、计划 §6.2 接口表。
--- 不在本文件：契约 §1 的顾客端 sp_customer_register —— §1 尚未冻结，冻结后再补，
---       免得签名一变又要改迁移脚本；四个新接口的授权（GRANT）由 C 的 12_permissions 落。
+-- 不在本文件：契约 §1.3 / §1.4 的顾客下单与查单（B 的 11b）；
+--       全部新接口的授权（GRANT）由 C 的 12_permissions 落。
 -- ============================================================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -327,5 +329,90 @@ BEGIN
 
     -- 默认等级判据、重复手机号 51005、事务边界都在店长建档过程里，一处实现不复制
     EXEC dbo.sp_create_customer @mobile = @mobile, @customer_type = 'GUEST';
+END
+GO
+
+-- ---------------------------------------------------------------------------
+-- 5. 顾客端建档（契约 §1.2；§1 于 2026-11-06 冻结）
+--    顾客端没有员工身份：本过程不读 USER_NAME()，权限只在 12_permissions：
+--    三个顾客过程齐了才把 EXECUTE 授给 cust_app；员工角色不得持有本过程。
+-- ---------------------------------------------------------------------------
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+GO
+
+CREATE PROCEDURE dbo.sp_customer_register
+    @mobile VARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 参数是 VARCHAR(20)，绑定时超长值会被无声截断；20 位截断串再往下走就是给错人建档，
+    -- 所以位数必须在这里挡（与 sp_register_customer_for_order 同一判据）。
+    IF @mobile IS NULL
+       OR LTRIM(RTRIM(@mobile)) NOT LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+        THROW 53000, N'sp_customer_register：@mobile 必须是 11 位数字。', 1;
+
+    SET @mobile = LTRIM(RTRIM(@mobile));
+
+    DECLARE @entry_trancount INT = @@TRANCOUNT;
+
+    IF @entry_trancount = 0
+        BEGIN TRANSACTION;
+    ELSE
+        SAVE TRANSACTION C_customer_register;
+
+    BEGIN TRY
+        DECLARE @customer_id BIGINT;
+        DECLARE @member_level_id BIGINT;
+        DECLARE @is_new BIT = 0;
+
+        -- 幂等：键范围锁把同一手机号的并发建档串起来，后到的那笔读到已提交的行
+        SELECT @customer_id = c.customer_id
+        FROM dbo.Customer AS c WITH (UPDLOCK, HOLDLOCK)
+        WHERE c.mobile = @mobile;
+
+        IF @customer_id IS NULL
+        BEGIN
+            -- 默认等级判据与 sp_create_customer 逐字相同：没有基准档是配置缺陷，让建档失败
+            SET @member_level_id = (
+                SELECT TOP (1) ml.member_level_id
+                FROM dbo.MemberLevel AS ml
+                WHERE ml.[status] = 'ACTIVE'
+                  AND ml.threshold_points <= 0
+                ORDER BY ml.threshold_points DESC, ml.member_level_id ASC
+            );
+
+            IF @member_level_id IS NULL
+                THROW 51001, N'sp_customer_register：找不到可用的默认会员等级（threshold_points <= 0 的 ACTIVE 等级），拒绝建档。', 1;
+
+            INSERT INTO dbo.Customer (mobile, customer_type, member_level_id, current_points, [status])
+            VALUES (@mobile, 'GUEST', @member_level_id, 0, 'ACTIVE');
+
+            SET @customer_id = SCOPE_IDENTITY();
+            SET @is_new = 1;
+        END
+        ELSE
+        BEGIN
+            -- 已建档一律不覆盖：类型、等级、积分、状态都留给员工侧过程，这里只回读
+            SELECT @member_level_id = c.member_level_id
+            FROM dbo.Customer AS c
+            WHERE c.customer_id = @customer_id;
+        END
+
+        IF @entry_trancount = 0
+            COMMIT TRANSACTION;
+
+        SELECT @customer_id    AS customer_id,
+               @member_level_id AS member_level_id,
+               @is_new         AS is_new;
+    END TRY
+    BEGIN CATCH
+        IF @entry_trancount = 0 AND XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+        ELSE IF @entry_trancount > 0 AND XACT_STATE() = 1
+            ROLLBACK TRANSACTION C_customer_register;
+        THROW;
+    END CATCH;
 END
 GO
