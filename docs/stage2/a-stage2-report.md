@@ -106,3 +106,12 @@ C 于 11-06 把 OI-16/OI-17 关闭、登记 OI-18 催 B 的 `11b`，并在交接
 - **为什么加 11 位校验**：参数是 `VARCHAR(20)`，超长入参在绑定时被无声截成 20 位；若不管，21 位手机号会以 20 位前缀给错人建档。11 位判据与 `sp_register_customer_for_order` 相同。
 - **口径**：幂等不覆盖（`is_new = 0`，类型/等级/积分/状态原样回读）；查重带 `UPDLOCK, HOLDLOCK` 串行化同号并发；默认等级缺失沿用 `sp_create_customer` 的 `51001`；不读 `USER_NAME()`，权限只在 `12` 的 `cust_app`。
 - **实测**：整份 `11a` 在本机 v0.1 开发库的显式事务里 `:r` 跑通后 `ROLLBACK`（5 条 `UQ_*`、5 个过程，回滚后零残留）；再用临时过程与临时 `cust_app` 跑七组用例，全过（含外层事务回滚后不留行、以 `cust_app` 身份建档成功），跑完 `Customer` 3 行 / 42 过程 / 25 表复原。
+
+## 9. 补记：2026-11-08 项目结构图
+
+计划 §10 把「集成测试脚本与操作手册、项目结构图」列为 2.3 的交付物，其中手册在 `user-manual.md`、结构图归 A。这一件不依赖 B 的 `11b`，先交付：
+
+- **图本身**：[project-structure.svg](project-structure.svg)。左半是仓库结构（根目录 + `app/` 五层 + `sql/stage2/` 迁移链 + `tests/` / `docs/` / `result/`），右半是运行时分层与调用链：表示层 → 蓝图（routes / service / dao）→ 访问层 `app/common` → 数据库层 → 底部「交付与验证」条带，箭头旁的注记就是层间契约（参数一律 `SqlParam`、每次新建连接、`USER_NAME()` 认人）。
+- **配色与截止线**：域配色沿用合并 ER 总图的 A 蓝 / B 黄 / C 绿；虚线框与橙色注记只标一件事——尚未交付的部分（`11b_order_*.sql`、orders 路由、顾客端 place/list 与页面，OI-18）。`run_migration` 的 53513 现在要求 15 个过程，其中 8 个属 B，缺 `11b` 时迁移会直接失败，这一点也写在图的左下注记里。
+- **不写会过期的数字**：图里各测试套只列名字（common / auth / master / orders / inventory），不写具体条数——B 到货后分母还会变，数字进图就会和报告打架。
+- **同步位置**：README §目录结构嵌了这张图，目录树补了 `project-structure.svg` 一行；`docs/` 计数同步为 55 份（stage2 31）。
