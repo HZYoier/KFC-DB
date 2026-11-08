@@ -1,101 +1,226 @@
 <!doctype html>
 <html lang="zh-CN">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>订单工作台</title>
-<style>
-body{font:16px system-ui;max-width:65rem;margin:2rem auto;padding:0 1rem;color:#241f1d}
-section{border:1px solid #ddd2cb;padding:1rem;margin:1rem 0;border-radius:.5rem}
-form{margin:.5rem 0} input,select,button{font:inherit;margin:.25rem;padding:.35rem}
-table{border-collapse:collapse;width:100%;margin:.5rem 0} th,td{text-align:left;padding:.45rem;border-bottom:1px solid #ddd}
-</style>
-<h1>订单工作台</h1>
-<p>岗位：{{ job }} · <a href="{{ url_for('auth.index') }}">返回身份页</a></p>
-{% if request.args.get('ok') %}<p role="status">操作已提交。</p>{% endif %}
-{% if request.args.get('reconciled') and status is defined and status and status[0].payment_status == 'SUCCESS' %}
-<p role="status">已查库确认该订单支付成功，无需再次支付。</p>{% endif %}
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>订单工作台 · KFC-DB</title>
+  {% include 'orders/theme.html' %}
+</head>
+<body>
+{% set role_names = {'CASHIER':'收银员','CHEF':'厨师','PACKER':'配餐员','WAITER':'叫号员','RIDER':'骑手','STORE_MANAGER':'店长'} %}
+{% set queue_names = {'CASHIER':'待支付订单','CHEF':'制作队列','PACKER':'配餐队列','WAITER':'取餐叫号','RIDER':'待认领订单','STORE_MANAGER':'可核对的订单'} %}
+{% set descriptions = {'CASHIER':'登记顾客、创建订单并收款。','CHEF':'从已支付订单中开始制作。','PACKER':'核对商品明细，完成制作或确认自取。','WAITER':'按订单号和取餐码叫号。','RIDER':'认领待配送订单，或确认已送达。','STORE_MANAGER':'按订单号核对状态，处理取消和退款。'} %}
+{% set labels = {'order_id':'订单 ID','order_no':'订单号','order_status':'订单状态','pickup_code':'取餐码',
+  'total_amount':'订单总额','ordered_at':'下单时间','product_name':'商品','item_role':'明细类型',
+  'quantity':'数量','unit_price':'成交单价','payment_status':'支付状态','paid_amount':'实付',
+  'refunded_amount':'退款','fulfillment_method':'履约方式','delivery_status':'配送状态',
+  'order_item_id':'明细 ID','parent_order_item_id':'父明细 ID','product_id':'商品 ID',
+  'promotion_id':'促销 ID','delivery_id':'配送 ID','production_finished_at':'制作完成时间',
+  'picked_up_at':'骑手取餐时间','is_completed':'是否完成'} %}
+{% set state_labels = {'PENDING_PAYMENT':'待支付','PAID':'已支付','IN_PRODUCTION':'制作中',
+  'READY_FOR_PICKUP':'待取餐','READY_FOR_DELIVERY':'待配送','WAITING_PICKUP':'待认领',
+  'DELIVERING':'配送中','PICKED_UP':'已取餐','DELIVERED':'已送达','COMPLETED':'已完成',
+  'CANCELLED':'已取消','PENDING':'待支付','SUCCESS':'支付成功','REFUNDED':'已退款','VOIDED':'已作废'} %}
+{% set tones = {'PENDING_PAYMENT':'pending','WAITING_PICKUP':'pending','PAID':'active','IN_PRODUCTION':'active',
+  'DELIVERING':'active','READY_FOR_PICKUP':'ready','READY_FOR_DELIVERY':'ready','SUCCESS':'ready',
+  'PICKED_UP':'ready','DELIVERED':'ready','COMPLETED':'ready'} %}
 
-{% macro table(rows) %}
-{% set labels = {'order_id':'订单 ID','order_no':'订单号','order_status':'状态','pickup_code':'取餐码',
-'total_amount':'总额','ordered_at':'下单时间','product_name':'商品','item_role':'明细类型',
-'quantity':'数量','unit_price':'成交单价','payment_status':'支付状态','paid_amount':'实付',
-'refunded_amount':'退款','fulfillment_method':'履约方式','delivery_status':'配送状态'} %}
-{% if rows %}
-<table><thead><tr>{% for key in rows[0] %}<th>{{ labels.get(key, key) }}</th>{% endfor %}</tr></thead>
-<tbody>{% for row in rows %}<tr>{% for key in rows[0] %}<td>{{ row[key] if row[key] is not none else '—' }}</td>{% endfor %}</tr>{% endfor %}</tbody></table>
-{% else %}<p>暂无记录。</p>{% endif %}
-{% endmacro %}
-{% macro submit(action, title, order_id) %}
-<form method="post" action="{{ url_for('orders.action', action=action) }}">
-  <input type="hidden" name="csrf" value="{{ csrf }}">
-  <input type="hidden" name="order_id" value="{{ order_id }}">
-  <button>{{ title }} · {{ order_id }}</button>
-</form>
-{% endmacro %}
-
-{% if job == 'CASHIER' %}
-<section><h2>新客登记</h2>
-<form method="post" action="{{ url_for('orders.action', action='register') }}">
+{% macro csrf_field() -%}
 <input type="hidden" name="csrf" value="{{ csrf }}">
-<label>手机号 <input name="mobile" inputmode="numeric" pattern="[0-9]{11}" required></label><button>登记</button>
-</form></section>
-<section><h2>创建订单</h2><p>选品价格仅供参考，最终以订单成交价为准。</p>
-<p>本次订单号：<strong>{{ draft_number }}</strong>。提交结果不明时先按此编号查询。</p>
-<form method="post" action="{{ url_for('orders.action', action='create') }}">
-<input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="attempt" value="{{ attempt }}">
-<label>手机号 <input name="mobile" inputmode="numeric" pattern="[0-9]{11}" required></label>
-<label>履约方式 <select name="fulfillment"><option value="PICKUP">自取</option><option value="DELIVERY">外送</option></select></label>
-{% for n in range(5) %}<div>
-<label>商品 {{ n+1 }} <select name="product"><option value="">不选</option>
-{% for product in products %}<option value="{{ product.product_id }}">{{ product.product_name }} · ¥{{ product.effective_price }}</option>{% endfor %}
-</select></label><label>份数 <input type="number" name="quantity" value="1" min="1" required></label>
-</div>{% endfor %}
-<button>下单</button></form></section>
-{% endif %}
+{%- endmacro %}
+{% macro submit(action, title, order_id) -%}
+<form method="post" action="{{ url_for('orders.action', action=action) }}">
+  {{ csrf_field() }}
+  <input type="hidden" name="order_id" value="{{ order_id }}">
+  <button class="btn small primary" aria-label="{{ title }} · 订单 {{ order_id }}">{{ title }}</button>
+</form>
+{%- endmacro %}
+{% macro table(rows, columns, action='') %}
+  {% if rows %}
+  <div class="scroll" tabindex="0" role="region" aria-label="订单表格，可横向滚动">
+  <table>
+    <thead><tr>{% for key in columns %}<th scope="col">{{ labels.get(key, key) }}</th>{% endfor %}
+      {% if action %}<th scope="col">操作</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr{% if action == 'payment' and head is defined and head and head[0].order_id == row.order_id %} class="selected"{% endif %}>
+      {% for key in columns %}
+        {% set value = row[key] %}
+        <td{% if key == 'order_no' %} class="order-no"{% elif key == 'pickup_code' %} class="pickup-code"{% endif %}>
+        {% if value is none %}—
+        {% elif key in ('order_status','payment_status','delivery_status') %}<span class="badge {{ tones.get(value,'') }}" title="{{ value }}">{{ state_labels.get(value,value) }}</span>
+        {% elif key == 'fulfillment_method' %}{{ {'PICKUP':'自取','DELIVERY':'外送'}.get(value,value) }}
+        {% elif key == 'item_role' %}{{ {'SELLABLE':'售卖项','COMPONENT':'套餐组件'}.get(value,value) }}
+        {% elif key in ('total_amount','paid_amount','refunded_amount','unit_price') %}<span class="amount">¥{{ value }}</span>
+        {% elif key == 'is_completed' %}{{ '是' if value else '否' }}
+        {% else %}{{ value }}{% endif %}
+        </td>
+      {% endfor %}
+      {% if action %}<td class="action-cell">
+        {% if action == 'payment' %}
+          <a class="btn small" href="{{ url_for('orders.index', detail=row.order_id) }}#payment">支付详情</a>
+        {% elif action == 'chef' and row.order_status == 'PAID' and (loop.first or loop.previtem.order_id != row.order_id) %}
+          {{ submit('start','开始制作',row.order_id) }}
+        {% elif action == 'packing' and row.order_status == 'IN_PRODUCTION' %}
+          {{ submit('finish','完成制作',row.order_id) }}
+        {% elif action == 'packing' and row.order_status == 'READY_FOR_PICKUP' %}
+          {{ submit('pickup','确认自取',row.order_id) }}
+        {% elif action == 'claim' %}{{ submit('claim','认领取餐',row.order_id) }}
+        {% elif action == 'confirm' %}{{ submit('confirm','确认送达',row.order_id) }}
+        {% elif action == 'manager' %}
+          <form class="inline-form" method="post" action="{{ url_for('orders.action', action='cancel') }}">
+            {{ csrf_field() }}
+            <input type="hidden" name="order_id" value="{{ row.order_id }}">
+            <select name="reason" aria-label="选择订单 {{ row.order_id }} 的处理方式">
+              {% if row.order_status == 'PENDING_PAYMENT' %}<option value="CANCEL">取消订单</option><option value="PAYMENT_TIMEOUT">支付超时</option>
+              {% else %}<option value="REFUND">全额退款</option>{% endif %}
+            </select>
+            <button class="btn small">确认</button>
+          </form>
+        {% else %}<span class="muted">—</span>{% endif %}
+      </td>{% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<p class="empty">暂无记录。</p>{% endif %}
+{% endmacro %}
+{% macro panel_heading(title, note='', count=none) %}
+<div class="panel-head">
+  <div><h2>{{ title }}</h2>{% if note %}<p>{{ note }}</p>{% endif %}</div>
+  {% if count is not none %}<span class="count">{{ count }} 条</span>{% endif %}
+</div>
+{% endmacro %}
 
-{% if job in ('CASHIER', 'STORE_MANAGER') %}
-<section><h2>按订单号确认结果</h2>
-<form method="get"><label>订单号 <input name="lookup" maxlength="50" required></label><button>查询</button></form>
-{% if status is defined %}{{ table(status) }}{% endif %}</section>
-{% if recent_numbers %}
-<p>本会话最近打开的下单表单：
-{% for number in recent_numbers %}<a href="{{ url_for('orders.index', lookup=number) }}">{{ number }}</a> {% endfor %}
-</p>
-{% endif %}
-{% endif %}
+<header class="topbar">
+  <div class="shell">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="brand-name">KFC-DB</span><span class="brand-sub">门店运营</span>
+    </div>
+    <div class="top-actions">
+      <span class="identity" title="岗位：{{ job }}">{{ role_names[job] }}</span>
+      <a class="btn small" href="{{ url_for('auth.index') }}">返回身份页</a>
+    </div>
+  </div>
+</header>
+<main class="shell">
+  <div class="intro">
+    <div><p class="eyebrow">门店运营 / 订单</p><h1>订单工作台</h1><p>{{ descriptions[job] }}</p></div>
+    <a class="btn small queue-link" href="{{ url_for('orders.index') }}">刷新队列</a>
+  </div>
 
-<section><h2>{{ {'CASHIER':'待支付','CHEF':'制作队列','PACKER':'配餐队列','WAITER':'取餐叫号','RIDER':'待认领','STORE_MANAGER':'可核对的订单'}[job] }}</h2>
-{{ table(orders) }}
-{% if job == 'CASHIER' %}
-{% for row in orders %}<p><a href="{{ url_for('orders.index', detail=row.order_id) }}">支付详情 · {{ row.order_no }}</a></p>{% endfor %}
-{% if head is defined and head %}
-<h3>支付详情</h3>{{ table(head) }}{{ table(items) }}
-<form method="post" action="{{ url_for('orders.action', action='pay') }}">
-<input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="order_id" value="{{ head[0].order_id }}">
-<label>实付 <input name="amount" inputmode="decimal" value="{{ head[0].total_amount }}" required></label>
-<label>方式 <select name="method"><option value="CASH">现金</option><option value="CARD">刷卡</option><option value="MOBILE">移动支付</option></select></label>
-<label>流水号 <input name="reference" maxlength="100"></label><button>确认支付</button></form>
-{% endif %}
-{% elif job == 'CHEF' %}
-{% for group in orders|groupby('order_id') %}{% if group.list[0].order_status == 'PAID' %}{{ submit('start','开始制作',group.grouper) }}{% endif %}{% endfor %}
-{% elif job == 'PACKER' %}
-<h3>制作明细（区分套餐与组件）</h3>{{ table(items) }}
-{% for row in orders %}
-{% if row.order_status == 'IN_PRODUCTION' %}{{ submit('finish','完成制作',row.order_id) }}
-{% elif row.order_status == 'READY_FOR_PICKUP' %}{{ submit('pickup','确认自取',row.order_id) }}{% endif %}
-{% endfor %}
-{% elif job == 'RIDER' %}
-{% for row in orders %}{{ submit('claim','认领取餐',row.order_id) }}{% endfor %}
-<h3>我的配送</h3>{{ table(mine) }}
-{% for row in mine %}{{ submit('confirm','确认送达',row.order_id) }}{% endfor %}
-{% elif job == 'STORE_MANAGER' %}
-{% for row in orders %}
-<form method="post" action="{{ url_for('orders.action', action='cancel') }}">
-<input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="order_id" value="{{ row.order_id }}">
-<label>{{ row.order_no }} <select name="reason">
-{% if row.order_status == 'PENDING_PAYMENT' %}<option value="CANCEL">取消</option><option value="PAYMENT_TIMEOUT">支付超时</option>
-{% else %}<option value="REFUND">全额退款</option>{% endif %}</select></label><button>确认</button>
-</form>{% endfor %}
-{% endif %}
-</section>
+  {% if request.args.get('ok') %}<p class="notice" role="status">操作已提交。</p>{% endif %}
+  {% if request.args.get('reconciled') and status is defined and status and status[0].payment_status == 'SUCCESS' %}
+    <p class="notice" role="status">已查库确认该订单支付成功，无需再次支付。</p>
+  {% endif %}
+  {% if status is defined %}
+    <section class="panel status-panel">
+      {{ panel_heading('订单查询结果') }}
+      {{ table(status, ['order_id','order_no','order_status','payment_status','paid_amount','refunded_amount','is_completed','pickup_code']) }}
+    </section>
+  {% endif %}
+
+  <div class="workspace {{ {'CASHIER':'cashier','RIDER':'rider','STORE_MANAGER':'manager'}.get(job,'') }}">
+    <div class="stack">
+      <section class="panel" id="queue">
+        {{ panel_heading(queue_names[job], '', orders|length) }}
+        {% if job == 'CASHIER' %}
+          {{ table(orders, ['order_id','order_no','total_amount','ordered_at'], 'payment') }}
+        {% elif job == 'CHEF' %}
+          {{ table(orders, ['order_id','order_no','order_status','item_role','product_name','quantity'], 'chef') }}
+        {% elif job == 'PACKER' %}
+          {{ table(orders, ['order_id','order_no','order_status','fulfillment_method','pickup_code'], 'packing') }}
+        {% elif job == 'WAITER' %}
+          {{ table(orders, ['order_no','pickup_code','order_status']) }}
+        {% elif job == 'RIDER' %}
+          {{ table(orders, ['order_id','order_no','production_finished_at'], 'claim') }}
+        {% else %}
+          {{ table(orders, ['order_id','order_no','order_status','total_amount','ordered_at'], 'manager') }}
+        {% endif %}
+      </section>
+      {% if job == 'CASHIER' and head is defined and head %}
+        <section class="panel" id="payment">
+          {{ panel_heading('支付详情') }}
+          <div class="payment-meta"><div><small>订单号 · {{ {'PICKUP':'自取','DELIVERY':'外送'}.get(head[0].fulfillment_method,head[0].fulfillment_method) }}</small>
+            <span class="order-no">{{ head[0].order_no }}</span></div>
+            <div><small>订单总额</small><strong>¥{{ head[0].total_amount }}</strong></div></div>
+          <h3 class="subhead">售卖明细</h3>
+          {{ table(items, ['product_name','quantity','unit_price','promotion_id']) }}
+          <div class="panel-body">
+            <form class="form-stack" method="post" action="{{ url_for('orders.action', action='pay') }}">
+              {{ csrf_field() }}<input type="hidden" name="order_id" value="{{ head[0].order_id }}">
+              <div class="fields">
+                <label class="field">实付金额 <input name="amount" inputmode="decimal" value="{{ head[0].total_amount }}" required></label>
+                <label class="field">支付方式 <select name="method"><option value="CASH">现金</option><option value="CARD">刷卡</option><option value="MOBILE">移动支付</option></select></label>
+              </div>
+              <label class="field">第三方流水号（可留空） <input name="reference" maxlength="100"></label>
+              <div class="form-footer"><button class="btn primary">确认支付</button></div>
+            </form>
+          </div>
+        </section>
+      {% elif job == 'PACKER' %}
+        <section class="panel">
+          {{ panel_heading('制作明细', '售卖项和套餐组件分开显示', items|length) }}
+          {{ table(items, ['order_id','order_item_id','parent_order_item_id','item_role','product_name','quantity']) }}
+        </section>
+      {% endif %}
+    </div>
+
+    {% if job in ('CASHIER','STORE_MANAGER','RIDER') %}<aside class="stack" aria-label="本岗位操作">
+      {% if job == 'CASHIER' %}
+        <section class="panel" id="create-order">
+          {{ panel_heading('创建订单', '选品价格仅供参考，以订单成交价为准。') }}
+          <form class="panel-body form-stack" method="post" action="{{ url_for('orders.action', action='create') }}">
+            {{ csrf_field() }}<input type="hidden" name="attempt" value="{{ attempt }}">
+            <div class="draft">本次订单号 <strong>{{ draft_number }}</strong></div>
+            <div class="fields">
+              <label class="field">手机号 <input name="mobile" inputmode="numeric" pattern="[0-9]{11}" placeholder="11 位手机号" required></label>
+              <label class="field">履约方式 <select name="fulfillment"><option value="PICKUP">自取</option><option value="DELIVERY">外送</option></select></label>
+            </div>
+            <div class="line-items">
+            {% for n in range(5) %}
+              <div class="line-item">
+                <span class="line-index">{{ '%02d'|format(n+1) }}</span>
+                <select name="product" aria-label="商品 {{ n+1 }}"><option value="">选择商品</option>
+                  {% for product in products %}<option value="{{ product.product_id }}">{{ product.product_name }} · ¥{{ product.effective_price }}</option>{% endfor %}
+                </select>
+                <input type="number" name="quantity" aria-label="商品 {{ n+1 }} 份数" value="1" min="1" required>
+              </div>
+            {% endfor %}
+            </div>
+            <div class="form-footer"><button class="btn primary">提交订单</button></div>
+          </form>
+        </section>
+        <section class="panel">
+          {{ panel_heading('新客登记') }}
+          <form class="panel-body inline-form" method="post" action="{{ url_for('orders.action', action='register') }}">
+            {{ csrf_field() }}
+            <label class="field">手机号 <input name="mobile" inputmode="numeric" pattern="[0-9]{11}" placeholder="11 位手机号" required></label><button class="btn">登记</button>
+          </form>
+        </section>
+      {% endif %}
+      {% if job in ('CASHIER','STORE_MANAGER') %}
+        <section class="panel" id="lookup">
+          {{ panel_heading('按订单号查单') }}
+          <div class="panel-body">
+            <form class="inline-form" method="get">
+              <label class="field">订单号 <input name="lookup" value="{{ request.args.get('lookup','') }}" maxlength="50" required></label><button class="btn">查询</button>
+            </form>
+            {% if recent_numbers %}<div class="recent"><span class="hint">近期打开的下单表单</span>
+              {% for number in recent_numbers %}<a href="{{ url_for('orders.index', lookup=number) }}">{{ number }}</a>{% endfor %}
+            </div>{% endif %}
+          </div>
+        </section>
+      {% elif job == 'RIDER' %}
+        <section class="panel">
+          {{ panel_heading('我的配送', '仅显示由当前骑手认领的订单', mine|length) }}
+          {{ table(mine, ['order_id','order_no','delivery_status','picked_up_at'], 'confirm') }}
+        </section>
+      {% endif %}
+    </aside>{% endif %}
+  </div>
+  <footer class="page-footer"><span>KFC-DB · 订单工作台</span><span>数据库课程项目</span></footer>
+</main>
+</body>
 </html>
