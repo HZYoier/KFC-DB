@@ -64,7 +64,7 @@ KFC-DB/
 │       ├── b-order.drawio / .svg    订单与履约域子图（9 实体 10 联系）
 │       ├── c-inventory-security.drawio / .svg   库存权限域子图（12 实体 14 联系）
 │       └── stage2-model.drawio / .svg           合并总图（25 实体 35 联系，C 交付）
-└── result/                      执行证据（57 个：顶层 31 + stage2/ 12 + stage2/scripts/ 14）
+└── result/                      执行证据（99 个：顶层 31 + stage2/ 30 + stage2/scripts/ 26 + 页面截图 12）
     ├── README.md                证据清单：逐文件说明与全部 SHA-256
     ├── stage1-full-test-*.txt   三台机器各自从空库整跑的完整原始输出
     ├── stage1-contract-check-*.txt      跨域接口契约检查输出
@@ -74,6 +74,7 @@ KFC-DB/
     ├── stage1-full-test-summary-2026-10-01.png  结果摘要图
     ├── stage1-a-*.png           19 张操作截图：建库、CRUD、关键查询、越权、非法数据、权限
     └── stage2/                  第二阶段证据：ER 复核、规范化校验、三机整跑原始输出
+        └── a-master-ui-2026-11-08/   A 主数据页面截图（11a+11c 演示库，2026-11-08）
 ```
 
 ![项目结构图](docs/stage2/project-structure.svg)
