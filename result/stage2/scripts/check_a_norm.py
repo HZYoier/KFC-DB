@@ -4,8 +4,8 @@
 用法：python -I check_a_norm.py
 判据：输出「0 差异（全部通过）」且退出码 0。
 读取：
-  sql/01_master_schema.sql            —— A 域 10 表的表名、列名、类型、可空性、主键
-  sql/04_master_constraints_crud.sql  —— 命名 CHECK 数量
+  sql/stage1/01_master_schema.sql            —— A 域 10 表的表名、列名、类型、可空性、主键
+  sql/stage1/04_master_constraints_crud.sql  —— 命名 CHECK 数量
   docs/stage2/a-normalization.md      —— §2 的属性与键清单
 """
 import io
@@ -20,8 +20,8 @@ if hasattr(sys.stdout, 'reconfigure'):
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))))
 
-SCHEMA = os.path.join(REPO, 'sql', '01_master_schema.sql')
-CRUD = os.path.join(REPO, 'sql', '04_master_constraints_crud.sql')
+SCHEMA = os.path.join(REPO, 'sql', 'stage1', '01_master_schema.sql')
+CRUD = os.path.join(REPO, 'sql', 'stage1', '04_master_constraints_crud.sql')
 DOC = os.path.join(REPO, 'docs', 'stage2', 'a-normalization.md')
 
 schema = io.open(SCHEMA, encoding='utf-8').read()

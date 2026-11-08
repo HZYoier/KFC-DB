@@ -2,7 +2,7 @@
 
 > 属主：成员 A（计划 §7.1）。结构：每项含 ID、业务规则、当前对象、复现证据、保留 / 改动建议与影响对象。跨域条目另以 `OI-*` 编号登记到 `docs/stage2/open-issues.md`，本文件只引用不另维护状态。
 >
-> 事实基础：`sql/01_master_schema.sql`（A 域 10 表建表）与 `sql/04_master_constraints_crud.sql`（22 条命名 `CHECK`、18 个 CRUD 过程、2 个跨域接口对象）的源码；与第一阶段 A 域验收 `10a`（A1–A13，13 条）的对象口径一致。对应教学要求 R5-02、R5-03、R5-11。
+> 事实基础：`sql/stage1/01_master_schema.sql`（A 域 10 表建表）与 `sql/stage1/04_master_constraints_crud.sql`（22 条命名 `CHECK`、18 个 CRUD 过程、2 个跨域接口对象）的源码；与第一阶段 A 域验收 `10a`（A1–A13，13 条）的对象口径一致。对应教学要求 R5-02、R5-03、R5-11。
 
 ## 1. 整理现有设计（A 域 10 表）
 

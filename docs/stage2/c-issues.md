@@ -2,7 +2,7 @@
 
 > 属主：成员 C（计划 §7.1）。结构：每项含 ID、业务规则、当前对象、复现证据、保留 / 改动建议与影响对象。跨域条目另以 `OI-*` 编号登记到 `docs/stage2/open-issues.md`，本文件只引用不另维护状态。
 >
-> 事实基础：`sql/run_all.sql` 于 2026-10-13 从空库部署的 v0.1 活库目录（`sys.tables` / `sys.columns` / `sys.key_constraints` / `sys.foreign_keys` / `sys.indexes`），以及第一阶段的回归证据（`t3`–`t10b`、`09c`/`09d` 断言、`08`)。对应教学要求 R5-02、R5-03、R5-11。
+> 事实基础：`sql/stage1/run_all.sql` 于 2026-10-13 从空库部署的 v0.1 活库目录（`sys.tables` / `sys.columns` / `sys.key_constraints` / `sys.foreign_keys` / `sys.indexes`），以及第一阶段的回归证据（`t3`–`t10b`、`09c`/`09d` 断言、`08`)。对应教学要求 R5-02、R5-03、R5-11。
 
 ## 1. 整理现有设计（C 域 10 表）
 
@@ -21,7 +21,7 @@
 
 补充（对应 R5-04 的复合主码讨论）：C 域共 3 个复合主码——`PurchaseOrderItem`、`RolePermission`、`EmployeeBusinessRole`；1 个 PKFK 共享标识——`Inventory`。其余为代理键：`BusinessRole`（`role_code` 唯一）、`PurchaseOrder`（`purchase_order_no` 唯一）、`EmployeeAccount`（`database_user_name` / `login_name` 唯一）带唯一候选，`InventoryMovement`、`AuditLog` 为事件行、无候选标识。
 
-更正（2026-10-14）：本节原将 `Ingredient` 列入 C 域 10 表并漏记 `AuditLog`。按建表位置，`Ingredient` 在 `sql/01_master_schema.sql:34`（A 域），`AuditLog` 在 `sql/03_inventory_security_schema.sql:167`（C 域）；本表已换成 `AuditLog`。表中其余对 `Ingredient` 的外码引用（`Inventory`、`ReplenishmentSuggestion`、`PurchaseOrderItem`）是跨域指向，保持不变，在 C 域子图中按灰矩形处理。
+更正（2026-10-14）：本节原将 `Ingredient` 列入 C 域 10 表并漏记 `AuditLog`。按建表位置，`Ingredient` 在 `sql/stage1/01_master_schema.sql:34`（A 域），`AuditLog` 在 `sql/stage1/03_inventory_security_schema.sql:167`（C 域）；本表已换成 `AuditLog`。表中其余对 `Ingredient` 的外码引用（`Inventory`、`ReplenishmentSuggestion`、`PurchaseOrderItem`）是跨域指向，保持不变，在 C 域子图中按灰矩形处理。
 
 ## 2. 保留项（设计合理，写明理由）
 
@@ -90,7 +90,7 @@
 
 **I-C12 `RolePermission` 的部分函数依赖（2NF）——2.2 拟拆分（2026-10-15 规范化分析）**
 - 业务规则：`permission_name` 是权限码的展示名，随码唯一（`permission_code → permission_name`）；而 `RolePermission` 的唯一候选码是 `(business_role_id, permission_code)`——`permission_name` 部分依赖于候选码真子集，违反 2NF；插入 / 修改 / 删除异常各附数据例。
-- 当前对象：`RolePermission`（`sql/03` 建表，4 列）；白名单 `CK_RolePermission_permission_code` 在 `06`。
+- 当前对象：`RolePermission`（`sql/stage1/03` 建表，4 列）；白名单 `CK_RolePermission_permission_code` 在 `06`。
 - 复现证据：`docs/stage2/c-normalization.md` §3.4（异常数据例）与 §4（拆分方案、无损连接与依赖保持论证、迁移影响）。
 - 建议：2.2 拆分为 `Permission(permission_code, permission_name)` 与 `RolePermission(business_role_id, permission_code, status)`，白名单 `CHECK` 迁至 `Permission`；只动本域、无跨域调用者。
 - 影响对象：`11c`、`13c`、`baseline_c.sql`（名称保真基线）、数据字典、ER 总图、`I-C10` 的白名单落点表述。

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """C 侧静态核对 B 的 baseline_b.sql（2026-10-31）：
-5 表/53 列与 sql/02 逐列一致；batch_id + 原主键；无 IDENTITY/DEFAULT/FK/业务 CHECK；
+5 表/53 列与 sql/stage1/02 逐列一致；batch_id + 原主键；无 IDENTITY/DEFAULT/FK/业务 CHECK；
 无 GO / 事务 / USE；INSERT 显式列 = 全列；@batch_id；public DENY。"""
 import re, os
 
@@ -23,8 +23,8 @@ def norm(s):
     s = re.sub(r'\s+', '', s).upper()
     return s
 
-# sql/02 source
-t = strip_comments(read('sql/02_order_schema.sql'))
+# sql/stage1/02 source
+t = strip_comments(read('sql/stage1/02_order_schema.sql'))
 src = {}
 for m in re.finditer(r'(?is)create\s+table\s+(?:dbo\.)?(\w+)\s*\(\s*\n(.*?)\n\s*\)\s*;?', t):
     name, body = m.group(1), m.group(2)

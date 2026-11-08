@@ -10,7 +10,7 @@
 | 项 | 要求 |
 | --- | --- |
 | 操作系统 | Windows（本组三台机器均为 Windows） |
-| 数据库 | SQL Server，已部署 `KFC_DB`；`v0.1` 用 `sql/run_all.sql`，迁 `v1.0` 用 §1.4 的顺序 |
+| 数据库 | SQL Server，已部署 `KFC_DB`；`v0.1` 用 `sql/stage1/run_all.sql`，迁 `v1.0` 用 §1.4 的顺序 |
 | 驱动 | **ODBC Driver 18 for SQL Server**，三台机器同一版本，连接串里显式写驱动名 |
 | Python | 3.11 及以上（本机实测 3.13.12）；依赖用 `pip install -r requirements.txt`（Flask 3.1.3、pyodbc 5.3.0，精确版本） |
 

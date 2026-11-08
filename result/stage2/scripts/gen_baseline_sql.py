@@ -59,7 +59,7 @@ def parse_file(path):
     return out
 
 M = {}
-for f in ('sql/01_master_schema.sql', 'sql/02_order_schema.sql', 'sql/03_inventory_security_schema.sql'):
+for f in ('sql/stage1/01_master_schema.sql', 'sql/stage1/02_order_schema.sql', 'sql/stage1/03_inventory_security_schema.sql'):
     M.update(parse_file(f))
 
 A = ['Category', 'MemberLevel', 'Ingredient', 'Product', 'ProductCategory', 'Customer',
@@ -99,10 +99,10 @@ header_c = '''-- ===============================================================
 -- ============================================================================
 '''
 header_a = '''-- TEMPORARY test stub for baseline_a (A domain) — NOT part of the repo.
--- Generated from sql/01 for framework testing only.
+-- Generated from sql/stage1/01 for framework testing only.
 '''
 header_b = '''-- TEMPORARY test stub for baseline_b (B domain) — NOT part of the repo.
--- Generated from sql/01/02 for framework testing only.
+-- Generated from sql/stage1/01/02 for framework testing only.
 '''
 
 os.makedirs(os.path.join(ROOT, 'sql', 'stage2'), exist_ok=True)

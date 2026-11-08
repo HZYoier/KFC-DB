@@ -11,17 +11,18 @@
 ```text
 KFC-DB/
 ├── README.md                    本文件：项目范围、业务角色、环境、复现步骤
-├── .gitattributes               固定 result/*.txt 的换行，使登记的 SHA-256 可逐字节核对
-├── sql/                         全部脚本（20 个），唯一入口 run_all.sql
-│   ├── run_all.sql              按固定顺序 :r 串联其余脚本，需从仓库根目录执行
-│   ├── 00_create_database.sql   建库；检测到同名库主动报错停止，不覆盖已有数据
-│   ├── 01 / 02 / 03             三域建表：主数据、订单、库存与权限
-│   ├── 04 / 05 / 06             三域约束与 CRUD 过程
-│   ├── 07a / 07b / 07c          三域视图与关键查询
-│   ├── 08_roles_permissions.sql 角色与最小授权
-│   ├── 09a ~ 09d                三域种子数据
-│   ├── 10a / 10b / 10c          三域验收断言
-│   ├── contract_interface_check.sql   只读跨域接口契约检查（独立执行）
+├── .gitattributes               固定 result/stage1 与 stage2 下 *.txt 的换行，使登记的 SHA-256 可逐字节核对
+├── sql/                         两阶段脚本，唯一入口 stage1/run_all.sql
+│   ├── stage1/                  第一阶段基线（v0.1，20 个脚本）
+│   │   ├── run_all.sql          按固定顺序 :r 串联其余脚本，需从仓库根目录执行
+│   │   ├── 00_create_database.sql   建库；检测到同名库主动报错停止，不覆盖已有数据
+│   │   ├── 01 / 02 / 03         三域建表：主数据、订单、库存与权限
+│   │   ├── 04 / 05 / 06         三域约束与 CRUD 过程
+│   │   ├── 07a / 07b / 07c      三域视图与关键查询
+│   │   ├── 08_roles_permissions.sql 角色与最小授权
+│   │   ├── 09a ~ 09d            三域种子数据
+│   │   ├── 10a / 10b / 10c      三域验收断言
+│   │   └── contract_interface_check.sql   只读跨域接口契约检查（独立执行）
 │   └── stage2/                  第二阶段迁移（v0.1 -> v1.0）
 │       ├── capture_baseline.sql 采集入口：批次协议、快照列契约与失败标记（C）
 │       ├── baseline_a / b / c.sql   三域快照定义与抽取（各域属主）
@@ -64,15 +65,16 @@ KFC-DB/
 │       ├── b-order.drawio / .svg    订单与履约域子图（9 实体 10 联系）
 │       ├── c-inventory-security.drawio / .svg   库存权限域子图（12 实体 14 联系）
 │       └── stage2-model.drawio / .svg           合并总图（25 实体 35 联系，C 交付）
-└── result/                      执行证据（99 个：顶层 31 + stage2/ 30 + stage2/scripts/ 26 + 页面截图 12）
-    ├── README.md                证据清单：逐文件说明与全部 SHA-256
-    ├── stage1-full-test-*.txt   三台机器各自从空库整跑的完整原始输出
-    ├── stage1-contract-check-*.txt      跨域接口契约检查输出
-    ├── stage1-object-inventory-2026-10-01.txt   对象数量清点
-    ├── stage1-receiving-*-c-2026-10-01.txt      收货链不变量与边界断言（成员 C）
-    ├── stage1-regression-c-2026-10-01.txt       夹具链回归汇总（成员 C）
-    ├── stage1-full-test-summary-2026-10-01.png  结果摘要图
-    ├── stage1-a-*.png           19 张操作截图：建库、CRUD、关键查询、越权、非法数据、权限
+└── result/                      执行证据（99 个：stage1/ 31 + stage2/ 30 + stage2/scripts/ 26 + 页面截图 12）
+    ├── stage1/                  第一阶段证据：三机整跑、契约检查、对象清点、操作截图
+    │   ├── README.md            证据清单：逐文件说明与全部 SHA-256
+    │   ├── full-test-*.txt      三台机器各自从空库整跑的完整原始输出
+    │   ├── contract-check-*.txt 跨域接口契约检查输出
+    │   ├── object-inventory-2026-10-01.txt   对象数量清点
+    │   ├── receiving-*-c-2026-10-01.txt      收货链不变量与边界断言（成员 C）
+    │   ├── regression-c-2026-10-01.txt       夹具链回归汇总（成员 C）
+    │   ├── full-test-summary-2026-10-01.png  结果摘要图
+    │   └── a-*.png              19 张操作截图：建库、CRUD、关键查询、越权、非法数据、权限
     └── stage2/                  第二阶段证据：ER 复核、规范化校验、三机整跑原始输出
         └── a-master-ui-2026-11-08/   A 主数据页面截图（11a+11c 演示库，2026-11-08）
 ```
@@ -81,7 +83,7 @@ KFC-DB/
 
 上图左半是上面的目录树，右半是运行时分层与调用链；域配色沿用合并 ER 总图（A 蓝 / B 黄 / C 绿），虚线框是尚未交付的部分。
 
-部署入口只有 `sql/run_all.sql` 一个。`docs/` 与 `result/` 不参与部署，分别是设计依据和执行证据。
+部署入口只有 `sql/stage1/run_all.sql` 一个。`docs/` 与 `result/` 不参与部署，分别是设计依据和执行证据。
 
 ## 业务角色
 
@@ -195,7 +197,7 @@ v0.1 的 25 张表还原为 **25 个实体、35 条物理外键**，按域拆成
 2. 在仓库根目录执行：
 
    ```powershell
-   sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/run_all.sql"
+   sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/stage1/run_all.sql"
    ```
 
 3. 成功日志应包含：
@@ -205,7 +207,7 @@ v0.1 的 25 张表还原为 **25 个实体、35 条物理外键**，按域拆成
 4. 可另行执行只读接口检查：
 
    ```powershell
-   sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/contract_interface_check.sql"
+   sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/stage1/contract_interface_check.sql"
    ```
 
 完整执行证据见 [`result/`](result/)，实验过程与结论见 [第一阶段测试报告](docs/stage1/test-report.md) 和 [第一阶段成员 B 报告](docs/stage1/b-stage-report.md)。
@@ -233,7 +235,7 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -I -i "sql/stage2/regr
 - [角色与职能清单](docs/角色与职能清单.md) — 后台/作业/顾客侧角色 + 系统自动行为，供后续 role.sql / 权限设计
 - [数据边界清单](docs/数据边界清单.md) — 进/不进库边界与灰色地带取舍
 - [业务流程](docs/业务流程.md) — 业务主线 8 步（含异常路径），建库与设计依据
-- [跨域接口契约](docs/stage1/cross-domain-interface-contract.md) — 三域之间的冻结接口：对象名、参数顺序与类型、返回列、种子常量，以及只读检查器 `sql/contract_interface_check.sql` 的校验口径
+- [跨域接口契约](docs/stage1/cross-domain-interface-contract.md) — 三域之间的冻结接口：对象名、参数顺序与类型、返回列、种子常量，以及只读检查器 `sql/stage1/contract_interface_check.sql` 的校验口径
 - [第一阶段三人协作实施计划](docs/stage1/three-person-implementation-plan.md) — 对象、接口、角色和验收标准
 - [第二阶段三人协作实施计划](docs/stage2-three-person-implementation-plan.md) — ER 重建、规范化迁移与应用开发分工；含员工数据库身份、岗位查询接口、原子迁移/恢复、文件属主和修订自查。2.2 迁移与应用层已按该计划实施（v1.0 迁移脚本、`app/` 三层与测试入口已交付）
 - 第二阶段过程文档：[操作手册](docs/stage2/user-manual.md)（启动、迁移顺序、七岗位入口与当前交付状态）、[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（§2 八写六查已冻结，§2.4 四个查询/注册接口 2026-11-01 补入；§1 顾客端 `§1.7` 四条联合边界 2026-11-06 定稿、§1 冻结，三个顾客过程待实现）、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-19 的状态与决议唯一入口）、[业务规则映射](docs/stage2/business-rule-mapping.md)（35 条外键的基数与实现机制）、[重构方案](docs/stage2/refactoring-design.md)、[事务边界](docs/stage2/transaction-boundaries.md)、[访问层接口](docs/stage2/access-layer-contract.md)（`app/common/` 的五个签名、多结果集口径与错误码映射）

@@ -10,7 +10,7 @@
 
 ## 1. B 已交付给 C 的稳定对象
 
-`sql/02_order_schema.sql` 创建 B 所有的五张表：
+`sql/stage1/02_order_schema.sql` 创建 B 所有的五张表：
 
 | 表 | C 可依赖的字段 | C 的后续动作 |
 | --- | --- | --- |

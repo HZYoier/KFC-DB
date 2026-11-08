@@ -2,11 +2,11 @@
 """c-normalization 对账脚本（2026-10-15，成员 C）。
 
 核对对象：
-  A. docs/stage2/c-normalization.md §2 属性与键清单 <-> sql/03_inventory_security_schema.sql
+  A. docs/stage2/c-normalization.md §2 属性与键清单 <-> sql/stage1/03_inventory_security_schema.sql
      （表名、列名、类型、可空、主键/唯一键/外键/默认值约束名、IDENTITY、过滤唯一索引）
   B. 文档声明的统计量（10 表 / 56 列 / 3 复合主键 / 16+1 外键 / 15 条 CHECK ...）逐项重算
   C. 文档引用的 R6-xx / I-Cxx 编号在对应文件中存在
-  D. docs/er/c-inventory-security.drawio 的实体与主键标注与 sql/03 一致
+  D. docs/er/c-inventory-security.drawio 的实体与主键标注与 sql/stage1/03 一致
 用法：python -I check_c_norm.py  （0 差异 = PASS）
 """
 import re
@@ -29,7 +29,7 @@ def report(ok, msg):
         problems.append(msg)
     print(f'[{tag}] {msg}')
 
-# ---------- A. 解析 sql/03 ----------
+# ---------- A. 解析 sql/stage1/03 ----------
 s03 = read(S03)
 src = {}
 for name, body in re.findall(r'CREATE TABLE dbo\.(\w+)\((.*?)\n\);', s03, re.S):
@@ -176,7 +176,7 @@ report(set(codes) == wl, f'E5b 种子码集合 == 白名单集合（差: 种独�
 
 import glob, os
 hits = {}
-for f in glob.glob(ROOT + r'\sql\*.sql'):
+for f in glob.glob(ROOT + r'\sql\stage1\*.sql'):
     txt = read(f)
     if 'permission_name' in txt:
         hits[os.path.basename(f)] = txt.count('permission_name')

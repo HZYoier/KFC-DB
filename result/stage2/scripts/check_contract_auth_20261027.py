@@ -17,10 +17,10 @@ def rep(ok, msg):
 def read(p):
     return open(os.path.join(ROOT, p), encoding='utf-8').read()
 
-t05 = read('sql/05_order_constraints_crud.sql')
-t06 = read('sql/06_inventory_constraints_crud.sql')
-t08 = read('sql/08_roles_permissions.sql')
-t09c = read('sql/09c_inventory_opening_seed_data.sql')
+t05 = read('sql/stage1/05_order_constraints_crud.sql')
+t06 = read('sql/stage1/06_inventory_constraints_crud.sql')
+t08 = read('sql/stage1/08_roles_permissions.sql')
+t09c = read('sql/stage1/09c_inventory_opening_seed_data.sql')
 
 EXP = {
     'sp_create_order':          ('cashier', 'CASHIER', range(52100, 52115)),
@@ -90,7 +90,7 @@ rep('role_cashier' not in view_grants.get('v_customer_point_ledger', set()),
 # ---------- 6 个查询提案未实现 ----------
 proposals = ['sp_list_orders_for_payment', 'sp_get_order_for_payment', 'sp_get_order_operation_status',
              'sp_list_orders_for_packing', 'sp_list_my_deliveries', 'sp_list_deliveries_available_for_pickup']
-all_sql = ''.join(read('sql/' + f) for f in os.listdir(os.path.join(ROOT, 'sql')) if f.endswith('.sql'))
+all_sql = ''.join(read('sql/stage1/' + f) for f in os.listdir(os.path.join(ROOT, 'sql', 'stage1')) if f.endswith('.sql'))
 rep(not any(p in all_sql for p in proposals), '6 个查询提案在 sql/ 中均未实现（与契约「尚未实现」一致）')
 
 print('\nRESULT: pass=%d fail=%d' % (passes[0], len(fails)))

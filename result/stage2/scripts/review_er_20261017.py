@@ -2,14 +2,14 @@
 """C 侧独立复核两张 ER 子图（2026-10-17）。
 
 核对内容：
-  A. 实体集合与键标注 vs sql/01（A 域 10 表）+ 跨域灰实体的键 vs sql/02/03。
+  A. 实体集合与键标注 vs sql/stage1/01（A 域 10 表）+ 跨域灰实体的键 vs sql/stage1/02/03。
   B. 边集合：每条边必须对应一条真实外码（无幽灵边、无漏边）。
   C. 箭头语义（标准鸦爪口径：某端符号 = 对端每条记录对应本端多少条）：
        父端 = ERone（外码非空）/ ERzeroToOne（外码可空）；
        子端 = ERzeroToOne（外码列恰为子表主码）/ ERzeroToMany（否则）。
-  D. A 域实体属性名集合 vs sql/01 列集合（仅 A 域 10 表）。
+  D. A 域实体属性名集合 vs sql/stage1/01 列集合（仅 A 域 10 表）。
   E. 共享实体的同名同键列（A 图主实体 vs C 图灰实体，以及 C 域三表在 A 图中）。
-输入：sql/01,02,03；docs/er/a-master.drawio；docs/er/c-inventory-security.drawio
+输入：sql/stage1/01,02,03；docs/er/a-master.drawio；docs/er/c-inventory-security.drawio
 """
 import re, html, os
 
@@ -131,7 +131,7 @@ for tbl in a_domain:
         m = re.match(r'^(PK|PKFK)\s+(\w+)', ln.strip())
         if m:
             pk_marked.add(m.group(2))
-    rep(pk_marked == s01[tbl]['pk'], 'A 域实体 %s 主键标注 == sql/01（图=%s 源=%s）' % (tbl, sorted(pk_marked), sorted(s01[tbl]['pk'])))
+    rep(pk_marked == s01[tbl]['pk'], 'A 域实体 %s 主键标注 == sql/stage1/01（图=%s 源=%s）' % (tbl, sorted(pk_marked), sorted(s01[tbl]['pk'])))
 gray_expect = ['Inventory', 'ReplenishmentSuggestion', 'PurchaseOrderItem', 'SalesOrder', 'PointLedger', 'SalesOrderItem']
 rep(set(a_ents) == set(a_domain) | set(gray_expect), 'A 图实体集合 == 10 A 表 + 6 灰实体（实得 %d）' % len(a_ents))
 for tbl in gray_expect:
@@ -153,7 +153,7 @@ for tbl in a_domain:
         if m:
             attrs.add(m.group(1))
     src_cols = set(s01[tbl]['cols'])
-    rep(attrs == src_cols, 'A 域实体 %s 属性名集合 == sql/01 列（差: 图独有=%s 源独有=%s）' % (tbl, sorted(attrs - src_cols), sorted(src_cols - attrs)))
+    rep(attrs == src_cols, 'A 域实体 %s 属性名集合 == sql/stage1/01 列（差: 图独有=%s 源独有=%s）' % (tbl, sorted(attrs - src_cols), sorted(src_cols - attrs)))
 
 # ---------- B/C. 边与箭头 ----------
 def expected_arrows(child_tbl, fk_cols):

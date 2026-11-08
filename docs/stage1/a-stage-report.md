@@ -57,14 +57,14 @@
 执行命令（仓库根目录，执行前确认 `KFC_DB` 不存在）：
 
 ```bat
-sqlcmd -S localhost -E -N o -C -f 65001 -b -i sql/run_all.sql
+sqlcmd -S localhost -E -N o -C -f 65001 -b -i sql/stage1/run_all.sql
 ```
 
 ## 5. 实验过程
 
 ### 5.1 空库部署与整链验收
 
-从空库只执行唯一入口，18 个文件按固定顺序一次部署完成：`exit=0`、0 条错误消息；三条验收 `RESULT` 为 A `13/13`、B `15/15`、C `18/18`，加 B 的种子自检共 47 条 `PASS:`；只读接口检查器 `sql/contract_interface_check.sql` 返回 `PASS`。部署后清点 A 域对象：10 张表（均含主键）、22 条 `CHECK`、9 条外键、2 个唯一索引、19 个过程加 1 个内联表值函数、2 个视图、2 条具名查询。
+从空库只执行唯一入口，18 个文件按固定顺序一次部署完成：`exit=0`、0 条错误消息；三条验收 `RESULT` 为 A `13/13`、B `15/15`、C `18/18`，加 B 的种子自检共 47 条 `PASS:`；只读接口检查器 `sql/stage1/contract_interface_check.sql` 返回 `PASS`。部署后清点 A 域对象：10 张表（均含主键）、22 条 `CHECK`、9 条外键、2 个唯一索引、19 个过程加 1 个内联表值函数、2 个视图、2 条具名查询。
 
 ### 5.2 定价与促销匹配
 
@@ -111,7 +111,7 @@ sqlcmd -S localhost -E -N o -C -f 65001 -b -i sql/run_all.sql
 
 | 类别 | 截图 | 内容 |
 | --- | --- | --- |
-| 建库 | `stage1-a-create-database-2026-10-04.png` | 删库后从空库整跑 `run_all.sql`，日志开头即 `KFC_DB 创建完成，兼容级别 = 170`。同轮完整日志为 `result/stage1-full-test-a-2026-10-04.txt`（`exit=0`、47 条 `PASS`、0 条错误），与 `2026-10-03` 那份逐字节相同 |
+| 建库 | `stage1-a-create-database-2026-10-04.png` | 删库后从空库整跑 `run_all.sql`，日志开头即 `KFC_DB 创建完成，兼容级别 = 170`。同轮完整日志为 `result/stage1/full-test-a-2026-10-04.txt`（`exit=0`、47 条 `PASS`、0 条错误），与 `2026-10-03` 那份逐字节相同 |
 | CRUD | `stage1-a-crud-create-category-2026-10-04.png` | 建分类：`Category` 2 行 → 3 行 |
 | CRUD | `stage1-a-crud-update-price-2026-10-04.png` | 改商品价：香辣鸡腿堡 19.00 → 21.00 |
 | CRUD | `stage1-a-crud-set-bom-2026-10-04.png` | 改配方：薯条(中) 用量 150.000 → 160.000 |

@@ -550,7 +550,7 @@
 <text x="1575.0" y="1344.0" font-size="10.5" fill="#444" text-anchor="middle">BR-34</text>
 <rect x="2134.0" y="1472.0" width="42.0" height="16" fill="#ffffff" opacity="0.92"/>
 <text x="2155.0" y="1484.0" font-size="10.5" fill="#444" text-anchor="middle">BR-35</text>
-<text x="60" y="1793" font-size="14" font-weight="bold" fill="#1a1a1a">KFC_DB 第二阶段数据模型总图（逻辑 ER，v0.1）— 25 个实体 / 35 条物理外键；源：sql/01–03 建表 + 03/05 唯一约束（2026-10-27 生成）</text>
+<text x="60" y="1793" font-size="14" font-weight="bold" fill="#1a1a1a">KFC_DB 第二阶段数据模型总图（逻辑 ER，v0.1）— 25 个实体 / 35 条物理外键；源：sql/stage1/01–03 建表 + 03/05 唯一约束（2026-10-27 生成）</text>
 <text x="60" y="1822" font-size="11" fill="#444">端点符号：| 恰好 1    o| 零或 1    |&lt; 一或多    o&lt; 零或多 —— 某端符号 = 对端每条记录对应本端多少条（legend.md §2）</text>
 <text x="60" y="1840" font-size="11" fill="#444">联系标签 = business-rule-mapping.md 的 BR 编号；端点只表达 DDL 结构基数（OI-09 于 2026-10-24 冻结）</text>
 <text x="60" y="1858" font-size="11" fill="#444">结构不保证的业务附加（均为过程保证，详见 business-rule-mapping.md）：BR-11 成功订单 ≥1 明细；BR-13 仅组件有父项；BR-15/16/17 支付成功/外送完成/支付后恰 1 行；BR-25 开放建议至多 1 条；BR-30 单次审批 1 单；BR-32 业务恰 1 条</text>

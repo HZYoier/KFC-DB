@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """C 侧独立复核 B 域 ER 子图 docs/er/b-order.drawio（2026-10-27）。
-核对：实体/属性名 = sql/02 五表全列；键标注 vs PK/UQ/FK；灰实体键 vs 引用表主码；
+核对：实体/属性名 = sql/stage1/02 五表全列；键标注 vs PK/UQ/FK；灰实体键 vs 引用表主码；
       10 条边 ↔ 10 个外键（BR-10..18 + BR-35，无幽灵/无遗漏）；箭头按 DDL 结构推导；
       标签 BR 编号 vs business-rule-mapping.md；字节与 XML。"""
 import re, html, os, sys, xml.etree.ElementTree as ET
@@ -65,19 +65,19 @@ def parse_schema(path):
     return out
 
 M = {}
-for f in ('sql/01_master_schema.sql', 'sql/02_order_schema.sql', 'sql/03_inventory_security_schema.sql'):
+for f in ('sql/stage1/01_master_schema.sql', 'sql/stage1/02_order_schema.sql', 'sql/stage1/03_inventory_security_schema.sql'):
     M.update(parse_schema(f))
-t05 = strip_comments(read('sql/05_order_constraints_crud.sql'))
+t05 = strip_comments(read('sql/stage1/05_order_constraints_crud.sql'))
 for m in re.finditer(r'(?is)alter\s+table\s+(?:\w+\.)?(\w+)\s+add\s+constraint\s+(UQ_\w+)\s+unique\s*\(([^)]*)\)', t05):
     M[m.group(1)]['uq'][m.group(2)] = [c.strip() for c in m.group(3).split(',')]
 FILTERED = set()
-for f in ('sql/01_master_schema.sql', 'sql/03_inventory_security_schema.sql', 'sql/05_order_constraints_crud.sql'):
+for f in ('sql/stage1/01_master_schema.sql', 'sql/stage1/03_inventory_security_schema.sql', 'sql/stage1/05_order_constraints_crud.sql'):
     t = strip_comments(read(f))
     for m in re.finditer(r'(?is)create\s+unique\s+index\s+(UQ_\w+)\s+on\s+(?:\w+\.)?(\w+)\s*\(([^)]*)\)([^;]*)', t):
         M[m.group(2)]['uq'][m.group(1)] = [c.strip() for c in m.group(3).split(',')]
         if re.search(r'(?i)\bwhere\b', m.group(4)):
             FILTERED.add(m.group(1))
-t03 = strip_comments(read('sql/03_inventory_security_schema.sql'))
+t03 = strip_comments(read('sql/stage1/03_inventory_security_schema.sql'))
 for m in re.finditer(r'(?is)alter\s+table\s+(?:\w+\.)?(\w+)\s+add\s+constraint\s+(FK_\w+)\s+foreign\s+key\s*\(([^)]*)\)\s+references\s+(?:\w+\.)?(\w+)\s*\(([^)]*)\)', t03):
     M[m.group(1)]['fk'].append({'name': m.group(2), 'cols': [c.strip() for c in m.group(3).split(',')],
                                 'parent': m.group(4), 'pcols': [c.strip() for c in m.group(5).split(',')]})
@@ -149,7 +149,7 @@ for t in B_TABLES:
                 continue
             ok_attr = False
             print('   marker mismatch', t, gc, gm, '!=', wm)
-rep(ok_attr, '5 主实体 53 列名/顺序/键标注与 sql/02(+05 唯一约束) 一致')
+rep(ok_attr, '5 主实体 53 列名/顺序/键标注与 sql/stage1/02(+05 唯一约束) 一致')
 
 # ---------- 灰实体键 ----------
 ok_gray = True

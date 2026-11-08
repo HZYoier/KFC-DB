@@ -30,7 +30,7 @@ def validate(overrides=None):
         results.append((bool(ok), label))
 
     docs = {name: read('docs/stage2/' + name) for name in B_DOCS}
-    schema = read('sql/02_order_schema.sql')
+    schema = read('sql/stage1/02_order_schema.sql')
     draw = ET.fromstring(read('docs/er/b-order.drawio'))
     svg = ET.fromstring(read('docs/er/b-order.svg'))
     cells = {c.attrib['id']: c for c in draw.iter('mxCell')}
@@ -54,7 +54,7 @@ def validate(overrides=None):
     check(column_count == 53, '53 B columns')
     fk_names = []
     for file in ['01_master_schema.sql', '02_order_schema.sql', '03_inventory_security_schema.sql']:
-        fk_names += re.findall(r'CONSTRAINT\s+(FK_\w+)\s+FOREIGN\s+KEY', read('sql/' + file), re.I)
+        fk_names += re.findall(r'CONSTRAINT\s+(FK_\w+)\s+FOREIGN\s+KEY', read('sql/stage1/' + file), re.I)
     check(len(fk_names) == 35, '35 physical FKs in source')
     for name in fk_names:
         check(docs['business-rule-mapping.md'].count(name) == 1, 'FK mapping ' + name)
@@ -70,7 +70,7 @@ def validate(overrides=None):
         check(('endArrow=' + ('ERzeroToOne' if unique else 'ERzeroToMany') + ';') in style, 'child endpoint ' + name)
         check(any(x.attrib.get('id') == name for x in svg.iter()), 'SVG FK ' + name)
     norm = lambda s: re.sub(r'\s+', ' ', s).strip()
-    src = read('sql/05_order_constraints_crud.sql')
+    src = read('sql/stage1/05_order_constraints_crud.sql')
     procs = re.findall(r'CREATE PROCEDURE dbo\.(\w+)\s+(.*?)\nAS\b(.*?)(?=\nGO\b)', src, re.S | re.I)
     check(len(procs) == 8, 'eight write procedures')
     handoff = docs['b-interface-handoff.md']

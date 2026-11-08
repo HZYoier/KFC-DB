@@ -2,7 +2,7 @@
 
 ## 1. 测试目标
 
-验证 `main` 能从空数据库一次完成关系模型、约束、业务过程、查询视图、种子数据和最小权限部署，并覆盖计划中的 E2E-01 至 E2E-07。验收以仓库唯一入口 `sql/run_all.sql` 为准，不依赖手工切换数据库或窗口变量。
+验证 `main` 能从空数据库一次完成关系模型、约束、业务过程、查询视图、种子数据和最小权限部署，并覆盖计划中的 E2E-01 至 E2E-07。验收以仓库唯一入口 `sql/stage1/run_all.sql` 为准，不依赖手工切换数据库或窗口变量。
 
 ## 2. 测试环境
 
@@ -18,7 +18,7 @@
 执行命令：
 
 ```powershell
-sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/run_all.sql"
+sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/stage1/run_all.sql"
 ```
 
 执行前确认测试实例中的 `KFC_DB` 已删除，从而验证真正的空库部署路径。`-b` 使任一 SQL 错误返回非零退出码，`-f 65001` 保证中文脚本按 UTF-8 读取。
@@ -98,7 +98,7 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/run_all.sql"
 执行命令（仓库根目录，执行前确认 `KFC_DB` 不存在）：
 
 ```bat
-sqlcmd -S ".\SQLEXPRESS" -E -C -f 65001 -i sql/run_all.sql
+sqlcmd -S ".\SQLEXPRESS" -E -C -f 65001 -i sql/stage1/run_all.sql
 ```
 
 结果与第 5 节的 2026-10-01 基线一致（该轮在 2026-10-03 增加 T14 之前）：退出码 0；`10a` `pass=13 fail=0`、`10b` `pass=15 fail=0`、`10c` `pass=17 fail=0`，连同 `PASS: B seed orders` 共 46 条 `PASS:`、0 条错误消息。`04` 的 11 条「取决于缺少的对象」为已知编译告警（其引用的审计过程由后续脚本创建），非错误。
@@ -106,7 +106,7 @@ sqlcmd -S ".\SQLEXPRESS" -E -C -f 65001 -i sql/run_all.sql
 本轮复跑同时覆盖了合并后相对上一轮验证基线（2026-09-30）的三处改动：`10c` 新增 T12b/T12c（分母 15→17）、`09b` 的异常收尾顺序（`ROLLBACK` → `REVERT`）、`10b` 的断言计数与收尾。追加证据：
 
 - `10c` 单独重复执行：`pass=17 fail=0`（夹具全部回滚，可重复跑）；
-- 收货链独立断言（夹具在仓库外、输出已归档）：`t10` 9/9、`t10b` 18/18（见 `result/stage1-receiving-invariants-c-2026-10-01.txt` 与 `result/stage1-receiving-boundaries-c-2026-10-01.txt`）；
+- 收货链独立断言（夹具在仓库外、输出已归档）：`t10` 9/9、`t10b` 18/18（见 `result/stage1/receiving-invariants-c-2026-10-01.txt` 与 `result/stage1/receiving-boundaries-c-2026-10-01.txt`）；
 - 四条回归链（t3+t3b、t4–t7、t8、t9）：144 条断言 0 FAIL；`08` 连跑两遍幂等；`09c` 重跑被守卫 `THROW 51001` 拒绝（预期）。
 
 ## 10. 独立复验（成员 A，2026-10-03）
@@ -124,10 +124,10 @@ sqlcmd -S ".\SQLEXPRESS" -E -C -f 65001 -i sql/run_all.sql
 执行命令（仓库根目录，执行前确认 `KFC_DB` 不存在）：
 
 ```bat
-sqlcmd -S localhost -E -N o -C -f 65001 -b -i sql/run_all.sql
+sqlcmd -S localhost -E -N o -C -f 65001 -b -i sql/stage1/run_all.sql
 ```
 
-结果：退出码 0；`10a` `pass=13 fail=0`、`10b` `pass=15 fail=0`、`10c` `pass=18 fail=0`，连同 `PASS: B seed orders` 共 47 条 `PASS:`、0 条错误消息。只读接口检查 `sql/contract_interface_check.sql` 返回 `PASS` 且退出码 0。
+结果：退出码 0；`10a` `pass=13 fail=0`、`10b` `pass=15 fail=0`、`10c` `pass=18 fail=0`，连同 `PASS: B seed orders` 共 47 条 `PASS:`、0 条错误消息。只读接口检查 `sql/stage1/contract_interface_check.sql` 返回 `PASS` 且退出码 0。
 
 本轮同时复核了第 7 节的对象清点，逐项一致：用户表/有主键的表 25 / 25、外键 35、CHECK 约束 51、存储过程 42、视图 10、业务角色 7、角色 `GRANT` 52。
 
@@ -136,4 +136,4 @@ sqlcmd -S localhost -E -N o -C -f 65001 -b -i sql/run_all.sql
 1. `10c` 新增 **T14**：验证值班经理不能调用 `sp_assign_employee_business_role`。该过程的角色同步由证书签名主体代持 `ALTER ANY ROLE` / `ALTER ANY USER`，此前只有 `09c` 的 7 次正向调用、全仓库无负例。断言计数由 17 增至 18（收尾分母同步改为 18）。
 2. `05_order_constraints_crud.sql` 的 `sp_create_order`：`@order_no` 由 `VARCHAR(40)` 放宽为 `VARCHAR(50)`，与 `SalesOrder.order_no` 列和《订单履约数据字典》§1 的口径一致，消除超过 40 字符的订单号在过程入口被静默截断的隐患。
 
-证据：`result/stage1-full-test-a-2026-10-03.txt`、`result/stage1-contract-check-2026-10-03.txt`。
+证据：`result/stage1/full-test-a-2026-10-03.txt`、`result/stage1/contract-check-2026-10-03.txt`。

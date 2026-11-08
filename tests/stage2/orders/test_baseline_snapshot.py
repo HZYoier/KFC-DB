@@ -33,7 +33,7 @@ class BaselineSnapshotTests(unittest.TestCase):
             admin.execute('CREATE DATABASE ['+name+']')
             created = True
             conn = pyodbc.connect(base+'DATABASE='+name+';', autocommit=True)
-            schema = (ROOT/'sql/02_order_schema.sql').read_text(encoding='utf-8-sig')
+            schema = (ROOT/'sql/stage1/02_order_schema.sql').read_text(encoding='utf-8-sig')
             fixtures = {}
             for table, body in re.findall(r'CREATE TABLE dbo\.(\w+)\s*\((.*?)\n\s*\);', schema, re.S):
                 columns = re.findall(r'^\s*(\w+)\s+(BIGINT|VARCHAR\(\d+\)|INT|DECIMAL\(\d+,\d+\)|DATETIME2\(\d+\))([^\n]*)', body, re.M)
@@ -66,7 +66,7 @@ class BaselineSnapshotTests(unittest.TestCase):
                 self.assertEqual([tuple(x) for x in actual[1:]], [tuple(x) for x in source], table+' types')
             conn.execute('COMMIT TRANSACTION;')
             write_check = (ROOT / 'sql/stage2/13b_order_write_contract_check.sql').read_text(encoding='utf-8-sig')
-            order_source = (ROOT / 'sql/05_order_constraints_crud.sql').read_text(encoding='utf-8-sig')
+            order_source = (ROOT / 'sql/stage1/05_order_constraints_crud.sql').read_text(encoding='utf-8-sig')
             headers = re.findall(r'^CREATE PROCEDURE dbo\.sp_.*?^AS\s*$', order_source, re.M | re.S)
             self.assertEqual(len(headers), 8)
             for header in headers:

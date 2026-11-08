@@ -26,12 +26,12 @@
 - `scripts/exp_contained_auth_setup.sql` / `exp_contained_auth_cleanup.sql` / `exp_sig_rollback.sql`：实验脚本（脱敏版）。
 - `scripts/elevate_login_mode.cmd`：实例认证模式变更的提权脚本（2026-10-10，经操作者明确授权执行）。
 - （2026-10-15 增补）`c-normalization-check-2026-10-15.txt`：`docs/stage2/c-normalization.md` §7 的对账日志（R1 首轮 4 项差异 → 修正 → R4 终轮 0 差异；含脚本两处判据缺陷的处置记录）。
-- （2026-10-15 增补）`scripts/check_c_norm.py`：对账脚本（文档 §2 属性与键清单 ↔ `sql/03` / `06` / `09c` / ER 子图；Python 3.13，`python -I` 运行，可从任意工作目录复跑）。
+- （2026-10-15 增补）`scripts/check_c_norm.py`：对账脚本（文档 §2 属性与键清单 ↔ `sql/stage1/03` / `06` / `09c` / ER 子图；Python 3.13，`python -I` 运行，可从任意工作目录复跑）。
 - （2026-10-17 增补）`er-review-2026-10-17.txt`：A/C 两张 ER 子图的 C 侧独立复核日志（R2 首轮 12 项差异的归因 → 3 处解析器修正 → R3 终轮 0 项问题；A 图 16/16 边通过）。
-- （2026-10-17 增补）`scripts/review_er_20261017.py`：复核脚本（实体 / 键 / 边 / 箭头 vs 据 `sql/01-03` 推导的期望；Python 3.13，`python -I` 运行）。
+- （2026-10-17 增补）`scripts/review_er_20261017.py`：复核脚本（实体 / 键 / 边 / 箭头 vs 据 `sql/stage1/01-03` 推导的期望；Python 3.13，`python -I` 运行）。
 
 - （2026-10-27 增补）`stage2-model-check-2026-10-27.txt`：合并总图 `docs/er/stage2-model.drawio/.svg` 的结构/几何对账（H20 三段式：生成过程 5 项缺陷归因 → 修正 → 终轮 103 PASS；含 `naming.md` N-01 的源码反例与 OI-12 依据）。
-- （2026-10-27 增补）`scripts/gen_stage2_model.py`：总图生成器（从 `sql/01–03` + `03`/`05` 唯一约束同源生成 drawio 与 svg；手工版面、显式正交路由、标签自动避让）。
+- （2026-10-27 增补）`scripts/gen_stage2_model.py`：总图生成器（从 `sql/stage1/01–03` + `03`/`05` 唯一约束同源生成 drawio 与 svg；手工版面、显式正交路由、标签自动避让）。
 - （2026-10-27 增补）`scripts/check_stage2_model.py`：总图校验器（25 实体/35 外键 ↔ 源码、BR-01–BR-35 ↔ `business-rule-mapping.md`、SVG 线段采样 0 穿盒、35 标签 0 压框/0 互叠、字节；Python 3.13，`python -I` 可从本目录复跑）。
 - （2026-10-27 增补）`b-er-review-2026-10-27.txt`：B 域 ER 子图独立复核（10 判据 0 失败；53 列/10 边/箭头/BR 编号全对账，1 条 pickup_code 过滤唯一 note）。
 - （2026-10-27 增补）`scripts/review_b_er_20261027.py`：B 子图复核脚本（只读，不改 B 文件）。
@@ -43,7 +43,7 @@
 
 - （2026-10-30 增补）`c-baseline-protocol-check-2026-10-30.txt`：2.2 基线采集框架的 H20 三段式证据（首轮 7 项实现差异归因 → 修正 → 终轮 31 PASS / 0 FAIL；含失败回滚、重试、VOID、v1.0/停写/漂移守卫）。
 - （2026-10-30 增补）`scripts/gen_baseline_sql.py`：按 v0.1 源码生成 `baseline_c.sql` 与仓库外 A/B 测试桩；`scripts/check_baseline_protocol_20261030.sql`：批次状态/元数据/快照行数/摘要/13a offset 的最终验证脚本。
-- （2026-10-30 增补）`../docs/stage2/migration-guide.md`、`../sql/stage2/capture_baseline.sql`、`../sql/stage2/baseline_c.sql`：2.2 辅助表/快照形状与采集入口（仓库文件，SHA 见下）。
+- （2026-10-30 增补）`../../docs/stage2/migration-guide.md`、`../../sql/stage2/capture_baseline.sql`、`../../sql/stage2/baseline_c.sql`：2.2 辅助表/快照形状与采集入口（仓库文件，SHA 见下）。
 
 - （2026-10-31 增补）`c-baseline-b-integration-2026-10-31.txt`：B 的 `baseline_b.sql` 静态核对（46 PASS）与真实集成证据（B 真文件 + C 真文件 + A 临时桩；batch1/2、25 表/178 行、B 五表 53 列逐值双向相等、public DENY 229；17 PASS / 0 FAIL）。
 - （2026-10-31 增补）`scripts/check_b_baseline_sql.py`：B 基线文件的 5 表/53 列/键/无事务静态核对；`scripts/check_b_baseline_integration_20261031.sql`：真实集成后的逐值/权限/行数验证。
@@ -113,11 +113,11 @@ F9CFACE4F3A2011FA7433467B484C13651F0D68A3E3E2C6958BEFF550F9D18E6  c-inventory-ap
 3AB44BC0E3E4B4953AA225E67999F1CD16FB7CC3225A227E193476DA15DA0A2D  c-common-oi14-2026-11-04.txt
 1E51AA780B933F8133EA78A5198328B170676320CBDAE492E5E978D80CB58EDF  scripts/check_11c_employee_roles_20261105.sql
 6B35BEE0746B6FEC0642B67DB74C9D13BF38F657D43F4D2EF25CAFF4DE274772  c-11c-employee-roles-2026-11-05.txt
-3A4191E1F9FE280EDB6AF2F241C8BE982F3C33B985D914BC4EC45946B8279582  ../sql/stage2/11c_inventory_security_migration.sql
-790AAF8F3021CDD77E1E487886F666F054DC6A87E5C7E3BEDE55665A6F276FEF  ../sql/stage2/12_permissions.sql
-86F23E944E0AD0FF3ED22A7358FDFDA00E410D6FF6DEA675BC87E9F315A8C42B  ../sql/stage2/13c_inventory_security_regression.sql
-E7D3FD93231B680071BABF1620ED8B10F1DE647BD148D3890C659F14780043D1  ../sql/stage2/run_migration.sql
-9CD4AE2C94D74BB63360E14FCAAE86315160946D34787F8D66D29F75B2E4B3A4  ../sql/stage2/regression.sql
+3A4191E1F9FE280EDB6AF2F241C8BE982F3C33B985D914BC4EC45946B8279582  ../../sql/stage2/11c_inventory_security_migration.sql
+790AAF8F3021CDD77E1E487886F666F054DC6A87E5C7E3BEDE55665A6F276FEF  ../../sql/stage2/12_permissions.sql
+86F23E944E0AD0FF3ED22A7358FDFDA00E410D6FF6DEA675BC87E9F315A8C42B  ../../sql/stage2/13c_inventory_security_regression.sql
+E7D3FD93231B680071BABF1620ED8B10F1DE647BD148D3890C659F14780043D1  ../../sql/stage2/run_migration.sql
+9CD4AE2C94D74BB63360E14FCAAE86315160946D34787F8D66D29F75B2E4B3A4  ../../sql/stage2/regression.sql
 C45DDF378F7D57098E19586FFD35B9D8FD9FD9CBA41C24E5283EC5A18CE663F8  c-oi16-recheck-2026-11-06.txt
 1E3D1A0AD952F470BE714243EA8276ED5F295E547170D9B1E92AC4451C2A0B71  c-oi17-runall-2026-11-06.txt
 A7C8AAC339A4072BD04CA02A699280EFCCA6F73C37E8507AD31119691788999F  c-53513-rehearsal-2026-11-07.txt

@@ -54,7 +54,7 @@
 删除本机项目测试库后，仅执行：
 
 ```powershell
-sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/run_all.sql"
+sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/stage1/run_all.sql"
 ```
 
 入口依次建立三域表、约束、过程、视图、角色、种子和验收对象。B 的三笔种子订单分别为：
@@ -97,4 +97,4 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -i "sql/run_all.sql"
 
 成员 B 的第一阶段目标已经完成。订单域不仅能独立表达订单、支付、配送和积分历史，也能在同一事务中正确使用 A 的定价/积分规则与 C 的库存接口；成功路径、失败回滚、状态边界和岗位越权均有可重复执行的证据。
 
-原始证据见 [`result/stage1-full-test-2026-10-01.txt`](../../result/stage1-full-test-2026-10-01.txt)，结果图见 [`result/stage1-full-test-summary-2026-10-01.png`](../../result/stage1-full-test-summary-2026-10-01.png)。
+原始证据见 [`result/stage1/full-test-2026-10-01.txt`](../../result/stage1/full-test-2026-10-01.txt)，结果图见 [`result/stage1/full-test-summary-2026-10-01.png`](../../result/stage1/full-test-summary-2026-10-01.png)。

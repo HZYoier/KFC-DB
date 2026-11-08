@@ -14,9 +14,9 @@
 
 | 产物 | 属主 | 其他成员 |
 | --- | --- | --- |
-| `sql/01/04/07a/09a/10a`、`11a`、`13a`、`baseline_a` | A | 只读/复核 |
-| `sql/02/05/07b/09b/10b`、`11b`、`13b`、`baseline_b` | B | 只读/复核 |
-| `sql/00/03/06/07c/08/09c/09d/10c`、`11c`、`12`、`13c`、`baseline_c`、`run_migration`、`regression` | C | 只读/复核 |
+| `sql/stage1/01/04/07a/09a/10a`、`11a`、`13a`、`baseline_a` | A | 只读/复核 |
+| `sql/stage1/02/05/07b/09b/10b`、`11b`、`13b`、`baseline_b` | B | 只读/复核 |
+| `sql/stage1/00/03/06/07c/08/09c/09d/10c`、`11c`、`12`、`13c`、`baseline_c`、`run_migration`、`regression` | C | 只读/复核 |
 | `app/common`、`app/master` | A | B/C 只读；C 的 auth 复用 Common |
 | `app/orders` | B | C 只读 |
 | `app/auth`、`app/inventory`、`run.py`、`tests/stage2` | C | A/B 只读 |
@@ -27,7 +27,7 @@
 
 ## 3. 集成顺序
 
-1. v0.1 部署：`sql/run_all.sql`（C 维护入口，A/B 脚本只读）。
+1. v0.1 部署：`sql/stage1/run_all.sql`（C 维护入口，A/B 脚本只读）。
 2. 停写、备份、三域基线：`capture_baseline.sql` + `baseline_a/b/c.sql`；批次 `COMPLETED` 才可迁移。
 3. 迁移：`run_migration.sql` 固定 `11a → 11b → 11c → 12`，单连接单外层事务；域脚本不 COMMIT。
 4. 回归：`13a` / `13b` / `13c`，由 `regression.sql` 汇总；实际断言数入 `RESULT`。

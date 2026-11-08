@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """生成第二阶段合并总 ER 图：docs/er/stage2-model.drawio 与 .svg（同源同布局）。
-依据：sql/01,02,03 建表 + 03/05 唯一约束/索引，docs/stage2/business-rule-mapping.md（BR 编号）。
+依据：sql/stage1/01,02,03 建表 + 03/05 唯一约束/索引，docs/stage2/business-rule-mapping.md（BR 编号）。
 口径：端点只表达 DDL 结构基数（OI-09 于 2026-10-24 由 B 冻结），业务条件见标签与 mapping。
 版面：手工坐标 + 显式正交折线（每条边逐段避开实体盒）；标签自动避让。
 """
@@ -66,22 +66,22 @@ def parse_file(path):
     return out
 
 MODEL = {}
-for f in ('sql/01_master_schema.sql', 'sql/02_order_schema.sql', 'sql/03_inventory_security_schema.sql'):
+for f in ('sql/stage1/01_master_schema.sql', 'sql/stage1/02_order_schema.sql', 'sql/stage1/03_inventory_security_schema.sql'):
     MODEL.update(parse_file(f))
 
-t03 = strip_comments(read('sql/03_inventory_security_schema.sql'))
+t03 = strip_comments(read('sql/stage1/03_inventory_security_schema.sql'))
 for m in re.finditer(r'(?is)alter\s+table\s+(?:\w+\.)?(\w+)\s+add\s+constraint\s+(FK_\w+)\s+foreign\s+key\s*\(([^)]*)\)\s+references\s+(?:\w+\.)?(\w+)\s*\(([^)]*)\)', t03):
     tbl, name, cc, pt, pc = m.groups()
     MODEL[tbl]['fk'].append({'name': name, 'cols': [c.strip() for c in cc.split(',')],
                              'parent': pt, 'pcols': [c.strip() for c in pc.split(',')]})
 
-t05 = strip_comments(read('sql/05_order_constraints_crud.sql'))
+t05 = strip_comments(read('sql/stage1/05_order_constraints_crud.sql'))
 for m in re.finditer(r'(?is)alter\s+table\s+(?:\w+\.)?(\w+)\s+add\s+constraint\s+(UQ_\w+)\s+unique\s*\(([^)]*)\)', t05):
     tbl, name, cc = m.groups()
     MODEL[tbl]['uq'][name] = [c.strip() for c in cc.split(',')]
 
 FILTERED = set()
-for f in ('sql/01_master_schema.sql', 'sql/03_inventory_security_schema.sql', 'sql/05_order_constraints_crud.sql'):
+for f in ('sql/stage1/01_master_schema.sql', 'sql/stage1/03_inventory_security_schema.sql', 'sql/stage1/05_order_constraints_crud.sql'):
     t = strip_comments(read(f))
     for m in re.finditer(r'(?is)create\s+unique\s+index\s+(UQ_\w+)\s+on\s+(?:\w+\.)?(\w+)\s*\(([^)]*)\)([^;]*)', t):
         name, tbl, cc, tail = m.groups()
@@ -420,7 +420,7 @@ def gen_svg():
     return '\n'.join(parts) + '\n'
 
 TITLE = ('KFC_DB 第二阶段数据模型总图（逻辑 ER，v0.1）— 25 个实体 / 35 条物理外键；'
-         '源：sql/01–03 建表 + 03/05 唯一约束（2026-10-27 生成）')
+         '源：sql/stage1/01–03 建表 + 03/05 唯一约束（2026-10-27 生成）')
 LEGEND = [
     '端点符号：| 恰好 1    o| 零或 1    |< 一或多    o< 零或多 —— 某端符号 = 对端每条记录对应本端多少条（legend.md §2）',
     '联系标签 = business-rule-mapping.md 的 BR 编号；端点只表达 DDL 结构基数（OI-09 于 2026-10-24 冻结）',
