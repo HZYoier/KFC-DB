@@ -52,6 +52,25 @@ def list_deliveries_available_for_pickup(session, take=100):
     return _read(session, 'sp_list_deliveries_available_for_pickup', [db.p_int(take)])
 
 
+def kitchen_queue(session):
+    require_employee_session(session)
+    return db.query(session, """SELECT order_id, order_no, order_status, item_role, product_name, quantity
+        FROM dbo.v_kitchen_queue ORDER BY ordered_at, order_id, order_item_id""")
+
+
+def pickup_board(session):
+    require_employee_session(session)
+    return db.query(session, """SELECT order_no, pickup_code, order_status
+        FROM dbo.v_pickup_board ORDER BY ordered_at, order_no""")
+
+
+def manager_orders(session):
+    require_employee_session(session)
+    return db.query(session, """SELECT DISTINCT TOP (100) order_id, order_no, order_status, total_amount, ordered_at
+        FROM dbo.v_order_detail WHERE order_status IN ('PENDING_PAYMENT','PAID','IN_PRODUCTION')
+        ORDER BY ordered_at DESC, order_id DESC""")
+
+
 def create_order(session, customer_id, fulfillment_method, order_no, items_json):
     return _execute(session, 'sp_create_order', [db.p_bigint(customer_id), db.p_varchar(fulfillment_method, 20), db.p_varchar(order_no, 50), db.p_nvarchar(items_json, 0)])
 

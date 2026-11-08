@@ -1,0 +1,29 @@
+Date: 2026-11-08
+Command: .venv/Scripts/python.exe -X utf8 tests/stage2/orders/check_migration.py --sql-server localhost\MSSQLSERVER2 --web
+Selected terminal results (expected rejection logs and setup output omitted):
+
+PASS phase stage1
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: baseline batch completed.
+PASS phase capture_baseline
+PASS injected pre-commit failure rolls back procedures, permissions and version marker
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: migration committed (v1.0 marker written; 11a/11b/11c/12).
+PASS phase run_migration
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT 13b baseline: pass=5 fail=0 total=5
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT 13b write signatures: pass=8 fail=0 total=8
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: regression files=4 expected_pass=38 fail=0 (13a 10 + 13b 5 + 13b 8 + 13c 15)
+PASS phase regression
+PASS guest authorization, exact lookup, stock lock, cashier result sets and negative inputs
+PASS six Flask roles: login/logout, cashier create/pay, chef start, packing/pickup, waiter board, rider/manager pages, CSRF/replay/role negatives
+PASS pre-submit order number remains recoverable; disabled waiter loses workbench session
+PASS temporary SQL logins removed
+PASS pickup and points
+PASS delivery assignment, completion and points
+PASS refund and voided points
+PASS insufficient stock rolls back guest order, items and stock movements
+PASS disposable database removed
+
+Exit code: 0
+Post-run catalog check: scratch_databases=0; scratch_logins=0.
+B targeted suite: pass=20 fail=0 skip=0.
+B static checks: pass=445 fail=0.
+Combined Python suites: common=18 auth=10 master=36 orders=20 inventory=12; 96 passed, 0 failed.

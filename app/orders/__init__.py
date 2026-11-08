@@ -1,1 +1,4 @@
-"""B order domain. DAO/service only; no public routes before joint identity/UI acceptance."""
+"""B employee order workbench."""
+from app.orders.routes import bp
+
+__all__ = ['bp']
