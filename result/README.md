@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | `stage1/` | 第一阶段：三台机器从空库整跑 `run_all.sql` 的原始输出、跨域接口契约检查、对象清点、收货链断言，以及 20 张操作与结果图 | [stage1/README.md](stage1/README.md) |
 | `stage2/` | 第二阶段：ER 复核、规范化校验、迁移与基线检查输出、C 侧三机整跑，以及 `scripts/` 下的一次性校验脚本 | [stage2/README.md](stage2/README.md) |
-| `stage2/a-master-ui-2026-11-08/` | A 域主数据页面截图（`11a` + `11c` 演示库） | 该目录下 README |
+| `stage2/a-master-ui/` | A 域主数据页面截图（`11a` + `11c` 演示库，2026-11-08） | 该目录下 README |
 
 约定：
 
