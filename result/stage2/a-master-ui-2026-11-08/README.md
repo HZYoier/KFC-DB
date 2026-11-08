@@ -7,7 +7,7 @@
 - 实例：`localhost`（SQL Server 2025 Express 17.0.1000.7，Windows 身份部署）。
 - 库：`KFC_DB_DEMO`，由本机 `KFC_DB`（v0.1：25 表 / 42 过程 / 3 行顾客）`BACKUP` + `RESTORE ... WITH MOVE` 复制，随后只执行 **`11a` + `11c`**。
 - **未执行 `11b`**：B 的迁移脚本尚未交付（OI-18），`run_migration.sql` 的 53513 现要求 15 个过程，缺 `11b` 会在该处失败。
-- **未执行 `12_permissions`**：`12` 里有针对 B 七个过程的 `GRANT`，过程不存在时会失败；属于 A 的授权按 `12` 的口径手工补：
+- **未执行 `12_permissions`**：`12` 第 2 节有 7 条 `GRANT` 指向 B 的 6 个员工侧订单/配餐/配送过程，过程不存在时会失败（顾客三条在 `12` 里本就是“存在才授”，缺了只打警告，不构成阻碍）；属于 A 的授权按 `12` 的口径手工补：
   - `sp_list_master_records` → `role_store_manager`
   - `sp_list_sale_products` / `sp_find_customer_for_order` / `sp_register_customer_for_order` → `role_cashier`
   - `sp_get_current_employee_context` → 七个业务角色
