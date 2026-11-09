@@ -18,7 +18,7 @@ from app.common import errors, log
 from app.common.config import DbConfig, load_db_config, load_env_file
 
 # 蓝图模块按域固定；顺序只影响 URL 注册顺序，不影响路由匹配
-BLUEPRINT_MODULES = ("app.auth", "app.master", "app.orders", "app.inventory")
+BLUEPRINT_MODULES = ("app.auth", "app.master", "app.api", "app.orders", "app.inventory")
 
 
 def create_app(config: DbConfig | None = None) -> Flask:

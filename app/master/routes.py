@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from flask import Blueprint, redirect, render_template, request, url_for
 
+from app.common.csrf import token as csrf_token
 from app.common.errors import AppError
 from app.master import service
 
@@ -166,7 +167,7 @@ def current_session():
 @bp.context_processor
 def _shared():
     """导航在每个页面上都要有；实体表只在路由里定义一份，模板不重复抄。"""
-    return {"entities": ENTITIES}
+    return {"entities": ENTITIES, "csrf_token": csrf_token()}
 
 
 def _notice():
@@ -200,6 +201,7 @@ def list_view(entity: str):
         "master/list.html",
         entity=entity,
         meta=meta,
+        column_keys=[key for key, _ in meta["columns"]],
         rows=rows,
         status=status,
         error=error,

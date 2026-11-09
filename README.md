@@ -4,7 +4,7 @@
 
 ## 项目范围
 
-覆盖门店从后台准备到补货闭环的完整经营链路，按业务主线分层建设：商品/BOM/促销等主数据、订单与支付、积分两段式、防超卖库存、补货建议与采购入库，以及后续的经营分析视角。**第一阶段关系数据库交付已完成**：可从空库一次部署表、约束、过程、视图、种子和岗位权限，并执行 A/B/C 三域验收。**第二阶段已交付**：ER 模型重建（2.1）的四类交付物已齐——三域子图与合并总图（25 实体 / 35 外键）、三域规范化分析、问题清单、A 的命名与情形验证，「数据库设计」一节五项已补全；迁移（2.2）已在本机真实库上从 v0.1 一次性推进到 v1.0，`run_migration` 在单个外层事务里串 `11a → 11b → 11c → 12`，交付 15 个过程与 58 个权限码（71 条角色授权），提交后 `regression` 38/0，迁移前后的关键查询对照见 [`result/stage2/a-migration-compare/`](result/stage2/a-migration-compare/)；应用开发（2.3）`app/common/` 访问层底座与各域 routes / service / dao 三层落地，主数据九实体维护页（店长视角）、订单岗位工作台、库存与权限页、顾客自助端均可用，六套应用测试 106/0，A 域 12 张运行截图取自 v1.0 真实库。
+覆盖门店从后台准备到补货闭环的完整经营链路，按业务主线分层建设：商品/BOM/促销等主数据、订单与支付、积分两段式、防超卖库存、补货建议与采购入库，以及后续的经营分析视角。**第一阶段关系数据库交付已完成**：可从空库一次部署表、约束、过程、视图、种子和岗位权限，并执行 A/B/C 三域验收。**第二阶段已交付**：ER 模型重建（2.1）的四类交付物已齐——三域子图与合并总图（25 实体 / 35 外键）、三域规范化分析、问题清单、A 的命名与情形验证，「数据库设计」一节五项已补全；迁移（2.2）已在本机真实库上从 v0.1 一次性推进到 v1.0，`run_migration` 在单个外层事务里串 `11a → 11b → 11c → 12`，交付 15 个过程与 58 个权限码（71 条角色授权），提交后 `regression` 38/0，迁移前后的关键查询对照见 [`result/stage2/a-migration-compare/`](result/stage2/a-migration-compare/)；应用开发（2.3）`app/common/` 访问层底座与各域 routes / service / dao 三层落地，主数据九实体维护页（店长视角）、订单岗位工作台、库存与权限页、顾客自助端均可用，六套应用测试 106/0（A 域 JSON 接口 12/0 走独立入口，尚未并入汇总，见 OI-21），A 域 12 张运行截图取自 v1.0 真实库。
 
 ## 目录结构
 
@@ -30,7 +30,8 @@ KFC-DB/
 │       └── 13a_master_regression.sql  A 域提交后回归（10 条：五条候选码反例 + 冻结事项 A/B/C）
 
 ├── app/                         应用层（2.3）：访问层底座 app/common/ 与各域 routes/service/dao 三层
-│   ├── common/                  底座：db（唯一连接与参数绑定）、tx、errors、log、config
+│   ├── common/                  底座：db（唯一连接与参数绑定）、tx、errors、log、config、csrf
+│   ├── api/                     A 域 JSON 接口（/api/master 取数 / 提交、/api/csrf、/api/master/meta）
 │   ├── master/                  主数据域（A）：routes / service / dao，模板在 app/templates/master/
 │   ├── orders/                  订单域（B）：routes / service / dao
 │   ├── inventory/               库存与权限（C）：routes / service / dao
@@ -69,7 +70,7 @@ KFC-DB/
 │       ├── b-order.drawio / .svg    订单与履约域子图（9 实体 10 联系）
 │       ├── c-inventory-security.drawio / .svg   库存权限域子图（12 实体 14 联系）
 │       └── stage2-model.drawio / .svg           合并总图（25 实体 35 联系，C 交付）
-└── result/                      执行证据（101 个：stage1/ 31 + stage2/ 30 + stage2/scripts/ 26 + 页面截图 12 + 迁移对照 2）
+└── result/                      执行证据（123 个文件：stage1/ 31 + stage2/ 91 + 本目录 README）
     ├── stage1/                  第一阶段证据：三机整跑、契约检查、对象清点、操作截图
     │   ├── README.md            证据清单：逐文件说明与全部 SHA-256
     │   ├── full-test-*.txt      三台机器各自从空库整跑的完整原始输出
@@ -79,9 +80,12 @@ KFC-DB/
     │   ├── regression-c-2026-10-01.txt       夹具链回归汇总（成员 C）
     │   ├── full-test-summary-2026-10-01.png  结果摘要图
     │   └── a-*.png              19 张操作截图：建库、CRUD、关键查询、越权、非法数据、权限
-    └── stage2/                  第二阶段证据：ER 复核、规范化校验、三机整跑原始输出
+    └── stage2/                  第二阶段证据：ER 复核、规范化校验、三机整跑原始输出（91 个）
         ├── a-master-ui/              A 主数据页面截图（v1.0 真实库，2026-11-09）
-        └── a-migration-compare/      A 迁移前后关键查询逐行对照：只读脚本 + 原始输出
+        ├── a-migration-compare/      A 迁移前后关键查询逐行对照：只读脚本 + 原始输出
+        ├── a-api/                    A 域 /api/master 实库探针输出：取数、令牌、错误体
+        ├── b-orders-ui/              B 订单岗位工作台页面截图
+        └── scripts/                  一次性校验脚本（B/C 为主，路径常量待按 OI-20 处理）
 ```
 
 ![项目结构图](docs/stage2/project-structure.svg)
@@ -230,14 +234,14 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -I -i "sql/stage2/regr
 - 第二步在**一个外层事务**里串 `11a → 11b → 11c → 12`，任一步失败整体回滚，库仍是 v0.1（预检码 `53500`–`53503`）。
 - 第三步必须在提交后跑，按 `SchemaVersion('v1.0')` 取批次号，期望 **38 条**（`13a` 10 + `13b` 5 + `13b` 8 + `13c` 15）。
 - 应用侧：复制 `config.example.env` 为 `.env` 填本机实例名，`python run.py` 启动；员工必须用**自己的数据库登录**（管理员按 `sql/stage2/provision_employee.template.ps1` 建），操作步骤见[操作手册](docs/stage2/user-manual.md)。
-- 测试汇总入口：`powershell -ExecutionPolicy Bypass -File tests/stage2/run-all.ps1`（默认 `conda run -n py_env3.11`，可用 `-CondaEnv` 或 `-Python` 改；没有 conda 的环境按 `tests/stage2/{common,auth,master,orders,inventory}` 各自的 `run_*` 入口跑，见 OI-17）。
+- 测试汇总入口：`powershell -ExecutionPolicy Bypass -File tests/stage2/run-all.ps1`（默认 `conda run -n py_env3.11`，可用 `-CondaEnv` 或 `-Python` 改；没有 conda 的环境按 `tests/stage2/{common,auth,master,orders,inventory}` 各自的 `run_*` 入口跑，见 OI-17）。A 域的 JSON 接口另有独立入口 `.venv\Scripts\python tests\stage2\api\run_api_tests.py`（12 条，不连库），尚未并入 `run-all.ps1`，见 [OI-21](docs/stage2/open-issues.md)。
 
 迁移协议与回滚细则见[迁移指南](docs/stage2/migration-guide.md)；A 域的实测结果见[第二阶段 A 报告](docs/stage2/reports/a-stage2-report.md)。
 
 ## 实现口径：两处容易误读的取舍
 
 - **没有删除过程，删除一律用状态表达。** 商品 / 原料 / 分类 / 会员等级的"删除"是停用（`status = 'INACTIVE'`），订单是取消（`order_status = 'CANCELLED'`），员工离职是停用账号；全库没有任何 `sp_delete_*`。理由是订单、积分流水、库存流水与审计日志都要能追溯，物理删除会让"删除异常"的分析对象本身消失。仅有的三处物理 `DELETE` 都属于"整体替换 / 撤销"，不是删业务实体：`sp_set_product_bom` 与 `sp_set_combo_component` 先删后插同一商品 / 套餐的关联行，`sp_revoke_employee_business_role` 撤掉一行角色映射；三处都在同一事务里先取 before 快照写进 `AuditLog`，删的只是配置关联，不碰业务事实。
-- **页面是服务端渲染 + 表单 POST，不是 JSON API。** 浏览器提交带 CSRF 令牌的表单，服务端返回整页；错误按统一九类错误码映射成固定文案，页面路由把它渲染回同一页，未被页面接住的异常由全局处理器返回 `{code, message, request_id}`。全站没有 `/api` 前缀的 REST 层，业务数据不以 JSON 形式对外——接口契约冻结在存储过程层（[跨域接口契约](docs/stage2/application-contract.md)），页面只负责"岗位能做该做的、不能做不该做的"，且全程可截图复核。
+- **页面以服务端渲染为主，A 域另有一层 JSON 接口。** 除商品页外，各实体页仍是"浏览器提交带 CSRF 令牌的表单、服务端返回整页"；商品页的取数与提交已改走 `app/api/` 的 `/api/master`：`GET /api/master/<entity>` 取列表（可带 `?status=`），`POST /api/master/<entity>/<action>` 提交动作（JSON 体 + `X-CSRF-Token` 头），另有 `GET /api/master/meta` 与 `GET /api/csrf`。接口层不另写一套校验，入参转成表单同形的字符串后交给同一个 `service`，配方 / 套餐子项的 JSON 数组也转回"每行一条 id 数量"的原文，因此页面与接口走的是同一批存储过程、同一套九类错误码。失败时页面路由把错误渲染回同一页，接口层与全局处理器返回 `{code, message, request_id}`。接口契约仍冻结在存储过程层（[跨域接口契约](docs/stage2/application-contract.md)），`/api` 只是 A 域页面对它的调用方式之一，不新增过程、不新增错误码。
 
 ## 文档索引
 

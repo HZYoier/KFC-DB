@@ -89,6 +89,14 @@ p_bit(value) / p_decimal(value, precision, scale) / p_datetime(value)
 
 **2026-11-07 补顾客端错误码（契约 §1.2）：** `tests/stage2/common` 增到 **18 条**，新增 `CustomerErrorCodeTests`——`53000`/`53001`/`53002` 必须分别是 `E_INPUT`/`E_NOTFOUND`/`E_RULE`。`sp_customer_register` 抛的就是 `53000`，映射缺了它，顾客侧入参错误会退化成 `E_UNKNOWN`，页面拿不到「输入不对」这一档。同批 `run_common_tests.py` 分母改 18，实跑 `pass=18 fail=0 skip=0`。本机以 `-Python .venv\Scripts\python.exe -SqlServer localhost` 跑 `run-all.ps1`，五套 18 + 10 + 36 + 20 + 12 = **96 条全过**，汇总行 `RESULT: run-all files=5 failed=0`。
 
+**2026-11-09 增 `/api` 层（A 域，不改本文五个签名）：** `app/api/` 是 A 域页面的另一种调用方式，与页面共用同一张实体 / 动作表（`app/master/routes.py` 的 `ENTITIES` / `ACTIONS`）与同一个 `service`，因此对本文的依赖没有变化——依旧只经 `query_procedure` / `execute_procedure`，不 import pyodbc、不自己开事务、不新增错误码。
+
+- 端点：`GET /api/master/meta`（实体与动作元数据）、`GET /api/master/<entity>`（列表，可带 `?status=`）、`POST /api/master/<entity>/<action>`（动作提交）、`GET /api/csrf`（取令牌）。
+- 入参一律先转成**表单同形的字符串**再交给 `service`：`service` 的校验器本来就是按字符串写的，接口层不重写一遍校验。配方 / 套餐子项在页面上是「每行一条 id 数量」的文本，接口收 JSON 数组后用 `_lines_text()` 转回同一形状，`service` 只保留一种入参。
+- 写动作要求 `X-CSRF-Token` 头与 `app/common/csrf.py` 的会话令牌（`token_hex(32)`）一致，用 `compare_digest` 比较；不通过直接 `E_FORBIDDEN`，不碰数据库。令牌同时渲染进页面的 `<meta name="csrf-token">`。
+- 响应形状：成功 `{ok, entity, action, message}`；失败沿用本文 §5 的 `{code, message, request_id}` 与九类错误映射。未知实体 / 未知动作在路由层就 404 `E_NOTFOUND`，不连库。
+- 商品页已改走接口取数与提交（服务端仍先渲染一份，脚本失败时页面照常可读），其余实体页仍是服务端渲染 + 表单 POST。测试见 `tests/stage2/api`（12 条，连接换成假的），实库探针输出见 `result/stage2/a-api/`。
+
 待办：① C 的 `run.py` 与 `app/auth`（包里给出 `bp` 即被应用工厂自动注册，不用改 `app/__init__.py`）；② B 用 `sp_create_order` 与一次故障回滚核对事务 helper 的提交/回滚语义；③ C 定顾客端 `cust_app` 的凭据交付方式（OI-10；契约 §1.7 已于 2026-11-06 定稿，见 `application-contract.md`）。
 
 ## 9. 变更记录
@@ -99,3 +107,4 @@ p_bit(value) / p_decimal(value, precision, scale) / p_datetime(value)
 | 2026-11-03 | 增补 `query_procedure_sets` 与结果集口径（OI-14）：多集按序返回、空集占位、`nextset` 异常冒泡；新增 13 条测试与本机实测。C 的 `app/auth/dao.py` 适配器可以改为一次 `query_procedure_sets` 调用 |
 | 2026-11-06 | 落实 OI-16：`open_connection` 每次连接前关闭驱动池（`pyodbc.pooling = False`），§1 签名表、§2 身份口径与 §8 现状同步；测试 13 → 17 条 |
 | 2026-11-07 | 补顾客端 530xx 映射用例，common 17 → 18 条；§8 记录契约 §1.2 `sp_customer_register` 的整份 `11a` 事务内核验 |
+| 2026-11-09 | §8 记录 A 域 `/api/master` JSON 接口层：与页面共用实体 / 动作表与 `service`，入参转表单同形字符串，写动作校验 CSRF 头；五个签名不变，测试 12 条 |

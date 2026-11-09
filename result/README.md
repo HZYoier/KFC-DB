@@ -8,6 +8,7 @@
 | `stage2/` | 第二阶段：ER 复核、规范化校验、迁移与基线检查输出、C 侧三机整跑，以及 `scripts/` 下的一次性校验脚本 | [stage2/README.md](stage2/README.md) |
 | `stage2/a-master-ui/` | A 域主数据页面截图（v1.0 真实库，2026-11-09 全部重拍） | 该目录下 README |
 | `stage2/a-migration-compare/` | A 的迁移前后关键查询逐行对照（`MigrationBaseline_*` 与 v1.0 业务表，2026-11-09） | 该目录下 README |
+| `stage2/a-api/` | A 域 `/api/master` 实库探针输出（取数、令牌、错误体，2026-11-09） | 该目录下 README |
 
 约定：
 
