@@ -1,0 +1,39 @@
+KFC-DB 第二阶段 C 侧真实迁移与回归证据（2026-11-09）
+环境：SQL Server 2025 Express，.\SQLEXPRESS；v0.1 由 sql/stage1/run_all.sql 全新部署。
+说明：B 的真实 11b 已到；本次不再使用任何 B/顾客临时桩。顾客页面应用测试仍用 fake DAO。
+
+执行顺序与结果：
+1) sqlcmd ... -i 'D:\DBLab\KFC-DB\sql\stage1\run_all.sql'
+   -> exit=0；T1–T14 验收 RESULT: pass=18 fail=0
+
+2) sqlcmd ... -i 'D:\DBLab\KFC-DB\sql\stage2\capture_baseline.sql' -v SourceBaseline="b11b-real-20261109" -v ConfirmAppStopped=YES
+   -> exit=0；batch_id=1，COMPLETED；25 张 Baseline_<Table> 快照
+
+3) sqlcmd ... -I -i 'D:\DBLab\KFC-DB\sql\stage2\run_migration.sql'
+   -> exit=0
+   -> 12: cust_app grants applied (3 customer procedures).
+   -> 12: employee grants, cust_app, and role-sync signatures verified.
+   -> RESULT: migration committed (v1.0 marker written; 11a/11b/11c/12).
+
+4) 迁移后目录核对（KFC_DB）：
+   v1_procs = 15
+     A 四接口 + B 六员工查询 + A 的 sp_customer_register + B 的 place/list + C 上下文/员工角色
+   cust_app_exec = 3
+   SchemaVersion = v0.1(batch 1), v1.0(batch 1)
+
+5) sqlcmd ... -I -i 'D:\DBLab\KFC-DB\sql\stage2\regression.sql'
+   -> exit=0
+   -> RESULT: regression files=4 expected_pass=38 fail=0
+      （13a 10 + 13b 5 + 13b write 8 + 13c 15）
+
+应用回归：
+  tests/stage2/run-all.ps1 -Python D:\Miniconda\envs\py_env3.11\python.exe
+  -> common 18/0、auth 10/0、master 36/0、orders 20/0、inventory 12/0、customer 10/0
+  -> RESULT: run-all files=6 failed=0
+  证据：result/stage2/c-runall-customer-2026-11-09.txt
+
+边界：
+- 本证据证明真实三域脚本的迁移提交、15 过程/3 个 cust_app GRANT 和 38 条回归；
+  不证明顾客登录在真实实例上的部署（需操作者执行 provision_customer.template.ps1 并设置本机 .env）。
+- 顾客页面用 fake DAO 测试输入边界和路由；B 的 11b 行为由 B 的联调记录覆盖，C 未代签 B 的结论。
+- KFC_DB 已在归档后删除。

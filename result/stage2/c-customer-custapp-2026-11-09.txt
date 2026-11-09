@@ -1,0 +1,21 @@
+KFC-DB 顾客端三过程 cust_app 授权/行为复核（2026-11-09）
+
+环境：SQL Server 2025 Express，.\SQLEXPRESS；KFC_DB 已真实迁移到 v1.0。
+方法：在事务内以 dbo 执行 `EXECUTE AS USER = 'cust_app'`，调用三个顾客过程；
+不创建 SQL 登录、不写入口令；调用后 REVERT + ROLLBACK，夹具不留在库内。
+边界：这是数据库授权/过程行为证据，不等于 HTTP 顾客页用真实 SQL 登录的联调。
+
+执行：
+  sqlcmd ... -i 'D:\DBLab\_kfcdb_tmp\check_customer_custapp_20261109.sql'
+结果：
+  PASS: cust_app can register, place a self-pickup order, and list it with mobile+pickup_code.
+  RESULT: pass=3 fail=0 total=3 (cust_app three procedures)
+
+覆盖：
+  1. sp_customer_register 新手机号建档（customer_id=8, is_new=1）
+  2. sp_customer_place_order 商品 1 × 1，生成 PENDING_PAYMENT 自取订单
+  3. sp_customer_list_orders 用生成的 20 位取餐码查回同一订单
+  4. 全程只有 cust_app 的 EXECUTE；基表访问仍由 12/13c 的 229 断言覆盖
+
+真实顾客 HTTP 登录仍需操作者执行 provision_customer.template.ps1 并设置本机 .env 的
+KFC_CUST_DB_LOGIN / KFC_CUST_DB_PASSWORD；本证据不替代该部署步骤。

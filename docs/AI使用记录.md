@@ -753,3 +753,19 @@
 **核对结果：** 联合 SQL 回归 38 项、五套应用测试共 96 项通过；并发失败方报 52602，非归属骑手送达报 52702。隔离库和临时登录已清理，证据见 `result/stage2/b-order-acceptance-final.md`。
 
 **我的处理：** 我要求先推送已有改动，再把 B 能补的验收做完，不能只把页面打开就算配送和退款通过。第二批只交 B 的字典、测试和回执；共同状态、顾客页面和部署仍由对应成员处理。
+
+## （2026-11-09）—— B 11b 到货、真实迁移与顾客端收口（C）
+
+**聊了什么：** pull 到 B 的真实 `11b`、员工工作台与验收记录；A 的 `sp_customer_register` 也已在 11a。三域后端和契约都已到齐，要求全力做完 C 侧能推进的任务、阶段报告后 commit。
+
+**AI 做了什么：**
+1. 用 B 真实 `11b` + A 真实 `11a` + C 真实 `11c/12` 在全新 v0.1 上跑完 `run_migration`：**15 个过程 / 3 个 `cust_app` GRANT / 58 码 / 71 行**，随后 `regression` **38/0**。
+2. 新增 C 顾客页：`/customer` 建档、下自取单、手机号+取餐码查单；新增 `customer_dao.py`、`customer_service.py`、`customer.py` 与模板。因 A 的 `app/__init__.py` 只注册固定蓝图，顾客路由挂在 C 的 `auth.bp` 上，未改 A 文件。
+3. 顾客 DAO 只走三个顾客过程，使用 `KFC_CUST_DB_LOGIN`/`KFC_CUST_DB_PASSWORD` 的 `cust_app` 凭据；缺凭据 fail closed，不借用员工会话、不退回部署账户。新增 `provision_customer.template.ps1`（仅解析验证，真实口令由操作者输入）。
+4. 新增 customer 10 条 fake-DAO 测试，`run-all.ps1` 扩为六套：common 18 / auth 10 / master 36 / orders 20 / inventory 12 / customer 10 = **106/0**。
+5. 以 `EXECUTE AS USER='cust_app'` 实调 register/place/list 三过程 **3/0**（事务回滚）；真实顾客 HTTP 登录仍待操作者部署。
+6. 关闭 OI-10/OI-18/OI-19，更新 C 阶段/测试报告、团队分工、证据 README 与 `AGENTS.md`；OI-20（历史脚本硬编码仓库根）保留为非阻塞项。
+
+**核对结果：** 真实迁移/回归与六套 fake-DAO 测试全绿；未修改 A/B 文件，未创建 `11b`。`KFC_DB` 测试后删除。
+
+**我的处理：** 本轮 C 改动随后 commit；push 仍由我手动。

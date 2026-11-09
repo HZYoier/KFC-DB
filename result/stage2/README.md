@@ -1,6 +1,6 @@
 # stage2 证据（C 侧）
 
-隔离实验执行日期：2026-10-13（重跑捕获；实验首做于 2026-10-10，本次为归档要求下的完整复现）；文档对账证据增补于 2026-10-15；ER 子图复核证据增补于 2026-10-17；合并总图对账、B 图复核与契约授权核对增补于 2026-10-27；2.2 基线采集框架证据增补于 2026-10-30；真实 25 表采集、11c 扩展与 12/13c/run_migration 部分演练证据增补于 2026-11-03；OI-16 复核与 OI-17 修复证据增补于 2026-11-06；A 的 register、53513 预演与 common 18/96 证据增补于 2026-11-07。
+隔离实验执行日期：2026-10-13（重跑捕获；实验首做于 2026-10-10，本次为归档要求下的完整复现）；文档对账证据增补于 2026-10-15；ER 子图复核证据增补于 2026-10-17；合并总图对账、B 图复核与契约授权核对增补于 2026-10-27；2.2 基线采集框架证据增补于 2026-10-30；真实 25 表采集、11c 扩展与 12/13c/run_migration 部分演练证据增补于 2026-11-03；OI-16 复核与 OI-17 修复证据增补于 2026-11-06；A 的 register、53513 预演与 common 18/96 证据增补于 2026-11-07；真实 11b 迁移、六套 106/0 与顾客页证据增补于 2026-11-09。
 
 实例：`.\SQLEXPRESS`（SQL Server 2025 Express 17.0.1000.7；混合模式；Windows 身份验证部署登录）
 
@@ -66,6 +66,9 @@
 - （2026-11-06 增补）`c-oi17-runall-2026-11-06.txt`：`run-all.ps1 -Python` 五套 95/0 的完整输出（common 17 / auth 10 / master 36 / orders 20 / inventory 12；`RESULT: run-all files=5 failed=0`）。
 - （2026-11-07 增补）`c-53513-rehearsal-2026-11-07.txt`：`run_migration.sql` 53513 从 12 扩到 15 个过程后的迁移预演；A 真实 11a（含 register）+ C 真实 11c/12 + 仓库外 B 临时桩，15 过程/3 个 `cust_app` GRANT/`13c` 15/0；明确不是 B 真实 11b 验收。
 - （2026-11-07 增补）`c-runall-2026-11-07.txt`：A 新增 `530xx` 测试后 common 18/0，`run-all.ps1 -Python` 五套 96/0 的完整输出（common 18 / auth 10 / master 36 / orders 20 / inventory 12）。
+- （2026-11-09 增补）`c-real-migration-2026-11-09.txt`：B 真实 `11b` 到达后的完整 `run_migration`（无临时桩）：15 个过程/3 个 `cust_app` GRANT/58 码/71 行、`regression` 38/0、六套应用 106/0。
+- （2026-11-09 增补）`c-runall-customer-2026-11-09.txt`：`run-all.ps1 -Python` 六套完整输出（common 18 / auth 10 / master 36 / orders 20 / inventory 12 / customer 10；`RESULT: run-all files=6 failed=0`）。
+- （2026-11-09 增补）`c-customer-custapp-2026-11-09.txt`：`EXECUTE AS USER='cust_app'` 实调 register/place/list 三过程（3/0，事务回滚）；不是真实 HTTP 顾客登录。
 
 ## SHA-256
 
@@ -122,4 +125,7 @@ C45DDF378F7D57098E19586FFD35B9D8FD9FD9CBA41C24E5283EC5A18CE663F8  c-oi16-recheck
 1E3D1A0AD952F470BE714243EA8276ED5F295E547170D9B1E92AC4451C2A0B71  c-oi17-runall-2026-11-06.txt
 A7C8AAC339A4072BD04CA02A699280EFCCA6F73C37E8507AD31119691788999F  c-53513-rehearsal-2026-11-07.txt
 D0436C45472FB30BF6912FBBA400BDA911C1DDF23C5CECE56D7F69DC5337C659  c-runall-2026-11-07.txt
+E31AEECC9BB85EC63F2C3FB7EA983640110F7B53365E6215A3BF7B1C29C203F8  c-real-migration-2026-11-09.txt
+6CABAE1285C238E53F1D92F780EC6D250ABAB3479F64943F4404EFEF77AB6765  c-runall-customer-2026-11-09.txt
+0433D4730211E6E74DFF260AC1BED8B7915ACC9B9B4B8D2D7FC10AD06279C44B  c-customer-custapp-2026-11-09.txt
 ```

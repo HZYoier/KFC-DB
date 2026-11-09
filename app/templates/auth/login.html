@@ -20,6 +20,7 @@
   <main class="card">
     <h1>KFC-DB 员工登录</h1>
     <p class="hint">使用你的数据库登录名和口令。系统会用该登录连接数据库，并按 USER_NAME() 校验员工身份。</p>
+    <p class="hint">顾客无需登录员工系统，请使用 <a href="{{ url_for('auth.customer_home') }}">顾客自助</a>。</p>
     {% if error %}<div class="error">{{ error }}</div>{% endif %}
     <form method="post" action="{{ url_for('auth.login_submit') }}">
       <input type="hidden" name="next" value="{{ next }}">

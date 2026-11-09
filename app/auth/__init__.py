@@ -6,6 +6,8 @@
 """
 
 from app.auth.routes import bp
+# 导入即把顾客自助路由挂到同一个 auth.bp 上；不要求员工登录，也不新增蓝图模块。
+from app.auth import customer as _customer  # noqa: F401
 from app.auth.service import current_employee_session, current_identity, login_required
 
 __all__ = ["bp", "current_employee_session", "current_identity", "login_required"]
