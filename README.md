@@ -245,6 +245,6 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -I -i "sql/stage2/regr
 - [ER 图](docs/er/) — [图例](docs/er/legend.md)与三域子图（[主数据](docs/er/a-master.svg)、[订单](docs/er/b-order.svg)、[库存权限](docs/er/c-inventory-security.svg)）；合并总图（25 实体 35 联系）
 - [主数据数据字典](docs/主数据数据字典.md)、[订单履约数据字典](docs/订单履约数据字典.md)、[库存权限数据字典](docs/库存权限数据字典.md)
 - [第一阶段测试报告](docs/stage1/test-report.md)
-- 第二阶段成员报告：[成员 A](docs/stage2/a-stage2-report.md)（主数据域迁移与应用落地）
+- 第二阶段成员报告：[成员 A](docs/stage2/a-stage2-report.md)（主数据、定价与会员）、[成员 B](docs/stage2/b-stage2-report.md)（订单、支付与履约）、[成员 C](docs/stage2/c-stage2-report.md)（迁移、权限、库存与顾客应用）
 - 第一阶段成员分工报告：[成员 A](docs/stage1/a-stage-report.md)（主数据与定价）、[成员 B](docs/stage1/b-stage-report.md)（订单与履约）、[成员 C](docs/stage1/c-stage-report.md)（库存、权限与集成）
 - [AI使用记录](docs/AI使用记录.md)
