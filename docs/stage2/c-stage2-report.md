@@ -38,6 +38,38 @@
 | `sql/stage2/provision_employee.template.ps1` | 员工 SQL 登录/同名用户/EmployeeAccount 映射模板（口令由操作者输入） |
 | `sql/stage2/provision_customer.template.ps1` | `cust_app` 的 SQL 登录/映射模板；只核三个 EXECUTE，不授予额外权限（口令由操作者输入） |
 
+### 2.3 实验截图
+
+以下截图来自真实 v1.0 库上的 C 页面；临时 SQL 登录用随机口令，截图后已恢复用户并删除登录。完整说明和复跑命令见 [`result/stage2/c-inventory-customer-ui/README.md`](../../result/stage2/c-inventory-customer-ui/README.md)。
+
+![图 1 员工登录](../../result/stage2/c-inventory-customer-ui/c-inventory-customer-ui-01-login.png)
+
+图 1：员工登录页；同时保留顾客自助入口。截图未填写账号或口令。
+
+![图 2 店长身份首页](../../result/stage2/c-inventory-customer-ui/c-inventory-customer-ui-02-identity-store.png)
+
+图 2：店长登录后的身份首页；显示姓名、岗位、业务角色和权限码入口，并提供主数据、库存与订单工作台入口。
+
+![图 3 库存看板](../../result/stage2/c-inventory-customer-ui/c-inventory-customer-ui-03-inventory-dashboard.png)
+
+图 3：真实库存视图的现有量/锁定量/可售量、库存调整、库存流水和补货/采购区域。截图数据来自种子和临时测试操作，不是静态假数据。
+
+![图 4 员工角色](../../result/stage2/c-inventory-customer-ui/c-inventory-customer-ui-04-inventory-roles.png)
+
+图 4：仅店长可读的员工角色页，显示员工、岗位、业务角色与分配时间。
+
+![图 5 顾客自助首页](../../result/stage2/c-inventory-customer-ui/c-inventory-customer-ui-05-customer-home.png)
+
+图 5：顾客建档、下自取单和按手机号+取餐码查单三个表单。顾客端使用 `cust_app`，不建立员工会话。
+
+![图 6 顾客下单结果](../../result/stage2/c-inventory-customer-ui/c-inventory-customer-ui-06-customer-order.png)
+
+图 6：真实调用 `sp_customer_place_order` 后返回的订单号、取餐码、金额和状态；页面提示保存凭据及响应丢失边界。
+
+![图 7 顾客查单](../../result/stage2/c-inventory-customer-ui/c-inventory-customer-ui-07-customer-orders.png)
+
+图 7：用同一手机号和上一步取餐码调用 `sp_customer_list_orders`，只查回匹配的订单头。
+
 ## 3. 本轮核验结果
 
 | 核验 | 实际结果 | 判定方法 |
