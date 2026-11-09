@@ -26,13 +26,15 @@ KFC-DB/
 │   └── stage2/                  第二阶段迁移（v0.1 -> v1.0）
 │       ├── capture_baseline.sql 采集入口：批次协议、快照列契约与失败标记（C）
 │       ├── baseline_a / b / c.sql   三域快照定义与抽取（各域属主）
-│       ├── 11a / 11c_*.sql      已交两域迁移（A / C），11b 待 B
+│       ├── 11a / 11b / 11c_*.sql 三域迁移（A / B / C）：主数据 5 过程、订单 8 过程、库存与权限
 │       └── 13a_master_regression.sql  A 域提交后回归（10 条：五条候选码反例 + 冻结事项 A/B/C）
 
 ├── app/                         应用层（2.3）：访问层底座 app/common/ 与各域 routes/service/dao 三层
 │   ├── common/                  底座：db（唯一连接与参数绑定）、tx、errors、log、config
 │   ├── master/                  主数据域（A）：routes / service / dao，模板在 app/templates/master/
-│   └── orders/                  订单域（B）：dao / service（页面待身份层接入后补）
+│   ├── orders/                  订单域（B）：routes / service / dao
+│   ├── inventory/               库存与权限（C）：routes / service / dao
+│   └── auth/                    登录 / 身份 / 顾客自助（C）
 ├── tests/stage2/                应用侧冒烟与集成脚本
 ├── requirements.txt             Python 依赖，写精确版本（Flask / pyodbc）
 ├── config.example.env           连接配置示例；复制为 .env 后按本机改，.env 不入库
@@ -81,7 +83,7 @@ KFC-DB/
 
 ![项目结构图](docs/stage2/project-structure.svg)
 
-上图左半是上面的目录树，右半是运行时分层与调用链；域配色沿用合并 ER 总图（A 蓝 / B 黄 / C 绿），虚线框是尚未交付的部分。
+上图左半是上面的目录树，右半是运行时分层与调用链；域配色沿用合并 ER 总图（A 蓝 / B 黄 / C 绿）。三个域均已交付，2026-11-09 真实迁移提交 v1.0、`regression` 38/0、六套应用测试 106/0。
 
 部署入口只有 `sql/stage1/run_all.sql` 一个。`docs/` 与 `result/` 不参与部署，分别是设计依据和执行证据。
 
@@ -238,7 +240,7 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -I -i "sql/stage2/regr
 - [跨域接口契约](docs/stage1/cross-domain-interface-contract.md) — 三域之间的冻结接口：对象名、参数顺序与类型、返回列、种子常量，以及只读检查器 `sql/stage1/contract_interface_check.sql` 的校验口径
 - [第一阶段三人协作实施计划](docs/stage1/three-person-implementation-plan.md) — 对象、接口、角色和验收标准
 - [第二阶段三人协作实施计划](docs/stage2-three-person-implementation-plan.md) — ER 重建、规范化迁移与应用开发分工；含员工数据库身份、岗位查询接口、原子迁移/恢复、文件属主和修订自查。2.2 迁移与应用层已按该计划实施（v1.0 迁移脚本、`app/` 三层与测试入口已交付）
-- 第二阶段过程文档：[操作手册](docs/stage2/user-manual.md)（启动、迁移顺序、七岗位入口与当前交付状态）、[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（§2 八写六查已冻结，§2.4 四个查询/注册接口 2026-11-01 补入；§1 顾客端 `§1.7` 四条联合边界 2026-11-06 定稿、§1 冻结，三个顾客过程待实现）、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-19 的状态与决议唯一入口）、[业务规则映射](docs/stage2/business-rule-mapping.md)（35 条外键的基数与实现机制）、[重构方案](docs/stage2/refactoring-design.md)、[事务边界](docs/stage2/transaction-boundaries.md)、[访问层接口](docs/stage2/access-layer-contract.md)（`app/common/` 的五个签名、多结果集口径与错误码映射）
+- 第二阶段过程文档：[操作手册](docs/stage2/user-manual.md)（启动、迁移顺序、七岗位与顾客端入口、全部可用界面的操作步骤）、[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（§2 八写六查已冻结，§2.4 四个查询/注册接口 2026-11-01 补入；§1 顾客端 `§1.7` 四条联合边界 2026-11-06 定稿、§1 冻结，三个顾客过程待实现）、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-19 的状态与决议唯一入口）、[业务规则映射](docs/stage2/business-rule-mapping.md)（35 条外键的基数与实现机制）、[重构方案](docs/stage2/refactoring-design.md)、[事务边界](docs/stage2/transaction-boundaries.md)、[访问层接口](docs/stage2/access-layer-contract.md)（`app/common/` 的五个签名、多结果集口径与错误码映射）
 - 三域分析：[A 域](docs/stage2/a-issues.md)问题清单 / [规范化](docs/stage2/a-normalization.md)、[B 域](docs/stage2/b-issues.md)问题清单 / [规范化](docs/stage2/b-normalization.md)、[C 域](docs/stage2/c-issues.md)问题清单 / [规范化](docs/stage2/c-normalization.md)、[命名口径](docs/stage2/naming.md)
 - [ER 图](docs/er/) — [图例](docs/er/legend.md)与三域子图（[主数据](docs/er/a-master.svg)、[订单](docs/er/b-order.svg)、[库存权限](docs/er/c-inventory-security.svg)）；合并总图（25 实体 35 联系）
 - [主数据数据字典](docs/主数据数据字典.md)、[订单履约数据字典](docs/订单履约数据字典.md)、[库存权限数据字典](docs/库存权限数据字典.md)
