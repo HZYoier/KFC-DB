@@ -1,0 +1,44 @@
+已将数据库上下文更改为 "KFC_DB"。
+PASS: 13c-1 Permission 58 / RolePermission 71 / 新增码集合一致
+PASS: 13c-2 旧 46 码名称保真
+PASS: 13c-3 旧 52 行保真
+PASS: 13c-4 新增 19 行（context 7 / A 4 / B 6 / C 1）
+PASS: 13c-5 白名单 = Permission = RolePermission 码集合
+PASS: 13c-6 71 对 role_* GRANT 与映射逐对相等
+PASS: 13c-7 cust_app 仅三个顾客过程、无角色成员
+PASS: 13c-8 cust_app 直调员工过程/基表均 229
+employee_id          database_user_name                                                                                                               employee_name                                      job_code            
+-------------------- -------------------------------------------------------------------------------------------------------------------------------- -------------------------------------------------- --------------------
+                   3 test_cashier                                                                                                                     测试收银员                                              CASHIER             
+business_role_id     role_code            role_name                                         
+-------------------- -------------------- --------------------------------------------------
+                   3 cashier              收银员                                               
+permission_code                                    permission_name                                                                                     
+-------------------------------------------------- ----------------------------------------------------------------------------------------------------
+sp_create_order                                    创建订单                                                                                                
+sp_find_customer_for_order                         收银顾客检索                                                                                              
+sp_get_current_employee_context                    当前员工身份上下文                                                                                           
+sp_get_order_for_payment                           订单支付详情查询                                                                                            
+sp_get_order_operation_status                      订单操作状态查询                                                                                            
+sp_list_orders_for_payment                         订单支付队列查询                                                                                            
+sp_list_sale_products                              收银商品查询                                                                                              
+sp_pay_order                                       订单支付                                                                                                
+sp_register_customer_for_order                     收银顾客建档                                                                                              
+PASS: 13c-9 身份上下文 51004 + test_cashier 三结果集正例
+PASS: 13c-10 同建议单第二张采购单被唯一约束拒绝
+PASS: 13c-11 库存非负、锁定/现有量双向勾稽
+PASS: 13c-12 开放建议唯一、采购单恰好一条明细
+PASS: 13c-13 三个角色同步过程各一条签名
+PASS: 13c-14 C 域四视图 QUOTED_IDENTIFIER/ANSI_NULLS 均为 ON
+employee_id          database_user_name                                                                                                               login_name                                                                                                                       employee_name                                      job_code             status               business_role_id     role_code            role_name                                          assigned_by_employee_id assigned_at                           
+-------------------- -------------------------------------------------------------------------------------------------------------------------------- -------------------------------------------------------------------------------------------------------------------------------- -------------------------------------------------- -------------------- -------------------- -------------------- -------------------- -------------------------------------------------- ----------------------- --------------------------------------
+                   1 test_store_manager                                                                                                               test_store_manager                                                                                                               测试店长                                               STORE_MANAGER        ACTIVE                                  1 store_manager        店长                                                                       1                    2026-11-09 12:54:53
+                   2 test_shift_manager                                                                                                               test_shift_manager                                                                                                               测试值班经理                                             SHIFT_MANAGER        ACTIVE                                  2 shift_manager        值班经理                                                                     1                    2026-11-09 12:54:53
+                   3 test_cashier                                                                                                                     test_cashier                                                                                                                     测试收银员                                              CASHIER              ACTIVE                                  3 cashier              收银员                                                                      1                    2026-11-09 12:54:53
+                   4 test_chef                                                                                                                        test_chef                                                                                                                        测试厨师                                               CHEF                 ACTIVE                                  4 chef                 厨师                                                                       1                    2026-11-09 12:54:53
+                   5 test_packer                                                                                                                      test_packer                                                                                                                      测试配餐员                                              PACKER               ACTIVE                                  5 packer               配餐员                                                                      1                    2026-11-09 12:54:53
+                   6 test_waiter                                                                                                                      test_waiter                                                                                                                      测试服务员                                              WAITER               ACTIVE                                  6 waiter               服务员                                                                      1                    2026-11-09 12:54:53
+                   7 test_rider                                                                                                                       test_rider                                                                                                                       测试骑手                                               RIDER                ACTIVE                                  7 rider                骑手                                                                       1                    2026-11-09 12:54:53
+PASS: 13c-15 员工角色查询仅店长可读、普通岗位 229
+RESULT: pass=15 fail=0
+RESULT: inventory-security files=1 pass=15 fail=0

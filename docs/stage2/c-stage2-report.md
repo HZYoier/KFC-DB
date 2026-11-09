@@ -44,6 +44,7 @@
 | 真实 25 表采集 | 25 表 / 178 行，**25/0** | A/B/C 真 `baseline_*`；逐表逐值双向 `EXCEPT` |
 | 真实 `run_migration`（11a→11b→11c→12） | **15 个过程 / 3 个 `cust_app` GRANT / 58 码 / 71 行** | B 真实 `11b`、A 真实 `11a`（含 register）、C 真实 `11c/12`；**无临时桩** |
 | `regression` | **38/0** | 13a 10 + 13b 5 + 13b write 8 + 13c 15；真实 v1.0 |
+| `tests/stage2/inventory-security` | **15/0** | 真实 v1.0 上运行 13c；独立入口需数据库，不并入 fake-DB run-all |
 | `13c` | **15/0** | 目录/映射/GRANT/cust_app/上下文/UQ/账本/建议/签名/视图/员工角色 229 |
 | `cust_app` 三过程 | **3/0** | `EXECUTE AS USER='cust_app'` 实调 register/place/list，事务内回滚；证据 `c-customer-custapp-2026-11-09.txt` |
 | 签名三路径 | **3/0** | 真实 v0.1；低权限店长实际调用 + 普通岗位 229 |

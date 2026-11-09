@@ -11,6 +11,7 @@
 | 真实 `run_migration`（A 11a + B 11b + C 11c/12） | 提交 v1.0；**15 个过程 / 3 个 `cust_app` GRANT / 58 码 / 71 行** | `result/stage2/c-real-migration-2026-11-09.txt` |
 | `13a` / `13b` baseline / `13b` write | **10/0** / **5/0** / **8/8** | 真实迁移后的 `regression` |
 | `13c` | **15/0**（目录/映射/GRANT/cust_app/上下文/UQ/账本/建议/签名/视图/员工角色 229） | 同上 |
+| `tests/stage2/inventory-security`（C） | **15/0** | 真实 v1.0 上运行 13c；独立入口需已迁移数据库，不并入六套 fake-DB `run-all` |
 | `regression.sql` | **38/0**（13a 10 + 13b 5 + 13b 8 + 13c 15） | 同上 |
 | `cust_app` 三过程 | **3/0**（`EXECUTE AS USER='cust_app'` 实调 register/place/list；事务回滚） | `result/stage2/c-customer-custapp-2026-11-09.txt` |
 | 签名三路径低权限 | **3/0**（ALTER 后回滚 / 重签后回滚 / 重签提交 + 普通岗位 229） | `result/stage2/c-signature-three-paths-2026-11-03.txt` |

@@ -74,6 +74,8 @@ class AuthTests(unittest.TestCase):
         self.assertIn("测试收银员", body)
         self.assertIn("cashier", body)
         self.assertIn("sp_create_order", body)
+        self.assertIn("/orders/", body)
+        self.assertNotIn("/inventory/", body)
 
     def test_04_login_failure(self):
         self.fetch_mock.side_effect = AppError("E_AUTH")

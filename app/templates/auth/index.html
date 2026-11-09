@@ -38,6 +38,12 @@
         {% if 'store_manager' in role_codes %}
           <a class="primary" href="{{ url_for('master.index') }}">主数据管理</a>
         {% endif %}
+        {% if identity.employee.job_code in ('STORE_MANAGER', 'SHIFT_MANAGER') %}
+          <a href="{{ url_for('inventory.index') }}">库存与补货</a>
+        {% endif %}
+        {% if identity.employee.job_code in ('STORE_MANAGER', 'SHIFT_MANAGER', 'CASHIER', 'CHEF', 'PACKER', 'WAITER', 'RIDER') %}
+          <a href="{{ url_for('orders.index') }}">订单工作台</a>
+        {% endif %}
         <form method="post" action="{{ url_for('auth.logout') }}">
           <button type="submit">退出登录</button>
         </form>
