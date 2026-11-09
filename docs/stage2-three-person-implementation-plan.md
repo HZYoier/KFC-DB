@@ -262,7 +262,7 @@ A/B/C 首个联合验收交付：一个真实员工登录 → 上下文正确 �
 | 代码目录：Web 应用代码 | `app/`（`common/`、`auth/`、`master/`、`orders/`、`inventory/`） | A / B / C 各域 |
 | 代码目录：应用测试脚本 | `tests/stage2/{master,orders,inventory-security}/` + `run-all.ps1` | 各域写、C 串联 |
 | 结果目录：ER 图、规范化分析、迁移前后关键查询结果、完整业务流程与权限差异、测试结果（正确 + 出错） | `result/stage2/`（各人字母前缀）+ `docs/er/*.svg` | 各域 |
-| 阶段报告：设计思路、实验过程、实验总结 | `docs/stage2/{a,b,c}-stage-report.md`，C 汇总总测试结论 | 各域 |
+| 阶段报告：设计思路、实验过程、实验总结 | `docs/stage2/reports/`（A/B/C 各一份，B 的第一阶段同名报告仍留在 `docs/stage2/b-stage-report.md`），C 汇总总测试结论 | 各域 |
 | ai_log：AI 辅助过程、输出内容、人工修改及验证结论 | `docs/AI使用记录.md`（按日期段追加，本轮不新增文件） | 各自记账 |
 | 小组分工说明 | `docs/stage2/team-division.md`，由本节与 §7.1 抽取一页 | C |
 
@@ -307,7 +307,7 @@ A/B/C 首个联合验收交付：一个真实员工登录 → 上下文正确 �
 | `tests/stage2/master/`、`orders/`、`inventory-security/` | A、B、C 各自测试 | A 主数据，B 流程/回滚，C 身份/权限；失败能定位业务场景 |
 | `tests/stage2/run-all.ps1`、`result/stage2/README.md`、`docs/stage2/test-report.md` | C | 串联测试；汇总执行环境、PASS/FAIL、日志和截图；每人证据用自己的字母前缀 |
 | `docs/stage2/team-division.md` | C | 阶段作业要求的「小组分工说明」：由 §6.4 与本节抽取一页，A/B 只提供自己那段的实际承担情况 |
-| 三份现有数据字典；`docs/stage2/a-stage2-report.md`、`docs/stage2/b-stage-report.md`、`docs/stage2/c-stage2-report.md` | A、B、C 各自域文件 | 对齐 v1.0 并记录自己的过程与结果。文件名按 [naming.md](stage2/naming.md) §5：B 的已建成的沿用原名，A/C 尚未创建的带阶段号，避免与 `docs/stage1/` 下的同名文件相撞 |
+| 三份现有数据字典；`docs/stage2/reports/a-stage2-report.md`、`docs/stage2/b-stage-report.md`、`docs/stage2/reports/c-stage2-report.md` | A、B、C 各自域文件 | 对齐 v1.0 并记录自己的过程与结果。文件名按 [naming.md](stage2/naming.md) §5：B 的已建成的沿用原名，A/C 尚未创建的带阶段号，避免与 `docs/stage1/` 下的同名文件相撞 |
 | `README.md` | A | C 提供迁移/账号/测试命令，B 提供订单演示步骤；A 统一入口和索引 |
 | `docs/AI使用记录.md` | 各人追加自己的日期段 | 提交前同步最新，仅追加本轮真实过程，不把计划当已完成实现 |
 

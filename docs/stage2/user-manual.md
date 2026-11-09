@@ -1,7 +1,7 @@
 # 门店运营系统操作手册（第二阶段 v1.0）
 
-> 日期：2026-11-03；属主：A；适用版本：`SchemaVersion = v1.0` 的 `KFC_DB`。
-> 口径：**只写已经能点到的界面**。订单与履约、顾客端页面尚未交付，§6、§7 只写当前状态与已冻结的接口，不描述不存在的按钮；页面到位后在本文件续写，不改已写章节的编号。
+> 日期：2026-11-03（2026-11-09 补订单工作台与顾客自助，§3、§6、§7、§9 按实际界面重写）；属主：A；适用版本：`SchemaVersion = v1.0` 的 `KFC_DB`。
+> 口径：**只写已经能点到的界面**。A/B/C 三个域的页面均已交付，2026-11-09 真实迁移与回归通过；此后只增不删，不重排已写章节的编号。
 
 ## 1. 运行环境与启动
 
@@ -27,6 +27,7 @@
 | `KFC_DB_QUERY_TIMEOUT` | 查询超时秒数，默认 30 |
 | `KFC_SECRET_KEY` | 会话签名密钥。不填则每次启动现生成一把，**重启后要重新登录**；演示环境请填固定值 |
 | `KFC_DB_TRUSTED_CONNECTION` | 仅本机冒烟用 Windows 信任连接。**演示环境必须 `no`**：此时 `USER_NAME()` 是 `dbo`，映射不到 `EmployeeAccount`，所有员工过程都会按「操作人未映射」拒绝 |
+| `KFC_CUST_DB_LOGIN` / `KFC_CUST_DB_PASSWORD` | 顾客自助页专用：映射到 `cust_app` 的 SQL 登录与口令。两项缺一，`/customer` 一律报「系统暂时无法完成操作」——故意 fail closed，不借用员工会话也不回退部署账户 |
 
 ### 1.3 启动
 
@@ -60,6 +61,8 @@ sqlcmd -S localhost -E -C -f 65001 -b -I -i sql/stage2/regression.sql
 
 每位员工必须**用自己的数据库登录**连接：员工侧过程一律按 `USER_NAME()` 映射 `EmployeeAccount`（要求 `ACTIVE`，多数还要求岗位匹配），共用部署账户会让所有过程落到 `51004`。员工侧库登录由管理员按 `sql/stage2/provision_employee.template.ps1` 建，口令不入仓库。
 
+顾客端另走一条路：`/customer` 不读员工会话，每个请求都从 `KFC_CUST_DB_LOGIN` / `KFC_CUST_DB_PASSWORD` 取 `cust_app` 凭据；`cust_app` 只有三个顾客过程的 `EXECUTE`，没有角色、没有登录名映射，缺凭据时直接失败而不是退回部署账户。
+
 ## 2. 登录与退出
 
 - 打开 `/login`，填**数据库登录名**与口令。口令只保存在服务端进程内存的会话表里（**8 小时**过期），不落库、不写日志；退出登录或进程重启即清除。
@@ -75,17 +78,20 @@ sqlcmd -S localhost -E -C -f 65001 -b -I -i sql/stage2/regression.sql
 
 ## 3. 岗位与入口
 
-七个岗位在计划 §6.4 的定位与**当前交付状态**：
+七个岗位与顾客在计划 §6.4 的定位与实际入口（2026-11-09 起全部可用）：
 
-| 岗位（角色码） | 现在能做什么 | 入口 | 状态 |
-| --- | --- | --- | --- |
-| 店长（`store_manager`） | 主数据九类实体的维护；库存调整；补货建议审批/驳回 | `/master/`、`/inventory/` | **可用** |
-| 值班经理（`shift_manager`） | 库存看板与流水；补货建议新建/改量/提交；收货 | `/inventory/` | **可用** |
-| 收银员（`cashier`） | 商品价目与顾客查询的数据库接口已就绪（契约 §2.4.2–2.4.4），页面未交付 | —— | 待 B |
-| 厨师（`cook`） | 厨房队列与开始制作 | —— | 待 B |
-| 配餐员（`packer`） | 制作完成、取餐 | —— | 待 B |
-| 骑手（`rider`） | 认领、送达 | —— | 待 B |
-| 顾客 | 建档、下单、查单（契约 §1 草案，未冻结） | —— | 待 C/A |
+| 岗位（角色码 / 岗位码） | 现在能做什么 | 入口 |
+| --- | --- | --- |
+| 店长（`store_manager` / `STORE_MANAGER`） | 主数据九类实体的维护；库存调整；补货建议审批/驳回；订单核对、取消与退款 | `/master/`、`/inventory/`、`/orders/` |
+| 值班经理（`shift_manager` / `SHIFT_MANAGER`） | 库存看板与流水；补货建议新建/改量/提交；收货 | `/inventory/` |
+| 收银员（`cashier` / `CASHIER`） | 商品价目、顾客查询与临时建档、创建订单、收款、按订单号查状态 | `/orders/` |
+| 厨师（`chef` / `CHEF`） | 制作队列、开始制作 | `/orders/` |
+| 配餐员（`packer` / `PACKER`） | 配餐队列、完成制作、确认自取 | `/orders/` |
+| 服务员（`waiter` / `WAITER`） | 取餐叫号看板（只读，无动作） | `/orders/` |
+| 骑手（`rider` / `RIDER`） | 待认领订单、我的配送、认领、确认送达 | `/orders/` |
+| 顾客 | 建档、下单、查单（手机号 + 取餐码），无需登录员工系统 | `/customer` |
+
+`/orders/` 一页按岗位渲染不同区块，同一个地址对不同岗位显示不同队列；`/customer` 与员工登录无关，直接用 `cust_app` 凭据。
 
 页面上的按钮只按角色码隐藏或显示，**真正的判定在数据库**：缺 `GRANT` 会得到 `229`，岗位不符会得到 `51004`，两者都归成「当前账号无权执行该操作」。不要因为按钮出现过就认为一定有权限。
 
@@ -145,23 +151,43 @@ sqlcmd -S localhost -E -C -f 65001 -b -I -i sql/stage2/regression.sql
 
 按钮按角色显示，但授权与状态机都在数据库过程里；状态不对（如审批已提交前的单子）会按过程定义报错，页面照原样显示提示。
 
-## 6. 订单与履约（收银 / 厨师 / 配餐 / 骑手）
+## 6. 订单与履约（收银 / 厨师 / 配餐 / 服务员 / 骑手 / 店长）
 
-**当前状态：页面未交付。** `app/orders/` 目前只有 `dao.py` 与 `service.py`（下单、支付、开始/完成制作、自取、骑手认领/送达、取消退款八个动作），没有 `routes.py` 与模板，所以本章没有可操作步骤可写。
+入口 `/orders/`。**同一地址按登录岗位渲染不同区块**，页面右上角显示岗位名；所有写操作都是带 CSRF 令牌的表单 POST，按钮按岗位显示，真正的判定仍在数据库。
 
-已冻结、页面到位后可直接用的口径：
+| 岗位 | 页面区块 | 能做的动作 |
+| --- | --- | --- |
+| 收银员 | 待支付订单、售卖明细、新建订单、临时建档、订单查询 | 登记顾客（`register`）、创建订单（`create`）、收款（`pay`）、按订单号查状态 |
+| 厨师 | 制作队列（订单 + 明细 + 数量） | 开始制作（`start`） |
+| 配餐员 | 配餐队列与明细 | 完成制作（`finish`）、确认自取（`pickup`） |
+| 服务员 | 取餐叫号（订单号 + 取餐码） | 无，供叫号核对 |
+| 骑手 | 待认领订单、我的配送 | 认领（`claim`）、确认送达（`confirm`） |
+| 店长 | 可核对的订单 | 取消或退款（`cancel`，原因必填）、按订单号查支付与退款状态 |
 
-- 收银取价可调 `sp_list_sale_products`（`@take` 只收 1..200，越界报错不静默截断），但**展示价不替代订单快照**：落单金额仍由 `sp_create_order` 记录。
-- 顾客查询用 `sp_find_customer_for_order`（精确手机号、查不到返回空集合）；临时建档用 `sp_register_customer_for_order`（固定 `GUEST`、0 分、默认等级；重复手机号报冲突）。
-- 支付后网络中断属于**结果未知**：先查订单与支付状态，再决定是否重新发起，不自动重复写入。
+**收银下单四步**：
 
-页面交付后在本章补：收银下单与收款、后厨开始制作、配餐出餐与取餐、骑手认领与送达、店长取消与退款。
+1. 先在「临时建档」填 11 位手机号——老顾客直接返回已有档案，重复手机号不报错；也可以在「新建订单」里直接用手机号查顾客（查不到返回空集合，不是报错）。
+2. 「新建订单」填手机号、履约方式、商品 ID 与数量（一行一条），提交生成 `B-` 开头的草稿订单号。**重放同一次提交不会重复下单**：草稿号与会话绑定、订单号唯一约束兜底，刷新重试拿到的是同一张单。
+3. 在「待支付订单」点订单号进「售卖明细」，核对总额与支付方式后收款。展示价不替代订单快照——落单金额由 `sp_create_order` 记录。
+4. 支付提交后如果连接中断，属于**结果未知**：页面会按订单号回查支付状态，已成功则提示「已查库确认该订单支付成功，无需再次支付」，不会自动重写。
+
+**状态口径**：`PENDING_PAYMENT` 待支付 → `PAID` 已支付 → `IN_PRODUCTION` 制作中 → `READY_FOR_PICKUP` 待取餐 / `READY_FOR_DELIVERY` 待配送 → `DELIVERED` / `PICKED_UP` → `COMPLETED` 已完成；取消走 `CANCELLED`。配送另经 `WAITING_PICKUP` 待认领、`DELIVERING` 配送中。
+
+**出错时**：输入不合法 400、状态机不允许 409、越权 403，页面停在订单错误页并保留订单号，便于回查而不是重下。
 
 ## 7. 顾客端
 
-**当前状态：契约 §1 已于 2026-11-06 冻结；`sp_customer_register` 已进 `11a`，顾客页面与下单/查单过程仍未交付**（`sp_customer_place_order` / `sp_customer_list_orders` 归 B 的 `11b`）。
+入口 `/customer`，**不需要员工登录**（登录页也给了一个「顾客自助」链接）。三个表单：
 
-已定的口径：手机号建档固定 `GUEST`、初始 0 分、默认等级，**重复手机号不报错**——返回既有 `customer_id` 且 `is_new = 0`，不覆盖类型、等级、积分与状态；查单要「手机号 + 取餐码」双要素，只返回本人订单且只回订单头；本轮只开放自取（`PICKUP`）。`cust_app` 的 `EXECUTE` 由 `12_permissions.sql` 在三个顾客过程齐备时授予。
+| 表单 | 填什么 | 规则 |
+| --- | --- | --- |
+| 建档 | 11 位手机号 | 固定 `GUEST`、初始 0 分、默认等级；**重复手机号不报错**——返回既有 `customer_id` 且 `is_new = 0`，不覆盖类型、等级、积分与状态 |
+| 下单 | 手机号 + 商品条目（每行 `商品ID 数量`，也可贴 JSON 数组） | 只开放自取（`PICKUP`）；条目 1–100 条、同一商品不能重复出现；成功返回订单号与 20 位十六进制取餐码 |
+| 查单 | 手机号 + 取餐码 | 双要素都对上才返回，且**只回订单头、不回明细**；查不到提示「没有匹配的订单」 |
+
+- 顾客页面不向顾客暴露价格计算、角色或父明细字段；这些都由数据库过程判定。
+- 页面提示里的订单号与取餐码请顾客自己保存，不要发到公开渠道。
+- 权限：三个过程只有 `cust_app` 有 `EXECUTE`（`12_permissions.sql` 在三过程齐备时授予），员工角色没有这三个过程的权限；`cust_app` 凭据缺失时页面直接失败，不借用员工会话。
 
 ## 8. 常见问题
 
@@ -180,12 +206,15 @@ sqlcmd -S localhost -E -C -f 65001 -b -I -i sql/stage2/regression.sql
 
 | 入口 | 期望 | 说明 |
 | --- | --- | --- |
-| `powershell -ExecutionPolicy Bypass -File tests/stage2/run-all.ps1` | 各域 `RESULT` 全绿 | C 的汇总入口；**A 的 `common` 套件待 C 加入第五行** |
-| `tests/stage2/auth/run_auth_tests.py` | 9 PASS | 登录、会话、守卫 |
+| `powershell -ExecutionPolicy Bypass -File tests/stage2/run-all.ps1 -Python .venv\Scripts\python.exe` | `RESULT: run-all files=6 failed=0`（106 条） | 六套汇总；可用 `-Python` 或 `$env:KFC_DB_PYTHON` 指定解释器 |
+| `tests/stage2/auth/run_auth_tests.py` | 10 PASS | 登录、会话、守卫 |
 | `tests/stage2/master/run_master_tests.py` | 36 PASS | 主数据域，假连接不连库 |
-| `tests/stage2/inventory/run_inventory_tests.py` | 10 PASS | 库存域 |
-| `tests/stage2/common/run_common_tests.py` | 13 PASS | 共享访问层：多结果集顺序、空集占位、错误冒泡 |
-| `sql/stage2/regression.sql` | 37 条（13a 10 + 13b 5 + 13b 8 + 13c 14） | 迁移提交后跑 |
+| `tests/stage2/orders/run_tests.py` | 20 PASS | 订单域，需 `--sql-server` |
+| `tests/stage2/inventory/run_inventory_tests.py` | 12 PASS | 库存域 |
+| `tests/stage2/customer/run_customer_tests.py` | 10 PASS | 顾客端三层，假连接 |
+| `tests/stage2/common/run_common_tests.py` | 18 PASS | 共享访问层：多结果集顺序、空集占位、错误冒泡、驱动池 |
+| `sql/stage2/regression.sql` | 38 条（13a 10 + 13b 5 + 13b 8 + 13c 15） | 迁移提交后跑 |
+| `tests/stage2/inventory-security/run_inventory_security_tests.py` | 15 PASS | 需已迁移的 v1.0 库，不并入上面六套 |
 | `tests/stage2/check_app_common.py` | 9 条 | 连库冒烟：`PYTHONPATH=. KFC_DB_SERVER=... KFC_DB_TRUSTED_CONNECTION=yes KFC_DB_TRUST_CERT=yes python tests/stage2/check_app_common.py` |
 
 测试入口的分母都是硬编码的，少跑一条或有 skip 都判失败——「绿了」必须是真的跑满。

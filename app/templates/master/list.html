@@ -5,6 +5,10 @@
 {% if error %}<div class="error">{{ error }}</div>{% endif %}
 
 <h2>{{ meta.title }}<span class="hint"> · {{ meta.code }}</span></h2>
+{% if entity == 'product' %}
+<p class="hint">本页数据经 <code>GET /api/master/product</code> 取回，表单经
+  <code>POST /api/master/product/&lt;action&gt;</code> 提交；其余实体页仍是服务端渲染。</p>
+{% endif %}
 
 {% if meta.status|default(true) %}
 <form method="get" action="{{ url_for('master.list_view', entity=entity) }}">
@@ -30,10 +34,94 @@
     {% endfor %}
   </tbody>
 </table>
-<p class="hint">共 {{ rows|length }} 行。</p>
+<p class="hint" id="row-count">共 {{ rows|length }} 行。</p>
 {% else %}
 <div class="empty">没有符合条件的记录。</div>
 {% endif %}
 
 {% include "master/forms/" ~ entity ~ ".html" %}
+{% endblock %}
+
+{% block scripts %}
+{% if entity == 'product' %}
+<script>
+(function () {
+  "use strict";
+  var entity = "product";
+  var tokenMeta = document.querySelector('meta[name="csrf-token"]');
+  var token = tokenMeta ? tokenMeta.content : "";
+  var keys = {{ column_keys | tojson }};
+  var tbody = document.querySelector("table tbody");
+  var count = document.getElementById("row-count");
+  var main = document.querySelector("main");
+
+  function banner(cls, text) {
+    var box = document.createElement("div");
+    box.className = cls;
+    box.textContent = text;
+    main.insertBefore(box, main.firstChild);
+    setTimeout(function () { box.remove(); }, 8000);
+  }
+
+  function render(rows) {
+    if (!tbody) { return; }
+    tbody.innerHTML = "";
+    rows.forEach(function (row) {
+      var tr = document.createElement("tr");
+      keys.forEach(function (key) {
+        var td = document.createElement("td");
+        var value = row[key];
+        td.textContent = (value === null || value === undefined) ? "—" : value;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  function load() {
+    fetch("/api/master/" + entity + window.location.search, {
+      headers: { "Accept": "application/json" }
+    }).then(function (res) {
+      return res.json().then(function (body) {
+        if (!res.ok) {
+          banner("error", body.message + "（" + body.code + "）");
+          return;
+        }
+        render(body.rows);
+        if (count) { count.textContent = "共 " + body.count + " 行。"; }
+      });
+    });
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('form[method="post"]'), function (form) {
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var data = {};
+      new FormData(form).forEach(function (value, key) { data[key] = value; });
+      fetch(form.action, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-CSRF-Token": token
+        },
+        body: JSON.stringify(data)
+      }).then(function (res) {
+        return res.json().then(function (body) {
+          if (res.ok) {
+            banner("notice", body.message);
+            form.reset();
+            load();
+          } else {
+            banner("error", body.message + "（" + body.code + "）");
+          }
+        });
+      });
+    });
+  });
+
+  load();
+})();
+</script>
+{% endif %}
 {% endblock %}
