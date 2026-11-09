@@ -206,15 +206,16 @@ sqlcmd -S localhost -E -C -f 65001 -b -I -i sql/stage2/regression.sql
 
 | 入口 | 期望 | 说明 |
 | --- | --- | --- |
-| `powershell -ExecutionPolicy Bypass -File tests/stage2/run-all.ps1 -Python .venv\Scripts\python.exe` | `RESULT: run-all files=6 failed=0`（106 条） | 六套汇总；可用 `-Python` 或 `$env:KFC_DB_PYTHON` 指定解释器 |
+| `powershell -ExecutionPolicy Bypass -File tests/stage2/run-all.ps1 -Python .venv\Scripts\python.exe` | `RESULT: run-all files=7 failed=0`（118 条） | 七套汇总；可用 `-Python` 或 `$env:KFC_DB_PYTHON` 指定解释器 |
 | `tests/stage2/auth/run_auth_tests.py` | 10 PASS | 登录、会话、守卫 |
 | `tests/stage2/master/run_master_tests.py` | 36 PASS | 主数据域，假连接不连库 |
 | `tests/stage2/orders/run_tests.py` | 20 PASS | 订单域，需 `--sql-server` |
 | `tests/stage2/inventory/run_inventory_tests.py` | 12 PASS | 库存域 |
 | `tests/stage2/customer/run_customer_tests.py` | 10 PASS | 顾客端三层，假连接 |
+| `tests/stage2/api/run_api_tests.py` | 12 PASS | A 域 `/api/master`：列表、元数据、CSRF、错误体 |
 | `tests/stage2/common/run_common_tests.py` | 18 PASS | 共享访问层：多结果集顺序、空集占位、错误冒泡、驱动池 |
 | `sql/stage2/regression.sql` | 38 条（13a 10 + 13b 5 + 13b 8 + 13c 15） | 迁移提交后跑 |
-| `tests/stage2/inventory-security/run_inventory_security_tests.py` | 15 PASS | 需已迁移的 v1.0 库，不并入上面六套 |
+| `tests/stage2/inventory-security/run_inventory_security_tests.py` | 15 PASS | 需已迁移的 v1.0 库，不并入上面七套 |
 | `tests/stage2/check_app_common.py` | 9 条 | 连库冒烟：`PYTHONPATH=. KFC_DB_SERVER=... KFC_DB_TRUSTED_CONNECTION=yes KFC_DB_TRUST_CERT=yes python tests/stage2/check_app_common.py` |
 
 测试入口的分母都是硬编码的，少跑一条或有 skip 都判失败——「绿了」必须是真的跑满。

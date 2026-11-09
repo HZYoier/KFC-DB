@@ -4,7 +4,7 @@
 
 ## 项目范围
 
-覆盖门店从后台准备到补货闭环的完整经营链路，按业务主线分层建设：商品/BOM/促销等主数据、订单与支付、积分两段式、防超卖库存、补货建议与采购入库，以及后续的经营分析视角。**第一阶段关系数据库交付已完成**：可从空库一次部署表、约束、过程、视图、种子和岗位权限，并执行 A/B/C 三域验收。**第二阶段已交付**：ER 模型重建（2.1）的四类交付物已齐——三域子图与合并总图（25 实体 / 35 外键）、三域规范化分析、问题清单、A 的命名与情形验证，「数据库设计」一节五项已补全；迁移（2.2）已在本机真实库上从 v0.1 一次性推进到 v1.0，`run_migration` 在单个外层事务里串 `11a → 11b → 11c → 12`，交付 15 个过程与 58 个权限码（71 条角色授权），提交后 `regression` 38/0，迁移前后的关键查询对照见 [`result/stage2/a-migration-compare/`](result/stage2/a-migration-compare/)；应用开发（2.3）`app/common/` 访问层底座与各域 routes / service / dao 三层落地，主数据九实体维护页（店长视角）、订单岗位工作台、库存与权限页、顾客自助端均可用，六套应用测试 106/0（A 域 JSON 接口 12/0 走独立入口，尚未并入汇总，见 OI-21），A 域 12 张运行截图取自 v1.0 真实库。
+覆盖门店从后台准备到补货闭环的完整经营链路，按业务主线分层建设：商品/BOM/促销等主数据、订单与支付、积分两段式、防超卖库存、补货建议与采购入库，以及后续的经营分析视角。**第一阶段关系数据库交付已完成**：可从空库一次部署表、约束、过程、视图、种子和岗位权限，并执行 A/B/C 三域验收。**第二阶段已交付**：ER 模型重建（2.1）的四类交付物已齐——三域子图与合并总图（25 实体 / 35 外键）、三域规范化分析、问题清单、A 的命名与情形验证，「数据库设计」一节五项已补全；迁移（2.2）已在本机真实库上从 v0.1 一次性推进到 v1.0，`run_migration` 在单个外层事务里串 `11a → 11b → 11c → 12`，交付 15 个过程与 58 个权限码（71 条角色授权），提交后 `regression` 38/0，迁移前后的关键查询对照见 [`result/stage2/a-migration-compare/`](result/stage2/a-migration-compare/)；应用开发（2.3）`app/common/` 访问层底座与各域 routes / service / dao 三层落地，主数据九实体维护页（店长视角）、订单岗位工作台、库存与权限页、顾客自助端均可用，七套应用测试 118/0（common 18 + auth 10 + master 36 + orders 20 + inventory 12 + customer 10 + api 12），A 域 12 张运行截图取自 v1.0 真实库。
 
 ## 目录结构
 
@@ -52,9 +52,9 @@ KFC-DB/
 │   │   ├── test-report.md        完整测试报告：环境、结果、E2E 结论、三次独立复验
 │   │   ├── cross-domain-interface-contract.md   A/B/C 之间冻结的接口契约
 │   │   └── three-person-implementation-plan.md  第一阶段协作实施计划与分工总览
-│   ├── stage2/                  第二阶段过程文档（32 份，索引见 stage2/README.md）
+│   ├── stage2/                  第二阶段过程文档（33 份，索引见 stage2/README.md）
 │   │   ├── README.md                目录索引：按用途分组，阶段报告置顶
-│   │   ├── reports/                 三份阶段报告（A / B / C）：审核先看这里
+│   │   ├── reports/                 组级阶段报告 + 三份成员报告（A / B / C）：审核先看这里
 │   │   ├── source-requirements.md   教学要求核对：65 项逐条编号与落点
 │   │   ├── open-issues.md           跨域开放问题：状态与决议的唯一入口
 │   │   ├── application-contract.md  第二阶段跨域接口契约（§2 定于 2026-11-03 冻结）
@@ -90,7 +90,7 @@ KFC-DB/
 
 ![项目结构图](docs/stage2/project-structure.svg)
 
-上图左半是上面的目录树，右半是运行时分层与调用链；域配色沿用合并 ER 总图（A 蓝 / B 黄 / C 绿）。三个域均已交付，2026-11-09 真实迁移提交 v1.0、`regression` 38/0、六套应用测试 106/0。
+上图左半是上面的目录树，右半是运行时分层与调用链；域配色沿用合并 ER 总图（A 蓝 / B 黄 / C 绿）。三个域均已交付，2026-11-09 真实迁移提交 v1.0、`regression` 38/0、七套应用测试 118/0。
 
 部署入口只有 `sql/stage1/run_all.sql` 一个。`docs/` 与 `result/` 不参与部署，分别是设计依据和执行证据。
 
@@ -234,7 +234,7 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -I -i "sql/stage2/regr
 - 第二步在**一个外层事务**里串 `11a → 11b → 11c → 12`，任一步失败整体回滚，库仍是 v0.1（预检码 `53500`–`53503`）。
 - 第三步必须在提交后跑，按 `SchemaVersion('v1.0')` 取批次号，期望 **38 条**（`13a` 10 + `13b` 5 + `13b` 8 + `13c` 15）。
 - 应用侧：复制 `config.example.env` 为 `.env` 填本机实例名，`python run.py` 启动；员工必须用**自己的数据库登录**（管理员按 `sql/stage2/provision_employee.template.ps1` 建），操作步骤见[操作手册](docs/stage2/user-manual.md)。
-- 测试汇总入口：`powershell -ExecutionPolicy Bypass -File tests/stage2/run-all.ps1`（默认 `conda run -n py_env3.11`，可用 `-CondaEnv` 或 `-Python` 改；没有 conda 的环境按 `tests/stage2/{common,auth,master,orders,inventory}` 各自的 `run_*` 入口跑，见 OI-17）。A 域的 JSON 接口另有独立入口 `.venv\Scripts\python tests\stage2\api\run_api_tests.py`（12 条，不连库），尚未并入 `run-all.ps1`，见 [OI-21](docs/stage2/open-issues.md)。
+- 测试汇总入口：`powershell -ExecutionPolicy Bypass -File tests/stage2/run-all.ps1`（默认 `conda run -n py_env3.11`，可用 `-CondaEnv` 或 `-Python` 改；没有 conda 的环境按 `tests/stage2/{common,auth,master,orders,inventory,customer,api}` 各自的 `run_*` 入口跑，见 OI-17）。七套的期望是 **118/0**、汇总行 `RESULT: run-all files=7 failed=0`。
 
 迁移协议与回滚细则见[迁移指南](docs/stage2/migration-guide.md)；A 域的实测结果见[第二阶段 A 报告](docs/stage2/reports/a-stage2-report.md)。
 
@@ -252,11 +252,12 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -I -i "sql/stage2/regr
 - [跨域接口契约](docs/stage1/cross-domain-interface-contract.md) — 三域之间的冻结接口：对象名、参数顺序与类型、返回列、种子常量，以及只读检查器 `sql/stage1/contract_interface_check.sql` 的校验口径
 - [第一阶段三人协作实施计划](docs/stage1/three-person-implementation-plan.md) — 对象、接口、角色和验收标准
 - [第二阶段三人协作实施计划](docs/stage2-three-person-implementation-plan.md) — ER 重建、规范化迁移与应用开发分工；含员工数据库身份、岗位查询接口、原子迁移/恢复、文件属主和修订自查。2.2 迁移与应用层已按该计划实施（v1.0 迁移脚本、`app/` 三层与测试入口已交付）
-- 第二阶段过程文档（[目录索引](docs/stage2/README.md)：按用途分组，阶段报告置顶）：[操作手册](docs/stage2/user-manual.md)（启动、迁移顺序、七岗位与顾客端入口、全部可用界面的操作步骤）、[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（§2 八写六查已冻结，§2.4 四个查询/注册接口 2026-11-01 补入；§1 顾客端 `§1.7` 四条联合边界 2026-11-06 定稿、§1 冻结；三个顾客过程已随 `11a`/`11b` 交付并经 `cust_app` 实调）、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-20 的状态与决议唯一入口）、[业务规则映射](docs/stage2/business-rule-mapping.md)（35 条外键的基数与实现机制）、[重构方案](docs/stage2/refactoring-design.md)、[事务边界](docs/stage2/transaction-boundaries.md)、[访问层接口](docs/stage2/access-layer-contract.md)（`app/common/` 的五个签名、多结果集口径与错误码映射）
+- [**第二阶段组级阶段报告**](docs/stage2/reports/阶段报告.md) — 总报告：2.1 ER 重建、2.2 规范化与真实迁移、2.3 应用开发的设计与实现，27 张运行截图逐图标注执行步骤，附测试数字、限制与证据索引
+- 第二阶段过程文档（[目录索引](docs/stage2/README.md)：按用途分组，阶段报告置顶）：[操作手册](docs/stage2/user-manual.md)（启动、迁移顺序、七岗位与顾客端入口、全部可用界面的操作步骤）、[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（§2 八写六查已冻结，§2.4 四个查询/注册接口 2026-11-01 补入；§1 顾客端 `§1.7` 四条联合边界 2026-11-06 定稿、§1 冻结；三个顾客过程已随 `11a`/`11b` 交付并经 `cust_app` 实调）、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-21 的状态与决议唯一入口）、[业务规则映射](docs/stage2/business-rule-mapping.md)（35 条外键的基数与实现机制）、[重构方案](docs/stage2/refactoring-design.md)、[事务边界](docs/stage2/transaction-boundaries.md)、[访问层接口](docs/stage2/access-layer-contract.md)（`app/common/` 的五个签名、多结果集口径与错误码映射）
 - 三域分析：[A 域](docs/stage2/a-issues.md)问题清单 / [规范化](docs/stage2/a-normalization.md)、[B 域](docs/stage2/b-issues.md)问题清单 / [规范化](docs/stage2/b-normalization.md)、[C 域](docs/stage2/c-issues.md)问题清单 / [规范化](docs/stage2/c-normalization.md)、[命名口径](docs/stage2/naming.md)
 - [ER 图](docs/er/) — [图例](docs/er/legend.md)与三域子图（[主数据](docs/er/a-master.svg)、[订单](docs/er/b-order.svg)、[库存权限](docs/er/c-inventory-security.svg)）；合并总图（25 实体 35 联系）
 - [主数据数据字典](docs/主数据数据字典.md)、[订单履约数据字典](docs/订单履约数据字典.md)、[库存权限数据字典](docs/库存权限数据字典.md)
 - [第一阶段测试报告](docs/stage1/test-report.md)
-- 第二阶段成员报告：[成员 A](docs/stage2/reports/a-stage2-report.md)（主数据、定价与会员）、[成员 B](docs/stage2/reports/b-stage2-report.md)（订单、支付与履约）、[成员 C](docs/stage2/reports/c-stage2-report.md)（迁移、权限、库存与顾客应用）
+- 第二阶段成员报告：[组级阶段报告](docs/stage2/reports/阶段报告.md)（合并总述）、[成员 A](docs/stage2/reports/a-stage2-report.md)（主数据、定价与会员）、[成员 B](docs/stage2/reports/b-stage2-report.md)（订单、支付与履约）、[成员 C](docs/stage2/reports/c-stage2-report.md)（迁移、权限、库存与顾客应用）
 - 第一阶段成员分工报告：[成员 A](docs/stage1/a-stage-report.md)（主数据与定价）、[成员 B](docs/stage1/b-stage-report.md)（订单与履约）、[成员 C](docs/stage1/c-stage-report.md)（库存、权限与集成）
 - [AI使用记录](docs/AI使用记录.md)

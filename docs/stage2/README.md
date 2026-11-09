@@ -7,17 +7,19 @@
 
 | 顺序 | 文档 | 属主 | 说明 |
 | --- | --- | --- | --- |
-| 1 | [A 阶段报告](reports/a-stage2-report.md) | A | 主数据、定价与会员：迁移、应用层、九实体页面与 12 张运行截图 |
-| 2 | [B 阶段报告](reports/b-stage2-report.md) | B | 订单、支付与履约：`11b`、岗位工作台与 8 张运行截图 |
-| 3 | [C 阶段报告](reports/c-stage2-report.md) | C | 迁移、权限、库存与顾客应用 |
-| 4 | [测试报告](test-report.md) | C | 全组测试汇总：环境、结果、证据索引 |
-| 5 | [操作手册](user-manual.md) | C | 启动、迁移顺序、各岗位与顾客端入口、全部界面的操作步骤 |
-| 6 | [迁移指南](migration-guide.md) | C | 采集、迁移、回归的执行顺序与回滚细则 |
+| 1 | [组级阶段报告](reports/阶段报告.md) | A | 先看这份：2.1/2.2/2.3 的设计、实现与测试全程，27 张运行截图逐图说明执行步骤 |
+| 2 | [A 阶段报告](reports/a-stage2-report.md) | A | 主数据、定价与会员：迁移、应用层、九实体页面与 12 张运行截图 |
+| 3 | [B 阶段报告](reports/b-stage2-report.md) | B | 订单、支付与履约：`11b`、岗位工作台与 8 张运行截图 |
+| 4 | [C 阶段报告](reports/c-stage2-report.md) | C | 迁移、权限、库存与顾客应用 |
+| 5 | [测试报告](test-report.md) | C | 全组测试汇总：环境、结果、证据索引 |
+| 6 | [操作手册](user-manual.md) | C | 启动、迁移顺序、各岗位与顾客端入口、全部界面的操作步骤 |
+| 7 | [迁移指南](migration-guide.md) | C | 采集、迁移、回归的执行顺序与回滚细则 |
 
 ## 阶段报告（`reports/`）
 
 | 文件 | 属主 | 说明 |
 | --- | --- | --- |
+| [reports/阶段报告.md](reports/阶段报告.md) | A | 组级总报告：设计、实验过程、27 张截图逐图说明、总结与证据索引 |
 | [reports/a-stage2-report.md](reports/a-stage2-report.md) | A | 主数据域迁移与应用落地 |
 | [reports/b-stage2-report.md](reports/b-stage2-report.md) | B | 订单、支付与履约 |
 | [reports/c-stage2-report.md](reports/c-stage2-report.md) | C | 迁移、权限、库存与顾客应用 |
@@ -77,6 +79,6 @@
 
 ## 约定
 
-- 阶段报告只放 `reports/`，新写的按 `<成员>-stage2-report.md` 命名（见 [naming.md](naming.md) §5）。
+- 阶段报告只放 `reports/`：组级总报告固定叫 `阶段报告.md`（与 `docs/stage1/阶段报告.md` 同名），成员报告按 `<成员>-stage2-report.md` 命名（见 [naming.md](naming.md) §5）。
 - 跨域问题一律登记到 [open-issues.md](open-issues.md)，状态列由 C 统一维护；域内问题写各域 `*-issues.md`。
 - 新增文档时在本表对应分组补一行，不要另起目录。
