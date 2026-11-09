@@ -11,7 +11,7 @@
 | 真实 `run_migration`（A 11a + B 11b + C 11c/12） | 提交 v1.0；**15 个过程 / 3 个 `cust_app` GRANT / 58 码 / 71 行** | `result/stage2/c-real-migration-2026-11-09.txt` |
 | `13a` / `13b` baseline / `13b` write | **10/0** / **5/0** / **8/8** | 真实迁移后的 `regression` |
 | `13c` | **15/0**（目录/映射/GRANT/cust_app/上下文/UQ/账本/建议/签名/视图/员工角色 229） | 同上 |
-| `tests/stage2/inventory-security`（C） | **15/0** | 真实 v1.0 上运行 13c；独立入口需已迁移数据库，不并入六套 fake-DB `run-all` |
+| `tests/stage2/inventory-security`（C） | **15/0** | 真实 v1.0 上运行 13c；独立入口需已迁移数据库，不并入七套 fake-DB `run-all` |
 | `regression.sql` | **38/0**（13a 10 + 13b 5 + 13b 8 + 13c 15） | 同上 |
 | `cust_app` 三过程 | **3/0**（`EXECUTE AS USER='cust_app'` 实调 register/place/list；事务回滚） | `result/stage2/c-customer-custapp-2026-11-09.txt` |
 | 签名三路径低权限 | **3/0**（ALTER 后回滚 / 重签后回滚 / 重签提交 + 普通岗位 229） | `result/stage2/c-signature-three-paths-2026-11-03.txt` |
@@ -25,16 +25,17 @@
 | `tests/stage2/auth`（C） | **10/0** | 登录/注销/安全 next/cookie 不含口令/身份失效检测 |
 | `tests/stage2/inventory`（C） | **12/0** | 输入边界/参数定型/视图 SQL/模板/员工角色正反入口 |
 | `tests/stage2/customer`（C） | **10/0** | `/customer` 公开页、建档/下单/查单输入边界、`cust_app` 参数定型、失败不连库 |
+| `tests/stage2/api`（A） | **12/0** | `/api/master` JSON 列表/元数据/提交、CSRF、错误映射；A 新增，已并入汇总 |
 | HTTP integration（C，临时 SQL 登录） | **3/0** | store/master/inventory/orders、五个 B 岗位订单页、shift 库存页；顾客建档→下单→取餐码查单；随机临时登录，跑完清理 |
 | `tests/stage2/master`（A） | **36/0** | 既有主数据域回归 |
 | `tests/stage2/orders`（B） | **20/0** | B 的 Common 适配后回归（需 `--sql-server`） |
 
-`tests/stage2/run-all.ps1` 已更新为六套（`files=6`），支持 `-Python`/`$env:KFC_DB_PYTHON`；2026-11-09 以 `powershell -NoProfile -File ... -Python D:\Miniconda\envs\py_env3.11\python.exe` 实跑六套 **106/0**（common 18 + auth 10 + master 36 + orders 20 + inventory 12 + customer 10），`RESULT: run-all files=6 failed=0`，证据 `result/stage2/c-runall-customer-2026-11-09.txt`。
+`tests/stage2/run-all.ps1` 已更新为七套（`files=7`），支持 `-Python`/`$env:KFC_DB_PYTHON`；2026-11-09 以 `powershell -NoProfile -File ... -Python D:\Miniconda\envs\py_env3.11\python.exe` 实跑七套 **118/0**（common 18 + auth 10 + master 36 + orders 20 + inventory 12 + customer 10 + api 12），`RESULT: run-all files=7 failed=0`，证据 `result/stage2/c-runall-final-2026-11-09.txt`。
 
 ## 3. 未覆盖与边界
 
 - **C 已完成技术 HTTP smoke**：用随机临时 SQL 登录（口令不打印、跑完删除）走员工 store/master/inventory/orders、五个 B 岗位订单页、shift 库存页，以及顾客建档→下单→取餐码查单，**3/0**。正式部署仍需操作者执行 `provision_employee.template.ps1` / `provision_customer.template.ps1` 并设置本机 `.env` 的 `KFC_CUST_DB_LOGIN`/`KFC_CUST_DB_PASSWORD`，再用浏览器与 A/B 联合验收。顾客页当前输入商品 ID/数量；本轮没有对顾客开放的商品目录过程，商品 ID 需向店员确认。
 - **真实员工 SQL 登录/员工模板未执行**：`provision_employee.template.ps1` 仅通过 PowerShell 语法解析；不影响本报告的 SQL/应用 fake-DB 结论，但联合登录验收仍未做。
-- **B 的验收记录独立**：B 的 11b 行为/并发/退款等由 `result/stage2/b-order-acceptance-final.md` 负责；C 只复核了真实迁移、13c、cust_app 三过程与六套应用测试，不代签 B 的页面/并发结论。
+- **B 的验收记录独立**：B 的 11b 行为/并发/退款等由 `result/stage2/b-order-acceptance-final.md` 负责；C 只复核了真实迁移、13c、cust_app 三过程与七套应用测试，不代签 B 的页面/并发结论。
 - **OI-20 非阻塞**：历史审计脚本硬编码仓库根，C/B 各属主下次处理；不影响已归档结论。
 - `KFC_DB` 在测试后删除；复现需先 `sql/stage1/run_all.sql`，再做采集/迁移/测试。

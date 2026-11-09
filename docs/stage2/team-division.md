@@ -44,7 +44,7 @@
 | B 真实 `11b_order_migration.sql` | **已到并验收**：六员工查询 + place/list；真实迁移 15 过程/38 回归 | C 已复核 |
 | 顾客三过程/OI-10 | **已收口**：A register + B place/list + C 12 授权；C 顾客页已落 | C/操作者做真实顾客登录部署 |
 | C `11c` 58/71、`12/13c/run_migration/regression` | 已落稿；真实 11b 迁移 15 过程/3 个 `cust_app` GRANT；regression 38/0 | C |
-| C `app/auth`/`app/inventory`/`app/auth/customer*`/`run.py` | 已落；auth 10/0、inventory 12/0、customer 10/0、run-all 六套 106/0 | C |
+| C `app/auth`/`app/inventory`/`app/auth/customer*`/`run.py` | 已落；auth 10/0、inventory 12/0、customer 10/0、run-all 七套 118/0（含 A API 12） | C |
 | 真实员工/顾客 SQL 登录部署 | C 已做随机临时登录的 HTTP smoke **3/0**；正式登录映射/浏览器验收仍待操作者输入口令 | C + 操作者 + A/B |
 
 ## 5. 共享约定

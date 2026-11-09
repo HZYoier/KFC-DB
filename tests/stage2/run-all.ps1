@@ -35,6 +35,7 @@ Invoke-PythonSuite 'master' @('tests/stage2/master/run_master_tests.py')
 Invoke-PythonSuite 'orders' @('tests/stage2/orders/run_tests.py', '--sql-server', $SqlServer)
 Invoke-PythonSuite 'inventory' @('tests/stage2/inventory/run_inventory_tests.py')
 Invoke-PythonSuite 'customer' @('tests/stage2/customer/run_customer_tests.py')
+Invoke-PythonSuite 'api' @('tests/stage2/api/run_api_tests.py')
 
-Write-Host 'RESULT: run-all files=6 failed=0'
+Write-Host 'RESULT: run-all files=7 failed=0'
 exit 0

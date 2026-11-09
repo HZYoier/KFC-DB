@@ -70,6 +70,7 @@
 - （2026-11-09 增补）`c-runall-customer-2026-11-09.txt`：`run-all.ps1 -Python` 六套完整输出（common 18 / auth 10 / master 36 / orders 20 / inventory 12 / customer 10；`RESULT: run-all files=6 failed=0`）。
 - （2026-11-09 增补）`c-inventory-security-2026-11-09.txt`：`tests/stage2/inventory-security` 入口调用真实 v1.0 的 13c，`RESULT: pass=15 fail=0`、`RESULT: inventory-security files=1 pass=15 fail=0`。
 - （2026-11-09 增补）`c-http-integration-2026-11-09.txt`：C 技术联调 smoke；用随机临时 SQL 登录（不打印口令、跑完 drop）走 store/master/inventory/orders、五个 B 岗位订单页、shift 库存页，以及顾客建档→下单→取餐码查单；`RESULT: pass=3 fail=0 total=3`。
+- （2026-11-09 增补）`c-runall-final-2026-11-09.txt`：合并 A API 后的最终汇总，七套 **118/0**（common 18 / auth 10 / master 36 / orders 20 / inventory 12 / customer 10 / api 12；`RESULT: run-all files=7 failed=0`）。
 - （2026-11-09 增补）`c-inventory-customer-ui/README.md` + 7 张 PNG：真实 v1.0 下的员工登录/店长身份/库存看板/员工角色/顾客三表单/下单结果/查单截图；临时 SQL 登录随机口令，截图后恢复用户并删除登录。
 - （2026-11-09 增补）`c-customer-custapp-2026-11-09.txt`：`EXECUTE AS USER='cust_app'` 实调 register/place/list 三过程（3/0，事务回滚）；不是真实 HTTP 顾客登录。
 
@@ -133,4 +134,5 @@ D803E7D78DAD7522F587D1DD3DDCA9FD5414A137274E98F4A91918657752D09E  c-real-migrati
 775A854598F3F76FBDB78A8C5A417DDC27CBAE41338213B7359B7DB8ECC45849  c-customer-custapp-2026-11-09.txt
 075851AD9483936D67F913B498B5C11AB32D8DB0EB9CFA403E4CFC962A6E6BD1  c-inventory-security-2026-11-09.txt
 79760FDB0FEC17914C2044FA9329FD1179279BFAEF4051ED9536121C97F5F6B3  c-http-integration-2026-11-09.txt
+C39C879F6D813EF78E928B128D74E712E4F271F5FC7E3D92105CF01FA03E60BB  c-runall-final-2026-11-09.txt
 ```

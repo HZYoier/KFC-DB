@@ -34,7 +34,7 @@
 | `app/templates/customer/index.html` | 顾客自助三表单与结果展示；取餐码只经 POST 返回，不写 URL |
 | `app/inventory/` | 库存看板、流水、补货创建/调整/提交/审批/驳回、收货、员工角色页 |
 | `run.py` | Flask 启动入口；`pyodbc.pooling = False` 进程级兜底 |
-| `tests/stage2/auth` / `inventory` / `customer` | 10 + 12 + 10 条 fake-DB 测试；`run-all.ps1` 六套汇总 |
+| `tests/stage2/auth` / `inventory` / `customer` / `api` | 10 + 12 + 10 条 C 侧 fake-DB 测试，加 A 的 API 12 条；`run-all.ps1` 七套汇总 |
 | `sql/stage2/provision_employee.template.ps1` | 员工 SQL 登录/同名用户/EmployeeAccount 映射模板（口令由操作者输入） |
 | `sql/stage2/provision_customer.template.ps1` | `cust_app` 的 SQL 登录/映射模板；只核三个 EXECUTE，不授予额外权限（口令由操作者输入） |
 
@@ -82,20 +82,20 @@
 | `cust_app` 三过程 | **3/0** | `EXECUTE AS USER='cust_app'` 实调 register/place/list，事务内回滚；证据 `c-customer-custapp-2026-11-09.txt` |
 | 签名三路径 | **3/0** | 真实 v0.1；低权限店长实际调用 + 普通岗位 229 |
 | auth / inventory / customer | **10/0 / 12/0 / 10/0** | 登录注销与 cookie、库存输入边界、顾客三表单与参数定型 |
-| 既有 app 回归 | common 18/0、master 36/0、orders 20/0；run-all 六套 **106/0** | 2026-11-09 `run-all.ps1 -Python` 实跑，证据 `c-runall-customer-2026-11-09.txt` |
+| 既有 app 回归 | common 18/0、master 36/0、orders 20/0、api 12/0；run-all 七套 **118/0** | 2026-11-09 `run-all.ps1 -Python` 实跑，证据 `c-runall-final-2026-11-09.txt` |
 | C HTTP smoke（临时 SQL 登录） | **3/0** | store/master/inventory/orders、五个 B 岗位订单页、shift 库存页；顾客建档→下单→取餐码查单；随机口令不打印、跑完清理 |
 
 ## 4. 决策与边界
 
 - **已关闭**：OI-10（三顾客过程 + 12 授权 + 13c）、OI-14（Common 多结果集）、OI-15（员工角色查询）、OI-16（驱动池）、OI-17（`run-all` 解释器）、OI-18（B 11b）、OI-19（`@customer_name`）。
 - **仍 open（非阻塞）**：OI-20（历史审计脚本硬编码仓库根；C/B 各自属主下次处理）、OI-05/OI-11 等礼节项。
-- **已完成**：真实 11b 迁移与 38 条回归；顾客页、`cust_app` 模板、六套应用测试；`KFC_DB` 测试后删除。
+- **已完成**：真实 11b 迁移与 38 条回归；顾客页、`cust_app` 模板、七套应用测试（118/0）；`KFC_DB` 测试后删除。
 - **已完成/边界**：C 已用随机临时 SQL 登录做技术 HTTP smoke（3/0），口令不打印、跑完删除；正式顾客/员工登录映射仍需操作者执行模板并配置 `.env`，再由 A/B/C 做浏览器联合验收。A 的操作手册/README 仍可能写“顾客页待交付”，需 A 按本报告更新。C 不以 fake DAO、`EXECUTE AS` 或 B 的联调记录冒充正式联合验收。
 - `cust_app` 三过程由 `12` 条件授权；缺失时 `13c-7` 必须失败，不以空列表冒充成功。
 
 ## 5. 下一步
 
 1. 操作者执行 `provision_customer.template.ps1`，在 `.env` 配置顾客登录；用真实浏览器走通建档→下单→取餐码查单→响应丢失边界。
-2. A 更新操作手册/README 的顾客页与六套测试入口；B 的订单工作台入口按联合验收补链接。
+2. A 更新操作手册/README 的顾客页与七套测试入口；B 的订单工作台入口按联合验收补链接。
 3. 处理 OI-20 的 C 侧历史脚本路径（不阻塞验收）。
 4. 收尾保留本报告、测试报告、证据 README 与数据字典 v1.0 一致；不再使用临时桩。
