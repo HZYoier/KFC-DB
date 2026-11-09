@@ -4,7 +4,7 @@
 
 ## 项目范围
 
-覆盖门店从后台准备到补货闭环的完整经营链路，按业务主线分层建设：商品/BOM/促销等主数据、订单与支付、积分两段式、防超卖库存、补货建议与采购入库，以及后续的经营分析视角。**第一阶段关系数据库交付已完成**：可从空库一次部署表、约束、过程、视图、种子和岗位权限，并执行 A/B/C 三域验收。**第二阶段正在进行**：ER 模型重建（2.1）的四类交付物已齐——三域子图与合并总图（25 实体 / 35 外键）、三域规范化分析、问题清单、A 的命名与情形验证，「数据库设计」一节五项已补全；迁移（2.2）只差 B 的 `11b`——`11a` / `11c` / `12_permissions` / `13a` / `13b` / `13c` / `run_migration` / `regression` 均已交付并实测，而 `run_migration` 的 53513 已要求 15 个过程，缺 `11b` 会直接失败（OI-18）；应用开发（2.3）已起访问层底座 `app/common/` 与五套应用测试，主数据域三层（列表 + 表单，店长视角）已通，收银选品 / 检索 / 建档 / 顾客建档四个库接口补进 `11a`，订单域已有业务层与用例，顾客端页面与 place/list 过程未交付。
+覆盖门店从后台准备到补货闭环的完整经营链路，按业务主线分层建设：商品/BOM/促销等主数据、订单与支付、积分两段式、防超卖库存、补货建议与采购入库，以及后续的经营分析视角。**第一阶段关系数据库交付已完成**：可从空库一次部署表、约束、过程、视图、种子和岗位权限，并执行 A/B/C 三域验收。**第二阶段已交付**：ER 模型重建（2.1）的四类交付物已齐——三域子图与合并总图（25 实体 / 35 外键）、三域规范化分析、问题清单、A 的命名与情形验证，「数据库设计」一节五项已补全；迁移（2.2）已在本机真实库上从 v0.1 一次性推进到 v1.0，`run_migration` 在单个外层事务里串 `11a → 11b → 11c → 12`，交付 15 个过程与 58 个权限码（71 条角色授权），提交后 `regression` 38/0，迁移前后的关键查询对照见 [`result/stage2/a-migration-compare/`](result/stage2/a-migration-compare/)；应用开发（2.3）`app/common/` 访问层底座与各域 routes / service / dao 三层落地，主数据九实体维护页（店长视角）、订单岗位工作台、库存与权限页、顾客自助端均可用，六套应用测试 106/0，A 域 12 张运行截图取自 v1.0 真实库。
 
 ## 目录结构
 
@@ -69,7 +69,7 @@ KFC-DB/
 │       ├── b-order.drawio / .svg    订单与履约域子图（9 实体 10 联系）
 │       ├── c-inventory-security.drawio / .svg   库存权限域子图（12 实体 14 联系）
 │       └── stage2-model.drawio / .svg           合并总图（25 实体 35 联系，C 交付）
-└── result/                      执行证据（99 个：stage1/ 31 + stage2/ 30 + stage2/scripts/ 26 + 页面截图 12）
+└── result/                      执行证据（101 个：stage1/ 31 + stage2/ 30 + stage2/scripts/ 26 + 页面截图 12 + 迁移对照 2）
     ├── stage1/                  第一阶段证据：三机整跑、契约检查、对象清点、操作截图
     │   ├── README.md            证据清单：逐文件说明与全部 SHA-256
     │   ├── full-test-*.txt      三台机器各自从空库整跑的完整原始输出
@@ -80,7 +80,8 @@ KFC-DB/
     │   ├── full-test-summary-2026-10-01.png  结果摘要图
     │   └── a-*.png              19 张操作截图：建库、CRUD、关键查询、越权、非法数据、权限
     └── stage2/                  第二阶段证据：ER 复核、规范化校验、三机整跑原始输出
-        └── a-master-ui/              A 主数据页面截图（v1.0 真实库，2026-11-09）
+        ├── a-master-ui/              A 主数据页面截图（v1.0 真实库，2026-11-09）
+        └── a-migration-compare/      A 迁移前后关键查询逐行对照：只读脚本 + 原始输出
 ```
 
 ![项目结构图](docs/stage2/project-structure.svg)
@@ -232,6 +233,11 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -I -i "sql/stage2/regr
 - 测试汇总入口：`powershell -ExecutionPolicy Bypass -File tests/stage2/run-all.ps1`（默认 `conda run -n py_env3.11`，可用 `-CondaEnv` 或 `-Python` 改；没有 conda 的环境按 `tests/stage2/{common,auth,master,orders,inventory}` 各自的 `run_*` 入口跑，见 OI-17）。
 
 迁移协议与回滚细则见[迁移指南](docs/stage2/migration-guide.md)；A 域的实测结果见[第二阶段 A 报告](docs/stage2/reports/a-stage2-report.md)。
+
+## 实现口径：两处容易误读的取舍
+
+- **没有删除过程，删除一律用状态表达。** 商品 / 原料 / 分类 / 会员等级的"删除"是停用（`status = 'INACTIVE'`），订单是取消（`order_status = 'CANCELLED'`），员工离职是停用账号；全库没有任何 `sp_delete_*`。理由是订单、积分流水、库存流水与审计日志都要能追溯，物理删除会让"删除异常"的分析对象本身消失。仅有的三处物理 `DELETE` 都属于"整体替换 / 撤销"，不是删业务实体：`sp_set_product_bom` 与 `sp_set_combo_component` 先删后插同一商品 / 套餐的关联行，`sp_revoke_employee_business_role` 撤掉一行角色映射；三处都在同一事务里先取 before 快照写进 `AuditLog`，删的只是配置关联，不碰业务事实。
+- **页面是服务端渲染 + 表单 POST，不是 JSON API。** 浏览器提交带 CSRF 令牌的表单，服务端返回整页；错误按统一九类错误码映射成固定文案，页面路由把它渲染回同一页，未被页面接住的异常由全局处理器返回 `{code, message, request_id}`。全站没有 `/api` 前缀的 REST 层，业务数据不以 JSON 形式对外——接口契约冻结在存储过程层（[跨域接口契约](docs/stage2/application-contract.md)），页面只负责"岗位能做该做的、不能做不该做的"，且全程可截图复核。
 
 ## 文档索引
 

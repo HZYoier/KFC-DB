@@ -73,7 +73,9 @@
 | 共享访问层测试 | **18 通过 / 0 失败** |
 | 本机整链迁移 | 提交 v1.0：15 个过程 / 58 个权限码 / 71 行角色授权 |
 | 总回归 `regression` | **38 通过 / 0 失败** |
+| 迁移前后逐行对照 | **PASS，0 差异行**（订单 / 明细 / 库存 / 顾客四组，见 `result/stage2/a-migration-compare/`） |
 
+迁移有没有改坏数据，单独用一份只读脚本回答：把 `MigrationBaseline_*` 快照（`batch_id = 1`）与迁移后的业务表逐行比一遍——三张订单、三条明细的金额与状态前后相同（总额都是 47.90），6 行库存的在库总量与锁定量为 34338.00 / 0.00，3 位顾客的积分合计 2028 都没有变。权限侧是"只增不减"：基线里 46 个权限码迁移后一个不少，同名权限码的名称没有一处被改，新增 12 个（`sp_list_master_records`、`sp_register_customer_for_order` 等），授权行从 52 扩到 71。脚本与原始输出见 [result/stage2/a-migration-compare/](../../../result/stage2/a-migration-compare/)。
 
 ## 4. 实验结果
 
