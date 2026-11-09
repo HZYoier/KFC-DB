@@ -69,6 +69,7 @@
 - （2026-11-09 增补）`c-real-migration-2026-11-09.txt`：B 真实 `11b` 到达后的完整 `run_migration`（无临时桩）：15 个过程/3 个 `cust_app` GRANT/58 码/71 行、`regression` 38/0、六套应用 106/0。
 - （2026-11-09 增补）`c-runall-customer-2026-11-09.txt`：`run-all.ps1 -Python` 六套完整输出（common 18 / auth 10 / master 36 / orders 20 / inventory 12 / customer 10；`RESULT: run-all files=6 failed=0`）。
 - （2026-11-09 增补）`c-inventory-security-2026-11-09.txt`：`tests/stage2/inventory-security` 入口调用真实 v1.0 的 13c，`RESULT: pass=15 fail=0`、`RESULT: inventory-security files=1 pass=15 fail=0`。
+- （2026-11-09 增补）`c-http-integration-2026-11-09.txt`：C 技术联调 smoke；用随机临时 SQL 登录（不打印口令、跑完 drop）走 store/master/inventory/orders、五个 B 岗位订单页、shift 库存页，以及顾客建档→下单→取餐码查单；`RESULT: pass=3 fail=0 total=3`。
 - （2026-11-09 增补）`c-customer-custapp-2026-11-09.txt`：`EXECUTE AS USER='cust_app'` 实调 register/place/list 三过程（3/0，事务回滚）；不是真实 HTTP 顾客登录。
 
 ## SHA-256
@@ -130,4 +131,5 @@ D803E7D78DAD7522F587D1DD3DDCA9FD5414A137274E98F4A91918657752D09E  c-real-migrati
 45103A244F8D883221D4F8F9356F492B9B2DB6C9BC0B6C468B58DB57131F017C  c-runall-customer-2026-11-09.txt
 775A854598F3F76FBDB78A8C5A417DDC27CBAE41338213B7359B7DB8ECC45849  c-customer-custapp-2026-11-09.txt
 075851AD9483936D67F913B498B5C11AB32D8DB0EB9CFA403E4CFC962A6E6BD1  c-inventory-security-2026-11-09.txt
+79760FDB0FEC17914C2044FA9329FD1179279BFAEF4051ED9536121C97F5F6B3  c-http-integration-2026-11-09.txt
 ```

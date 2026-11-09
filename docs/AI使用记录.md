@@ -783,3 +783,13 @@
 **核对结果：** C 侧功能收尾完成；OI-20 仍是历史脚本路径的非阻塞项，A 的手册/README 与全员真实登录仍需 A/操作者处理。`KFC_DB` 已删除。
 
 **我的处理：** 本轮改动随后 commit；push 仍由我手动。
+
+## （2026-11-09 续）—— C 技术 HTTP 联调 smoke（C）
+
+**聊了什么：** 用户问联调是否 C 能完成；C 在随机临时 SQL 登录、不暴露口令的前提下，先把技术联调做完。
+
+**AI 做了什么：** 部署真实 v1.0，创建随机临时员工/顾客 SQL 登录并把 seeded 测试用户/`cust_app` 映射到临时登录；用 Flask test_client 走员工 store→master/inventory/orders、cashier/chef/packer/waiter/rider→orders、shift→inventory，以及顾客建档→下单→取餐码查单。口令只存在内存，不打印、不入仓；跑完删除数据库与临时登录。
+
+**核对结果：** `RESULT: pass=3 fail=0 total=3`，证据 `result/stage2/c-http-integration-2026-11-09.txt`。这证明 C 侧技术联调可跑通；正式员工/顾客登录部署与 A/B 联合验收仍需操作者/A/B。
+
+**我的处理：** 本轮证据随后 commit；push 仍由我手动。

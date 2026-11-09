@@ -25,6 +25,7 @@
 | `tests/stage2/auth`（C） | **10/0** | 登录/注销/安全 next/cookie 不含口令/身份失效检测 |
 | `tests/stage2/inventory`（C） | **12/0** | 输入边界/参数定型/视图 SQL/模板/员工角色正反入口 |
 | `tests/stage2/customer`（C） | **10/0** | `/customer` 公开页、建档/下单/查单输入边界、`cust_app` 参数定型、失败不连库 |
+| HTTP integration（C，临时 SQL 登录） | **3/0** | store/master/inventory/orders、五个 B 岗位订单页、shift 库存页；顾客建档→下单→取餐码查单；随机临时登录，跑完清理 |
 | `tests/stage2/master`（A） | **36/0** | 既有主数据域回归 |
 | `tests/stage2/orders`（B） | **20/0** | B 的 Common 适配后回归（需 `--sql-server`） |
 
@@ -32,7 +33,7 @@
 
 ## 3. 未覆盖与边界
 
-- **顾客真实 HTTP 登录未做**：`/customer` 的 fake DAO 测试与 `EXECUTE AS USER='cust_app'` 三过程测试通过；真实 SQL 登录映射需操作者执行 `provision_customer.template.ps1` 并设置本机 `.env` 的 `KFC_CUST_DB_LOGIN`/`KFC_CUST_DB_PASSWORD`，再用浏览器走通建档→下单→取餐码查单。 顾客页当前输入商品 ID/数量；本轮没有对顾客开放的商品目录过程，商品 ID 需向店员确认。
+- **C 已完成技术 HTTP smoke**：用随机临时 SQL 登录（口令不打印、跑完删除）走员工 store/master/inventory/orders、五个 B 岗位订单页、shift 库存页，以及顾客建档→下单→取餐码查单，**3/0**。正式部署仍需操作者执行 `provision_employee.template.ps1` / `provision_customer.template.ps1` 并设置本机 `.env` 的 `KFC_CUST_DB_LOGIN`/`KFC_CUST_DB_PASSWORD`，再用浏览器与 A/B 联合验收。顾客页当前输入商品 ID/数量；本轮没有对顾客开放的商品目录过程，商品 ID 需向店员确认。
 - **真实员工 SQL 登录/员工模板未执行**：`provision_employee.template.ps1` 仅通过 PowerShell 语法解析；不影响本报告的 SQL/应用 fake-DB 结论，但联合登录验收仍未做。
 - **B 的验收记录独立**：B 的 11b 行为/并发/退款等由 `result/stage2/b-order-acceptance-final.md` 负责；C 只复核了真实迁移、13c、cust_app 三过程与六套应用测试，不代签 B 的页面/并发结论。
 - **OI-20 非阻塞**：历史审计脚本硬编码仓库根，C/B 各属主下次处理；不影响已归档结论。

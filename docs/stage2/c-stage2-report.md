@@ -50,13 +50,14 @@
 | 签名三路径 | **3/0** | 真实 v0.1；低权限店长实际调用 + 普通岗位 229 |
 | auth / inventory / customer | **10/0 / 12/0 / 10/0** | 登录注销与 cookie、库存输入边界、顾客三表单与参数定型 |
 | 既有 app 回归 | common 18/0、master 36/0、orders 20/0；run-all 六套 **106/0** | 2026-11-09 `run-all.ps1 -Python` 实跑，证据 `c-runall-customer-2026-11-09.txt` |
+| C HTTP smoke（临时 SQL 登录） | **3/0** | store/master/inventory/orders、五个 B 岗位订单页、shift 库存页；顾客建档→下单→取餐码查单；随机口令不打印、跑完清理 |
 
 ## 4. 决策与边界
 
 - **已关闭**：OI-10（三顾客过程 + 12 授权 + 13c）、OI-14（Common 多结果集）、OI-15（员工角色查询）、OI-16（驱动池）、OI-17（`run-all` 解释器）、OI-18（B 11b）、OI-19（`@customer_name`）。
 - **仍 open（非阻塞）**：OI-20（历史审计脚本硬编码仓库根；C/B 各自属主下次处理）、OI-05/OI-11 等礼节项。
 - **已完成**：真实 11b 迁移与 38 条回归；顾客页、`cust_app` 模板、六套应用测试；`KFC_DB` 测试后删除。
-- **未做/边界**：真实顾客 SQL 登录映射与浏览器联调需操作者执行 `provision_customer.template.ps1` 并设置本机 `.env` 的 `KFC_CUST_DB_LOGIN` / `KFC_CUST_DB_PASSWORD`；A 的操作手册/README仍可能写“顾客页待交付”，需 A 按本报告更新。C 不以 fake DAO 测试、`EXECUTE AS` 测试或 B 的联调记录冒充真实顾客登录验收。
+- **已完成/边界**：C 已用随机临时 SQL 登录做技术 HTTP smoke（3/0），口令不打印、跑完删除；正式顾客/员工登录映射仍需操作者执行模板并配置 `.env`，再由 A/B/C 做浏览器联合验收。A 的操作手册/README 仍可能写“顾客页待交付”，需 A 按本报告更新。C 不以 fake DAO、`EXECUTE AS` 或 B 的联调记录冒充正式联合验收。
 - `cust_app` 三过程由 `12` 条件授权；缺失时 `13c-7` 必须失败，不以空列表冒充成功。
 
 ## 5. 下一步

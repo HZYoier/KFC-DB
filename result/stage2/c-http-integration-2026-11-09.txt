@@ -1,0 +1,4 @@
+PASS: employee/store: /master/ /inventory/ /orders/ + home links
+PASS: employee/five B order roles + shift inventory
+PASS: customer: register -> place order -> list by pickup code
+RESULT: pass=3 fail=0 total=3
