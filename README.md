@@ -39,8 +39,7 @@ KFC-DB/
 ├── tests/stage2/                应用侧冒烟与集成脚本
 ├── requirements.txt             Python 依赖，写精确版本（Flask / pyodbc）
 ├── config.example.env           连接配置示例；复制为 .env 后按本机改，.env 不入库
-├── docs/                        设计与验收文档（56 份：顶层 8 + stage1/ 7 + stage2/ 32 + er/ 9）
-│   ├── stage2-three-person-implementation-plan.md  第二阶段计划与分工：ER 重建、规范化与迁移、应用开发，含 v0.1 问题清单
+├── docs/                        设计与验收文档（58 份：顶层 7 + stage1/ 7 + stage2/ 34 + stage3/ 1 + er/ 9）
 │   ├── 主数据 / 订单履约 / 库存权限数据字典.md      三份字段级数据字典
 │   ├── 业务流程.md               业务主线 8 步（含异常路径）
 │   ├── 数据边界清单.md           进库 / 不进库边界与灰色地带取舍
@@ -52,9 +51,10 @@ KFC-DB/
 │   │   ├── test-report.md        完整测试报告：环境、结果、E2E 结论、三次独立复验
 │   │   ├── cross-domain-interface-contract.md   A/B/C 之间冻结的接口契约
 │   │   └── three-person-implementation-plan.md  第一阶段协作实施计划与分工总览
-│   ├── stage2/                  第二阶段过程文档（33 份，索引见 stage2/README.md）
+│   ├── stage2/                  第二阶段过程文档（34 份，索引见 stage2/README.md）
 │   │   ├── README.md                目录索引：按用途分组，阶段报告置顶
 │   │   ├── reports/                 组级阶段报告 + 三份成员报告（A / B / C）：审核先看这里
+│   │   ├── three-person-implementation-plan.md  第二阶段计划与分工：ER 重建、规范化与迁移、应用开发
 │   │   ├── source-requirements.md   教学要求核对：65 项逐条编号与落点
 │   │   ├── open-issues.md           跨域开放问题：状态与决议的唯一入口
 │   │   ├── application-contract.md  第二阶段跨域接口契约（§2 定于 2026-11-03 冻结）
@@ -64,6 +64,8 @@ KFC-DB/
 │   │   ├── refactoring-design.md、transaction-boundaries.md  重构方案与事务边界
 │   │   ├── access-layer-contract.md 访问层四个签名、参数定型与错误码映射（2.3 底座）
 │   │   └── project-structure.svg   项目结构图：仓库结构 + 运行时分层与调用链（A）
+│   ├── stage3/                  第三阶段计划与分工（1 份）
+│   │   └── three-person-implementation-plan.md  过程/函数、触发器、递归与事务、并发控制分工
 │   └── er/                      ER 图源文件与图例（9 份）
 │       ├── legend.md                端点符号与画法口径
 │       ├── a-master.drawio / .svg   主数据与定价域子图（16 实体 16 联系）
@@ -251,7 +253,8 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -I -i "sql/stage2/regr
 - [业务流程](docs/业务流程.md) — 业务主线 8 步（含异常路径），建库与设计依据
 - [跨域接口契约](docs/stage1/cross-domain-interface-contract.md) — 三域之间的冻结接口：对象名、参数顺序与类型、返回列、种子常量，以及只读检查器 `sql/stage1/contract_interface_check.sql` 的校验口径
 - [第一阶段三人协作实施计划](docs/stage1/three-person-implementation-plan.md) — 对象、接口、角色和验收标准
-- [第二阶段三人协作实施计划](docs/stage2-three-person-implementation-plan.md) — ER 重建、规范化迁移与应用开发分工；含员工数据库身份、岗位查询接口、原子迁移/恢复、文件属主和修订自查。2.2 迁移与应用层已按该计划实施（v1.0 迁移脚本、`app/` 三层与测试入口已交付）
+- [第二阶段三人协作实施计划](docs/stage2/three-person-implementation-plan.md) — ER 重建、规范化迁移与应用开发分工；含员工数据库身份、岗位查询接口、原子迁移/恢复、文件属主和修订自查。2.2 迁移与应用层已按该计划实施（v1.0 迁移脚本、`app/` 三层与测试入口已交付）
+- [第三阶段三人协作实施计划](docs/stage3/three-person-implementation-plan.md) — 第 10—13 周的过程与函数、触发器与窗口函数、递归与业务事务、并发控制分工；v1.1 只做加法。第 12、13 周讲解未到，相关条目在计划中标为待核
 - [**第二阶段组级阶段报告**](docs/stage2/reports/阶段报告.md) — 总报告：2.1 ER 重建、2.2 规范化与真实迁移、2.3 应用开发的设计与实现，27 张运行截图逐图标注执行步骤，附测试数字、限制与证据索引
 - 第二阶段过程文档（[目录索引](docs/stage2/README.md)：按用途分组，阶段报告置顶）：[操作手册](docs/stage2/user-manual.md)（启动、迁移顺序、七岗位与顾客端入口、全部可用界面的操作步骤）、[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（§2 八写六查已冻结，§2.4 四个查询/注册接口 2026-11-01 补入；§1 顾客端 `§1.7` 四条联合边界 2026-11-06 定稿、§1 冻结；三个顾客过程已随 `11a`/`11b` 交付并经 `cust_app` 实调）、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-21 的状态与决议唯一入口）、[业务规则映射](docs/stage2/business-rule-mapping.md)（35 条外键的基数与实现机制）、[重构方案](docs/stage2/refactoring-design.md)、[事务边界](docs/stage2/transaction-boundaries.md)、[访问层接口](docs/stage2/access-layer-contract.md)（`app/common/` 的五个签名、多结果集口径与错误码映射）
 - 三域分析：[A 域](docs/stage2/a-issues.md)问题清单 / [规范化](docs/stage2/a-normalization.md)、[B 域](docs/stage2/b-issues.md)问题清单 / [规范化](docs/stage2/b-normalization.md)、[C 域](docs/stage2/c-issues.md)问题清单 / [规范化](docs/stage2/c-normalization.md)、[命名口径](docs/stage2/naming.md)

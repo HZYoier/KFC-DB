@@ -285,7 +285,7 @@ operated_at        DATETIME2(0) NOT NULL
 
 | 路径 | 唯一属主 | 输入与验收 |
 | --- | --- | --- |
-| `docs/stage3-three-person-implementation-plan.md` | A | 本计划；C 在此登记冻结日期与状态 |
+| `docs/stage3/three-person-implementation-plan.md` | A | 本计划；C 在此登记冻结日期与状态 |
 | `docs/stage3/source-requirements.md` | C | 第 10、11 周讲解逐条编号（R10/R11），第 12、13 周标待核；原文核对后删除、不入仓 |
 | `docs/stage3/sales-semantics.md` | A | 已结算口径、日期边界、折扣政策、应用层计算清单 |
 | `docs/stage3/procedure-vs-function.md` | B | 每个对象为何是过程/函数，对照教学两组职责 |

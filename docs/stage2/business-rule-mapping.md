@@ -1,7 +1,7 @@
 # 业务规则与关系映射清单
 
 > 主笔 B；2026-10-14。覆盖 R5-05/06/10/13/14/15。源码提取 25 表、35 条外键，A/C 业务条件参考其 issues；本文是可供合图的映射稿，不替全组签署冻结。
-> 依据：[实施计划](../stage2-three-person-implementation-plan.md)、[A 素材](a-issues.md)、[B 素材](b-issues.md)、[C 素材](c-issues.md)、[图例](../er/legend.md)。
+> 依据：[实施计划](three-person-implementation-plan.md)、[A 素材](a-issues.md)、[B 素材](b-issues.md)、[C 素材](c-issues.md)、[图例](../er/legend.md)。
 
 ## 1. 不歧义的方向约定
 

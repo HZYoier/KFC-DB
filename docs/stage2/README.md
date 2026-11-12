@@ -38,6 +38,7 @@
 
 | 文件 | 属主 | 说明 |
 | --- | --- | --- |
+| [three-person-implementation-plan.md](three-person-implementation-plan.md) | C | 第二阶段计划与分工总入口：ER 重建、迁移与应用开发、文件属主与阶段门槛 |
 | [a-normalization.md](a-normalization.md) | A | A 域范式分析（10 表 / 47 列）与三条冻结语义 |
 | [b-normalization.md](b-normalization.md) | B | B 域范式分析与表保留 / 拆分结论 |
 | [c-normalization.md](c-normalization.md) | C | C 域范式分析与 `Permission` 拆分 |

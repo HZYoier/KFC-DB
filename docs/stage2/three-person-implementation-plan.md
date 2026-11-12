@@ -4,7 +4,7 @@
 
 **Architecture:** 沿用第一阶段的三条业务线——A 主数据与定价、B 订单与履约、C 库存权限与集成。第二阶段不改这条线，改的是"从库到应用"的层次：库结构先经一次受控迁移升到 v1.0，再由统一的访问层封装，最后按岗位暴露操作界面。
 
-**Spec:** 教学安排《第二阶段 · 第 5—9 周 数据设计、重构与应用开发》，含第五周（ER 模型）与第六周（函数依赖与规范化）两份讲解。库内依据为[业务流程](业务流程.md)、[数据边界清单](数据边界清单.md)、[角色与职能清单](角色与职能清单.md)与三份数据字典。
+**Spec:** 教学安排《第二阶段 · 第 5—9 周 数据设计、重构与应用开发》，含第五周（ER 模型）与第六周（函数依赖与规范化）两份讲解。库内依据为[业务流程](../业务流程.md)、[数据边界清单](../数据边界清单.md)、[角色与职能清单](../角色与职能清单.md)与三份数据字典。
 
 教学材料原文不归档到本仓库：用户于 2026-10-12 提供第五、六周两份讲解，C 于 2026-10-13 逐条核对（36 项全部有落点），并按要求在核对后即删除，仓库只保留编号化的摘录与逐条映射，见 `docs/stage2/source-requirements.md`（对应 `open-issues.md` 的 OI-01，状态 closed）。该表是需求溯源的唯一记录，未在其中出现的要求一律视为未核对项，不记为已通过。原文已删，后续若对某条要求有争议，只能以摘录为准。
 
@@ -285,7 +285,7 @@ A/B/C 首个联合验收交付：一个真实员工登录 → 上下文正确 �
 
 | 路径 | 唯一属主 | 输入与验收 |
 | --- | --- | --- |
-| `docs/stage2-three-person-implementation-plan.md`、`docs/stage2/source-requirements.md` | C | 汇总域问题和教学要求；问题 ID、决策与阶段状态可追溯 |
+| `docs/stage2/three-person-implementation-plan.md`、`docs/stage2/source-requirements.md` | C | 汇总域问题和教学要求；问题 ID、决策与阶段状态可追溯 |
 | `docs/er/a-master.drawio/.svg`、`b-order.drawio/.svg`、`c-inventory-security.drawio/.svg` | A、B、C 各自的字母文件 | 每域实体/属性/候选标识、外键、联系注释齐全 |
 | `docs/er/stage2-model.drawio/.svg`、`docs/er/legend.md` | C | 收三份子图；25 表、35 外键覆盖，无重名实体 |
 | `docs/stage2/naming.md`、`design-validation.md` | A | 名称映射与三种情形的验证证据 |
@@ -307,7 +307,7 @@ A/B/C 首个联合验收交付：一个真实员工登录 → 上下文正确 �
 | `tests/stage2/master/`、`orders/`、`inventory-security/` | A、B、C 各自测试 | A 主数据，B 流程/回滚，C 身份/权限；失败能定位业务场景 |
 | `tests/stage2/run-all.ps1`、`result/stage2/README.md`、`docs/stage2/test-report.md` | C | 串联测试；汇总执行环境、PASS/FAIL、日志和截图；每人证据用自己的字母前缀 |
 | `docs/stage2/team-division.md` | C | 阶段作业要求的「小组分工说明」：由 §6.4 与本节抽取一页，A/B 只提供自己那段的实际承担情况 |
-| 三份现有数据字典；`docs/stage2/reports/a-stage2-report.md`、`docs/stage2/b-stage-report.md`、`docs/stage2/reports/c-stage2-report.md` | A、B、C 各自域文件 | 对齐 v1.0 并记录自己的过程与结果。文件名按 [naming.md](stage2/naming.md) §5：B 的已建成的沿用原名，A/C 尚未创建的带阶段号，避免与 `docs/stage1/` 下的同名文件相撞 |
+| 三份现有数据字典；`docs/stage2/reports/a-stage2-report.md`、`docs/stage2/b-stage-report.md`、`docs/stage2/reports/c-stage2-report.md` | A、B、C 各自域文件 | 对齐 v1.0 并记录自己的过程与结果。文件名按 [naming.md](naming.md) §5：B 的已建成的沿用原名，A/C 尚未创建的带阶段号，避免与 `docs/stage1/` 下的同名文件相撞 |
 | `README.md` | A | C 提供迁移/账号/测试命令，B 提供订单演示步骤；A 统一入口和索引 |
 | `docs/AI使用记录.md` | 各人追加自己的日期段 | 提交前同步最新，仅追加本轮真实过程，不把计划当已完成实现 |
 

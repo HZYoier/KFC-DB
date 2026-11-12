@@ -1,7 +1,7 @@
 # 第二阶段重构方案：B 分析稿与全组汇总框架
 
 > 主笔 B；2026-10-14建立，2026-10-30同步d741e24；R6-05/06/09。A人工复核及期初修订、C基线/白名单协议已交付；本文补全三域方案汇总，但**不是全组v1.0共同冻结批准**。
-> [实施计划](../stage2-three-person-implementation-plan.md)与[开放问题表](open-issues.md)优先；不修改第一阶段 SQL。
+> [实施计划](three-person-implementation-plan.md)与[开放问题表](open-issues.md)优先；不修改第一阶段 SQL。
 
 ## 1. 输入、决定与状态
 

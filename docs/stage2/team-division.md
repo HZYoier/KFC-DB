@@ -1,6 +1,6 @@
 # 第二阶段团队分工与交接
 
-> 属主：成员 C（总集成）。依据：`docs/stage2-three-person-implementation-plan.md` §7.1 属主表、§6.3/§6.4 应用分工。本文只记录协作边界，不改计划正文。
+> 属主：成员 C（总集成）。依据：`docs/stage2/three-person-implementation-plan.md` §7.1 属主表、§6.3/§6.4 应用分工。本文只记录协作边界，不改计划正文。
 
 ## 1. 角色
 

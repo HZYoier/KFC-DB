@@ -1,7 +1,7 @@
 # B 数据库接口交接清单
 
 > B；2026-10-14；输入提交 `11bca75`。当前接口按第一阶段源码记录，新增查询为 B 提案，不是已存在对象或已冻结契约。
-> A 收取本材料统一写 application-contract，C 审核身份/白名单/GRANT；本文件不直接修改其产物。依据：[计划 §6](../stage2-three-person-implementation-plan.md)、[事务规范](transaction-boundaries.md)。
+> A 收取本材料统一写 application-contract，C 审核身份/白名单/GRANT；本文件不直接修改其产物。依据：[计划 §6](three-person-implementation-plan.md)、[事务规范](transaction-boundaries.md)。
 
 ## 1. 当前写接口：准确签名
 
