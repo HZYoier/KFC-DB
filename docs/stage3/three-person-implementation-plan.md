@@ -323,7 +323,8 @@ operated_at        DATETIME2(0) NOT NULL
 
 ### 8.3 版本、脚本与权限口径
 
-- **入口**：`run_stage3.sql` 要求 `SchemaVersion('v1.0')` 存在且 `v1.1` 不存在；在一个外层事务里按 `20 → 21a → 21b → 21c → 22b → 22c → 27` 执行，事务内检查对象数、权限数、触发器数、列存在性，全部通过后写 `SchemaVersion('v1.1')` 并 `COMMIT`；任何一步失败整体回滚，库仍是 v1.0。`run_stage3.sql` 不建库、不删库、不删表、不重写存量行。
+- **入口**：`run_stage3.sql` 要求 `SchemaVersion('v1.0')` 存在且 `v1.1` 不存在；在一个外层事务里按 `20 → 21b → 21a → 21c → 22b → 22c → 27` 执行，事务内检查对象数、权限数、触发器数、列存在性，全部通过后写 `SchemaVersion('v1.1')` 并 `COMMIT`；任何一步失败整体回滚，库仍是 v1.0。`run_stage3.sql` 不建库、不删库、不删表、不重写存量行。
+  **21b 必须早于 21a**：`fn_product_sales_summary` 是内联表值函数，创建时即校验 `v_settled_sales_line` 存在；视图未建会直接报 208（2026-11-12 在 tempdb 实测）。同理，`21a` 的两个函数都不读 `20` 之前不存在的表。
 - **对象**：新过程/函数/触发器用 `CREATE`；只有 `sp_adjust_inventory`（C）、`sp_create_order` 与 `sp_customer_place_order`（B）用 `ALTER PROCEDURE`，三处都在 `run_stage3.sql` 内执行并留升级前后对照；重复执行由 v1.1 标记拒绝，已应用时只报告"已应用"，不重复创建。
 - **权限**：`27_permissions.sql` 新增权限码、RolePermission 行与实际 `GRANT`（表值函数 `SELECT`、标量函数 `EXECUTE`、审计表 `SELECT`），并核对"目录 = 映射 = 实际授权"三方一致；`13c` 的 58/71、新增 12 码与 19 行授权等期望改为按版本取常量（v1.0 或 v1.1），断言条数不变。
 - **回归**：`verify_stage3.sql` 顺序调用 `28a/28b/28c`，汇总实际断言数与预期分母，非零退出即失败；`regression.sql` 的 38 条继续作为"没弄坏第二阶段"的门槛，应用七套 118 条同理。
@@ -370,13 +371,14 @@ operated_at        DATETIME2(0) NOT NULL
 | 文档 | 分工、口径、分界、并发、手册 | `docs/stage3/` 五份 + `docs/stage3/user-manual.md` 增补 + `README.md` | A / B / C |
 | 报告 | 阶段报告 | `docs/stage3/reports/` 三份成员报告 + 组级 `阶段报告.md` | 各域；总报告 A |
 
-表中 `sql/stage3/`、`tests/stage3/`、`result/stage3/`、`docs/stage3/` 与 `app/reports/` 都是**计划落点，尚未建立**；每个文件由表中属主在对应子阶段创建，不是当前已有链接。教学交付名与本仓文件名的对应关系以本表为准，提交时在 `test-report.md` 里再列一次，避免老师按 `procedure.sql` 找不到文件。
+截至 2026-11-12，`docs/stage3/`、`sql/stage3/`、`tests/stage3/` 已建立：计划、`sales-semantics.md`、`21a_master_programmability.sql` 与 A 域两套测试已落稿；`result/stage3/`、`app/reports/` 仍是**计划落点，尚未建立**。其余文件由表中属主在对应子阶段创建。教学交付名与本仓文件名的对应关系以本表为准，提交时在 `test-report.md` 里再列一次，避免老师按 `procedure.sql` 找不到文件。
 
 ## 12. 变更记录
 
 | 日期 | 变更 |
 | --- | --- |
 | 2026-11-12 | 建立本计划：按第 10、11 周讲解与阶段周次表划出 3.1—3.4，冻结 v1.1 只做加法的范围、五个 3.1 对象、两个触发器、三类窗口查询、递归与两项事务、并发实验与文件属主；第 12、13 周条目标"待核" |
+| 2026-11-12 | 3.0 口径冻结：`docs/stage3/sales-semantics.md` 落稿（F-01—F-04）；`21a_master_programmability.sql` 与 A 域测试落稿（折扣 27/27、汇总 15/15，tempdb 桩库）。依据内联 TVF 的 208 实测，`run_stage3.sql` 顺序由 `21a → 21b` 改为 `21b → 21a`；表值函数默认参数不能省略，调用一律写满三位 |
 
 ## 13. 本次设计自查
 
