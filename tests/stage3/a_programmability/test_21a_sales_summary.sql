@@ -28,7 +28,7 @@ IF OBJECT_ID(N'tempdb..#counters_summary') IS NOT NULL DROP TABLE #counters_summ
 CREATE TABLE #counters_summary (pass INT NOT NULL, fail INT NOT NULL);
 INSERT INTO #counters_summary (pass, fail) VALUES (0, 0);
 
-CREATE TABLE #expected
+CREATE TABLE #expected_summary
 (
     product_id   BIGINT NOT NULL,
     product_name NVARCHAR(100) NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE #expected
     sales_amount DECIMAL(12,2) NOT NULL,
     order_count  INT NOT NULL
 );
-CREATE TABLE #actual
+CREATE TABLE #actual_summary
 (
     product_id   BIGINT NOT NULL,
     product_name NVARCHAR(100) NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE #actual
     order_count  INT NOT NULL
 );
 
-INSERT INTO #expected (product_id, product_name, sold_qty, sales_amount, order_count)
+INSERT INTO #expected_summary (product_id, product_name, sold_qty, sales_amount, order_count)
 SELECT
     l.product_id,
     l.product_name,
@@ -57,16 +57,16 @@ WHERE l.completed_at >= @start
   AND l.completed_at <  DATEADD(DAY, 1, @end)
 GROUP BY l.product_id, l.product_name;
 
-INSERT INTO #actual (product_id, product_name, sold_qty, sales_amount, order_count)
+INSERT INTO #actual_summary (product_id, product_name, sold_qty, sales_amount, order_count)
 SELECT f.product_id, f.product_name, f.sold_qty, f.sales_amount, f.order_count
 FROM dbo.fn_product_sales_summary(@start, @end) AS f;
 
 -- S-01 函数结果没有多出商品
 IF NOT EXISTS
 (
-    SELECT product_id, product_name, sold_qty, sales_amount, order_count FROM #actual
+    SELECT product_id, product_name, sold_qty, sales_amount, order_count FROM #actual_summary
     EXCEPT
-    SELECT product_id, product_name, sold_qty, sales_amount, order_count FROM #expected
+    SELECT product_id, product_name, sold_qty, sales_amount, order_count FROM #expected_summary
 )
     INSERT INTO #counters_summary VALUES (1, 0);
 ELSE
@@ -75,16 +75,16 @@ ELSE
 -- S-02 函数结果没有漏掉商品
 IF NOT EXISTS
 (
-    SELECT product_id, product_name, sold_qty, sales_amount, order_count FROM #expected
+    SELECT product_id, product_name, sold_qty, sales_amount, order_count FROM #expected_summary
     EXCEPT
-    SELECT product_id, product_name, sold_qty, sales_amount, order_count FROM #actual
+    SELECT product_id, product_name, sold_qty, sales_amount, order_count FROM #actual_summary
 )
     INSERT INTO #counters_summary VALUES (1, 0);
 ELSE
     INSERT INTO #counters_summary VALUES (0, 1);
 
 -- S-03 总销量一致
-IF (SELECT SUM(sold_qty) FROM #actual) = (SELECT SUM(quantity) FROM dbo.v_settled_sales_line
+IF (SELECT SUM(sold_qty) FROM #actual_summary) = (SELECT SUM(quantity) FROM dbo.v_settled_sales_line
                                           WHERE completed_at >= @start
                                             AND completed_at < DATEADD(DAY, 1, @end))
     INSERT INTO #counters_summary VALUES (1, 0);
@@ -92,7 +92,7 @@ ELSE
     INSERT INTO #counters_summary VALUES (0, 1);
 
 -- S-04 总净额一致
-IF (SELECT SUM(sales_amount) FROM #actual) = (SELECT CAST(SUM(net_amount) AS DECIMAL(12,2))
+IF (SELECT SUM(sales_amount) FROM #actual_summary) = (SELECT CAST(SUM(net_amount) AS DECIMAL(12,2))
                                               FROM dbo.v_settled_sales_line
                                               WHERE completed_at >= @start
                                                 AND completed_at < DATEADD(DAY, 1, @end))

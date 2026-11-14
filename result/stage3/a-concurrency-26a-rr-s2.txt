@@ -1,0 +1,7 @@
+﻿已将数据库上下文更改为 "KFC_DB"。
+phase           on_hand_qty   
+--------------- --------------
+S2-after-commit        105.000
+phase       on_hand_qty   
+----------- --------------
+S2-restored        100.000

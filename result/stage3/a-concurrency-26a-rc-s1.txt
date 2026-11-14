@@ -1,0 +1,7 @@
+﻿已将数据库上下文更改为 "KFC_DB"。
+phase    isolation_level on_hand_qty   
+-------- --------------- --------------
+S1-first READ COMMITTED         100.000
+phase     on_hand_qty   
+--------- --------------
+S1-second        105.000

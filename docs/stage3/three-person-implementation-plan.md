@@ -371,7 +371,7 @@ operated_at        DATETIME2(0) NOT NULL
 | 文档 | 分工、口径、分界、并发、手册 | `docs/stage3/` 五份 + `docs/stage3/user-manual.md` 增补 + `README.md` | A / B / C |
 | 报告 | 阶段报告 | `docs/stage3/reports/` 三份成员报告 + 组级 `阶段报告.md` | 各域；总报告 A |
 
-截至 2026-11-12，`docs/stage3/`、`sql/stage3/`、`tests/stage3/` 已建立：计划、`sales-semantics.md`、`21a_master_programmability.sql` 与 A 域两套测试已落稿；`result/stage3/`、`app/reports/` 仍是**计划落点，尚未建立**。其余文件由表中属主在对应子阶段创建。教学交付名与本仓文件名的对应关系以本表为准，提交时在 `test-report.md` 里再列一次，避免老师按 `procedure.sql` 找不到文件。
+截至 2026-11-14，`docs/stage3/`、`sql/stage3/`、`tests/stage3/`、`result/stage3/` 均已建立：计划、`sales-semantics.md`（含附录 A）、`21a_master_programmability.sql`、`23a_window_queries.sql`、`26a_isolation_experiment.sql`，A 域三套测试（折扣 27、汇总 15、窗口 10，tempdb 桩库合计 52/0），以及 26a 在 `KFC_DB(v1.0)` 上的两次隔离实验证据；`app/reports/` 仍是**计划落点，尚未建立**，等 B 的 `sp_sales_report` 签名。其余文件由表中属主在对应子阶段创建。教学交付名与本仓文件名的对应关系以本表为准，提交时在 `test-report.md` 里再列一次，避免老师按 `procedure.sql` 找不到文件。
 
 ## 12. 变更记录
 
@@ -379,6 +379,7 @@ operated_at        DATETIME2(0) NOT NULL
 | --- | --- |
 | 2026-11-12 | 建立本计划：按第 10、11 周讲解与阶段周次表划出 3.1—3.4，冻结 v1.1 只做加法的范围、五个 3.1 对象、两个触发器、三类窗口查询、递归与两项事务、并发实验与文件属主；第 12、13 周条目标"待核" |
 | 2026-11-12 | 3.0 口径冻结：`docs/stage3/sales-semantics.md` 落稿（F-01—F-04）；`21a_master_programmability.sql` 与 A 域测试落稿（折扣 27/27、汇总 15/15，tempdb 桩库）。依据内联 TVF 的 208 实测，`run_stage3.sql` 顺序由 `21a → 21b` 改为 `21b → 21a`；表值函数默认参数不能省略，调用一律写满三位 |
+| 2026-11-14 | A 提前落稿 `23a_window_queries.sql`（排名 + 移动平均）与 `26a_isolation_experiment.sql`（RC/RR 双会话实验），窗口测试 10/10 并入 A 域入口（三套 52/0）；26a 在 `KFC_DB(v1.0)` 实测 RR 两次读 100、RC 第二次读 105，证据在 `result/stage3/a-concurrency-26a-*.txt`。`sales-semantics.md` 补附录 A（R10-06 应用层计算清单） |
 
 ## 13. 本次设计自查
 

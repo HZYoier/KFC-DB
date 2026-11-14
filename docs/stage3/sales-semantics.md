@@ -170,5 +170,30 @@ SUM(ROUND(unit_price * quantity, 2) - discount_amount) = SalesOrder.total_amount
 | 日期 | 变更 | 提出人 | 三人确认 |
 | --- | --- | --- | --- |
 | 2026-11-12 | 首次冻结：F-01 至 F-04，§1 销售口径、§2 折扣与分摊、§5 测试锚点 | A | 待 B/C 回执；回执前按本文执行，异议先改本节 |
+| 2026-11-14 | 补附录 A：应用层计算清单（R10-06），结论为 Python 无业务计算，补货建议数量待 C 接函数 | A | — |
 
 **变更规则：** 任何一条口径变化，必须同时更新本文、`20_schema_v1_1.sql`（如涉列）、`21a/21b` 实现、`28a/28b` 断言与 `13c` 版本常量，五处缺一不可；不允许只在代码里改。
+
+## 附录 A：应用层计算清单（R10-06，2026-11-14 排查）
+
+**目的：** 教学要求“应用里已经实现的替换掉”。先查清哪些业务值仍在 Python 里算，再决定第三阶段要改哪些页面。
+
+**方法：** 通读 `app/{master,orders,inventory,auth,api,common}` 的 service/dao/routes，检索 `SUM`、`AVG`、`ROUND`、`price`、`amount`、`quantity` 与模板中的算术表达式；只读排查，未改任何 B/C 文件。
+
+| 业务值 | 当前来源 | 应用层实际动作 | 判定 |
+| --- | --- | --- | --- |
+| 商品标准价、促销价、成交价 | `fn_get_effective_product_price`、`v_active_product_price`、下单过程 | `app/master` 只校验金额形状（`_money`）并原样传参；模板只显示 | 已在数据库 |
+| 订单总额、明细单价、行金额 | `sp_create_order` / `sp_customer_place_order` 计算并落库，查询过程返回 | `app/orders` 不乘单价、不汇总；`total_amount` 直接展示 | 已在数据库 |
+| 实付金额、退款金额 | `sp_pay_order`、`sp_cancel_or_refund_order` | 只校验 `Decimal` 位数与范围；不计算差额 | 已在数据库 |
+| 可售量、低库存标记 | `v_inventory_available.available_qty`、`is_low_stock` | 页面直接显示三列，不在 Python 相减 | 已在数据库 |
+| 补货建议数量 | 目前由页面人工填写，过程只落库 | **没有数据库计算**；`app/inventory` 把输入当值校验 | **应由 C 的 `fn_replenishment_qty` 接管** |
+| 采购未清量 | `v_replenishment_dashboard.outstanding_qty` | 页面直接显示 | 已在数据库 |
+| 销售汇总、排名、移动平均 | 第三阶段尚未实现 | 无 Python 汇总代码 | 3.1/3.2 新增，报表页只调过程/函数 |
+| 会员折扣率与折扣额 | 第三阶段尚未实现 | 无 Python 折扣代码 | 3.1 新增，B 的页面只显示快照 |
+
+**结论：**
+
+1. 当前 `app/` 中**没有**在 Python 里计算金额、折扣、销售汇总或可售量的代码；`_money`、`_qty`、`_decimal` 只做输入形状校验，不算业务结果，不纳入替换清单。
+2. 唯一“本该由数据库算、现在靠人工填”的是**补货建议数量**，由 C 在 3.1 把 `fn_replenishment_qty` 接进建议创建/页面默认值。
+3. 第三阶段新增的三处展示必须遵守“只显示、不重算”：A 的销售报表页调 `sp_sales_report`；B 的订单页显示 `SalesOrderItem.discount_rate/discount_amount` 快照；C 的补货页显示函数结果。任何一处在 Python 里再乘、再除、再汇总，都算违反 R10-06。
+4. 3.2 合并后再按本表复查一次，重点看新增的 `app/reports/`、订单折扣列和补货默认值。
