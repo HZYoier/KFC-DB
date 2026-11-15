@@ -793,3 +793,19 @@
 **核对结果：** `RESULT: pass=3 fail=0 total=3`，证据 `result/stage2/c-http-integration-2026-11-09.txt`。这证明 C 侧技术联调可跑通；正式员工/顾客登录部署与 A/B 联合验收仍需操作者/A/B。
 
 **我的处理：** 本轮证据随后 commit；push 仍由我手动。
+
+## （2026-11-15）—— 第三阶段 3.1 C 域对象与库存审计触发器（C）
+
+**聊了什么：** 用户 pull 到第三阶段计划与 A 的 `21a/23a/26a` 后，让 C 做建议推进的工作。B 的 `21b/22b/27` 尚未到，因此先把 C 能独立完成的 3.1 对象、测试与 v1.1 入口骨架落下。
+
+**AI 做了什么：**
+1. 新增 `20_schema_v1_1.sql`：`InventoryAudit`（行级前后量审计）与 `SalesOrderItem.discount_rate/discount_amount` 两列；只加不删。
+2. 新增 `21c_inventory_programmability.sql`：复核并 ALTER `sp_adjust_inventory`（签名不变，拒绝路径统一 54301–54308），新增 `fn_replenishment_qty`（按可售量算，目标量优先，结果为 NULL/0/正值且非负）。
+3. 新增 `22c_inventory_triggers.sql`：集合式 `tr_Inventory_Audit`，用 `inserted/deleted` 全外连接，只改 `updated_at` 不审计、无游标。
+4. 新增 C 测试 `tests/stage3/c_programmability`（14/10/15）、`c_triggers`（10）、`c_app`（4）；新增 `run_stage3.sql` 骨架、`docs/stage3/source-requirements.md`、`docs/stage3/open-issues.md` 和 `result/stage3` 证据/README。
+5. `app/inventory` 新增读取 `fn_replenishment_qty` 的 GET 入口与表单默认值；页面只显示数据库返回值，不在 Python 重算（R10-06）。
+6. 在真实 v1.0 上增量应用 20/21c/22c，重跑 C 测试、10c、13a/13b-write/13c 与七套应用；应用仍 118/0。
+
+**核对结果：** C 可编程 14/10/15、C 触发器 10/10、10c 18/0、13a 10/0、13b write 8/8、13c 15/0、七套应用 118/0。B 的 13b baseline 仍按 v1.0 的 10 列校验，`SalesOrderItem` 新增两列后报 51961，登记 S3-03；A 的 `app/common/errors.py` 尚未映射 543xx，登记 S3-01；审计表外键与 DELETE 分支边界登记 S3-02。完整 v1.1 迁移与 regression 38/0 仍等 B。证据 `result/stage3/c-stage3-31-2026-11-15.txt`，`KFC_DB` 测试后删除。
+
+**我的处理：** 本轮改动待我审阅后手动 commit；push 仍由我手动。

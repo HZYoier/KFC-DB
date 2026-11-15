@@ -16,7 +16,7 @@ def _employee_id(identity) -> int:
     return int(identity["employee"]["employee_id"])
 
 
-def _render(identity, session, *, error=None, notice=None, ingredient_id=None):
+def _render(identity, session, *, error=None, notice=None, ingredient_id=None, suggested_default=None):
     try:
         inventory = service.list_inventory(session)
         movements = service.list_movements(session, ingredient_id)
@@ -38,6 +38,7 @@ def _render(identity, session, *, error=None, notice=None, ingredient_id=None):
         error=error or load_error,
         notice=notice,
         ingredient_id=ingredient_id or "",
+        suggested_default=suggested_default,
     )
 
 
@@ -76,6 +77,35 @@ def adjust():
             request.form.get("on_hand_delta"),
             request.form.get("reason"),
         ),
+    )
+
+
+@bp.get("/replenishment/default")
+@login_required
+def replenishment_default():
+    """读取数据库函数给出的建议量，作为创建建议表单的默认值。"""
+    identity = current_identity()
+    session = current_employee_session()
+    ingredient = request.args.get("ingredient_id") or None
+    try:
+        suggested = service.default_suggested_qty(
+            session,
+            ingredient,
+            request.args.get("target_qty"),
+            request.args.get("min_qty"),
+        )
+    except AppError as err:
+        if auth_service.clear_if_stale(err):
+            return redirect(url_for("auth.login", next=request.path))
+        return _render(
+            identity, session, error=err.user_message, ingredient_id=ingredient
+        ), err.http_status
+    return _render(
+        identity,
+        session,
+        notice=f"数据库建议量：{suggested}",
+        ingredient_id=ingredient,
+        suggested_default=suggested,
     )
 
 

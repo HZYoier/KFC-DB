@@ -1,0 +1,90 @@
+C 第三阶段 3.1 / C 域对象证据（在真实 v1.0 上增量验证）
+日期：2026-11-15
+环境：SQL Server 2025 Express（.\SQLEXPRESS），compat 170；ODBC Driver 18；sqlcmd 17
+数据库：KFC_DB。序列：sql/stage1/run_all.sql -> capture_baseline.sql -> run_migration.sql（v1.0）
+        -> 20_schema_v1_1.sql -> 21c_inventory_programmability.sql -> 22c_inventory_triggers.sql。
+边界：A 的 21a/23a/26a 已到；B 的 21b/22b/27 未到，所以这不是完整 v1.1 迁移证据；
+      SchemaVersion 仍只有 v0.1/v1.0，未写 v1.1 标记。
+
+1. 真实 v1.0 前置链
+v0.1 部署末尾：RESULT: pass=18 fail=0
+baseline 采集：PASS: baseline batch completed. batch_id=1
+run_migration：12: employee grants, cust_app, and role-sync signatures verified.
+               RESULT: migration committed (v1.0 marker written; 11a/11b/11c/12).
+C 增量对象输出：
+  20: InventoryAudit and SalesOrderItem discount columns created.
+  21c: sp_adjust_inventory upgraded and fn_replenishment_qty created.
+  22c: tr_Inventory_Audit created (set-based inventory audit).
+退出码：全部 0。
+
+2. C 域可编程对象测试（sqlcmd -b -W，仓库根目录）
+命令：
+  sqlcmd -S '.\SQLEXPRESS' -E -C -f 65001 -b -W -i 'D:\DBLab\KFC-DB\tests\stage3\c_programmability\run_c_programmability.sql'
+输出：
+  RESULT: c-programmability schema pass=14 fail=0 total=14
+  RESULT: c-programmability replenishment pass=10 fail=0 total=10
+  RESULT: c-programmability adjust_inventory pass=15 fail=0 total=15
+  RESULT: c-programmability files=3 failed=0
+退出码：0。
+覆盖：InventoryAudit/折扣列/两个对象签名；补货量 NULL、负数、目标优先、非负性质；库存调整
+NULL 参数、零增量、空原因、未映射主体、员工不匹配、非店长、原料不存在、调整后为负、
+失败不落半条数据、连续两次基于新值。
+
+3. C 域库存审计触发器测试
+命令：
+  sqlcmd ... -i 'D:\DBLab\KFC-DB\tests\stage3\c_triggers\run_c_triggers.sql'
+输出：
+  RESULT: c-triggers inventory_audit pass=10 fail=0 total=10
+  RESULT: c-triggers files=1 failed=0
+退出码：0。
+覆盖：两条 INSERT、单条 UPDATE、只改 updated_at 不审计、多行 UPDATE 两条审计、前后值、
+实际库存、operated_by/employee_id、无 CURSOR、触发器事件齐备。测试事务已回滚。
+
+4. 真实 v1.0 兼容性
+- 10c C 域验收（升级后）：RESULT: pass=18 fail=0。
+- 13a 主数据回归：RESULT: pass=10 fail=0。
+- 13b 写接口签名：RESULT 13b write signatures: pass=8 fail=0 total=8（需 -d KFC_DB 单独运行）。
+- 13c 权限/库存安全：RESULT: pass=15 fail=0。
+- 七套应用（common/auth/master/orders/inventory/customer/api）：
+  RESULT: run-all files=7 failed=0（118 条，全部 0 fail）。
+- **13b baseline 在 v1.1 形状下未通过**：消息 51961，`13b: baseline shape mismatch: SalesOrderItem`。
+  原因是 B 的检查仍按 v1.0 的 10 列校验，而 20 增加了 discount_rate/discount_amount 两列；
+  该文件属 B，C 不代改，已在 docs/stage3/open-issues.md 登记 S3-03。因此完整 `regression.sql`
+  在 B 更新 13b 前不能声称 38/0；本证据只声称已跑过的 13a/13b-write/13c 与七套应用全绿。
+
+5. C 域应用测试（不连库，fake DAO）
+命令：
+  conda run -n py_env3.11 python tests/stage3/c_app/run_c_app_tests.py
+输出：
+  RESULT: pass=4 fail=0 skip=0 total=4
+退出码：0。
+覆盖：补货量调用 dbo.fn_replenishment_qty；空最低量绑定 NULL；负目标量不查库、直接 E_INPUT；
+函数返回 NULL 映射 E_NOTFOUND。页面只显示函数结果，不在 Python 重算（R10-06）。
+
+6. 输入/预期/实际/错误消息原始演示
+脚本：result/stage3/scripts/c-programmability-demo-2026-11-15.sql
+命令：
+  sqlcmd -S '.\SQLEXPRESS' -E -C -f 65001 -b -W -s '|' -i 'D:\DBLab\KFC-DB\result\stage3\scripts\c-programmability-demo-2026-11-15.sql'
+主要输出：
+  case_name|ingredient_id|on_hand_qty|locked_qty|available_qty|target_qty|actual_qty
+  可售量 + 10|1|40.000|.000|40.000|50.000|10.000
+  刚好达到目标|1|40.000|.000|40.000|40.000|.000
+  原料不存在|999999999|NULL|NULL|NULL|10.000|NULL
+  目标量为负按 NULL|1|40.000|.000|40.000|-1.000|NULL
+  case_name|expected_error|actual_error|actual_message
+  原料不存在|54307|54307|sp_adjust_inventory：原料不存在或尚未建立库存记录。
+  调整后为负|54308|54308|sp_adjust_inventory：调整后库存不能为负。
+  员工不匹配|54305|54305|sp_adjust_inventory：传入员工 ID 与当前登录主体解析出的员工不一致，拒绝执行。
+  连续两次 +5|before=40.000|after=50.000|delta=10.000|two_step_movements=2|two_step_audits=2
+（最后一行在事务内执行并 ROLLBACK，没有留下测试库存。）
+
+7. 边界与下一步
+- `run_stage3.sql` 已落骨架，但在 B 的 21b/22b/27 到齐前不会提交 v1.1；不能把本证据读成
+  “v1.1 完整迁移完成”。
+- 21c 的业务错误码已统一到 543xx；A 的 app/common/errors.py 尚未映射，页面会把它们归到
+  E_INTERNAL。已登记 S3-01，等待 A 补映射。
+- 22c 的 DELETE 分支与 InventoryAudit 到 Inventory 的外键存在边界冲突；库存行没有业务
+  DELETE 授权，正常路径不受影响，已登记 S3-02。
+- 真实 v1.0 的 13b baseline 因新增折扣列失败；已登记 S3-03，等待 B 改为版本感知后重跑
+  regression 38/0。
+- 本证据完成后 KFC_DB 已删除（不再保留测试库）。

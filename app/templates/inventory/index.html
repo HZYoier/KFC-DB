@@ -105,9 +105,15 @@
 
     <h2>补货建议与采购</h2>
     {% if allowed.create %}
+    <form class="form" method="get" action="{{ url_for('inventory.replenishment_default') }}">
+      <label>原料 ID<input name="ingredient_id" type="number" min="1" value="{{ ingredient_id }}" required></label>
+      <label>目标量<input name="target_qty" type="number" step="0.001" min="0" required placeholder="例如 20.000"></label>
+      <label>最低量（可空）<input name="min_qty" type="number" step="0.001" min="0"></label>
+      <button type="submit">取数据库建议量</button>
+    </form>
     <form class="form" method="post" action="{{ url_for('inventory.create_suggestion') }}">
-      <label>原料 ID<input name="ingredient_id" type="number" min="1" required></label>
-      <label>建议数量<input name="suggested_qty" type="number" step="0.001" min="0.001" required></label>
+      <label>原料 ID<input name="ingredient_id" type="number" min="1" value="{{ ingredient_id }}" required></label>
+      <label>建议数量<input name="suggested_qty" type="number" step="0.001" min="0.001" value="{{ suggested_default if suggested_default is not none else '' }}" required></label>
       <button type="submit">创建建议</button>
     </form>
     {% endif %}

@@ -51,6 +51,11 @@ FROM dbo.v_replenishment_dashboard
 ORDER BY replenishment_suggestion_id DESC;
 """
 
+# R10-06：补货建议数量必须由数据库函数给出，页面只展示返回值，不在 Python 重算。
+_SQL_REPLENISHMENT_QTY = """
+SELECT dbo.fn_replenishment_qty(?, ?, ?) AS suggested_qty;
+"""
+
 
 def list_inventory(session):
     return query(session, _SQL_INVENTORY)
@@ -64,6 +69,15 @@ def list_movements(session, ingredient_id: int | None = None):
 
 def list_replenishment(session):
     return query(session, _SQL_REPLENISHMENT)
+
+
+def replenishment_qty(session, ingredient_id: int, target_qty, min_qty=None):
+    """调用 C 的标量函数；返回值是数据库算出的补货量，不是页面计算。"""
+    return query(
+        session,
+        _SQL_REPLENISHMENT_QTY,
+        [p_bigint(ingredient_id), p_decimal(target_qty, 12, 3), p_decimal(min_qty, 12, 3)],
+    )
 
 
 def adjust_inventory(session, ingredient_id: int, on_hand_delta, employee_id: int, reason: str):

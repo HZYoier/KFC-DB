@@ -6,5 +6,8 @@ result/stage2/a-api/* -text
 result/stage3/*.txt -text
 # Stage 2 migration scripts only: enforce CRLF (plan 5.1); stage-1 files untouched.
 sql/stage2/**/*.sql text eol=crlf
+# Stage 3 SQL uses the same CRLF rule; evidence txt stays byte-for-byte (-text above).
+sql/stage3/**/*.sql text eol=crlf
 # Scripts kept as-is so their output stays reproducible.
 result/stage2/scripts/* -text
+result/stage3/scripts/* -text

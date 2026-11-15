@@ -51,6 +51,20 @@ def _delta(value) -> Decimal:
     return number
 
 
+def _target_qty(value) -> Decimal:
+    """目标量允许 0（数据库函数对“已达到目标”返回 0），但不允许负数。"""
+    try:
+        number = Decimal(str(value).strip())
+    except (InvalidOperation, AttributeError):
+        raise AppError("E_INPUT") from None
+    if not number.is_finite() or number < 0 or number > _MAX_QTY:
+        raise AppError("E_INPUT")
+    digits = number.as_tuple()
+    if digits.exponent < -3 and any(digits.digits[digits.exponent + 3:]):
+        raise AppError("E_INPUT")
+    return number
+
+
 def _reason(value) -> str:
     text = (value or "").strip()
     if not text or len(text) > 50:
@@ -74,6 +88,23 @@ def list_movements(session, ingredient_id=None):
 
 def list_replenishment(session):
     return dao.list_replenishment(session)
+
+
+def default_suggested_qty(session, ingredient_id, target_qty, min_qty=None):
+    """R10-06：只把参数交给数据库函数，返回函数的原值，不在 Python 重算。
+
+    函数返回 NULL 表示原料不存在（或参数组合无意义）；页面给出 NOTFOUND，
+    不退回“用目标量减页面库存”的 Python 算式。
+    """
+    target = _target_qty(target_qty)
+    minimum = None if min_qty in (None, "") else _target_qty(min_qty)
+    rows = dao.replenishment_qty(
+        session, _positive_id(ingredient_id), target, minimum
+    )
+    value = rows[0].get("suggested_qty") if rows else None
+    if value is None:
+        raise AppError("E_NOTFOUND")
+    return value
 
 
 def list_employee_roles(session):
