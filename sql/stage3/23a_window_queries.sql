@@ -13,6 +13,9 @@ GO
 SET NOCOUNT ON;
 GO
 
+IF OBJECT_ID(N'dbo.v_settled_sales_line', N'V') IS NULL
+    THROW 54101, N'缺少 dbo.v_settled_sales_line；请先执行 B 的 sql/stage3/21b_order_programmability.sql。', 1;
+
 -- 日期区间不写死：默认取视图里最早/最晚的已结算日期；
 -- 正式报表可由调用方改成参数或存储过程入参。
 DECLARE @start_date DATE = (SELECT MIN(CAST(l.completed_at AS DATE)) FROM dbo.v_settled_sales_line AS l);

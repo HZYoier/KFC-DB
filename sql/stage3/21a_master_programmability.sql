@@ -11,6 +11,10 @@ SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
+IF OBJECT_ID(N'dbo.v_settled_sales_line', N'V') IS NULL
+    THROW 54101, N'缺少 dbo.v_settled_sales_line；请先执行 B 的 sql/stage3/21b_order_programmability.sql，再运行本文件。', 1;
+GO
+
 -- ---------------------------------------------------------------------
 -- fn_calculate_discount
 -- 作用：按会员等级与订单毛额计算订单级折扣率与折扣额。

@@ -6,6 +6,10 @@
 -- test_21a_sales_summary.sql 与 test_23a_windows.sql 依赖 B 的 v_settled_sales_line（21b）；
 -- 视图未建时按前置失败处理，不是跳过。
 -- ============================================================================
+-- 注意：下行的 :on error exit 与本文件中的 :r 是 sqlcmd 指令，不是 T-SQL。
+-- 必须用 sqlcmd -i 运行，或在 SSMS 中启用 SQLCMD Mode；
+-- VS Code 的 mssql 扩展不支持 :r，直接执行会报“冒号附近语法错误”。
+-- ============================================================================
 :on error exit
 USE KFC_DB;
 GO
