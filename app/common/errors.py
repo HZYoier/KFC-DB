@@ -42,7 +42,8 @@ CODE_MESSAGE = {
 }
 
 # 数据库消息号 -> 类。段位依据源码实测：A 域 51000–51005、B 域 52xxx、
-# C 域过程统一 50000、顾客端 530xx。511xx / 519xx 是验收脚本断言码，不收。
+# C 域库存调整 543xx、C 域过程统一 50000、顾客端 530xx。
+# 511xx / 519xx 是验收脚本断言码，不收。
 _SQL_NUMBER = {
     51000: "E_INPUT",
     51001: "E_NOTFOUND",
@@ -53,6 +54,14 @@ _SQL_NUMBER = {
     53000: "E_INPUT",
     53001: "E_NOTFOUND",
     53002: "E_RULE",
+    54301: "E_INPUT",
+    54302: "E_INPUT",
+    54303: "E_INPUT",
+    54304: "E_FORBIDDEN",
+    54305: "E_FORBIDDEN",
+    54306: "E_FORBIDDEN",
+    54307: "E_NOTFOUND",
+    54308: "E_RULE",
     50000: "E_RULE",
     229: "E_FORBIDDEN",
     230: "E_FORBIDDEN",

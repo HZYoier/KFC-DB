@@ -97,6 +97,8 @@ p_bit(value) / p_decimal(value, precision, scale) / p_datetime(value)
 - 响应形状：成功 `{ok, entity, action, message}`；失败沿用本文 §5 的 `{code, message, request_id}` 与九类错误映射。未知实体 / 未知动作在路由层就 404 `E_NOTFOUND`，不连库。
 - 商品页已改走接口取数与提交（服务端仍先渲染一份，脚本失败时页面照常可读），其余实体页仍是服务端渲染 + 表单 POST。测试见 `tests/stage2/api`（12 条，连接换成假的），实库探针输出见 `result/stage2/a-api/`。
 
+**2026-11-17 补库存调整错误码（S3-01）：** `tests/stage2/common` 仍为 **18 条**，把 `54301`–`54308` 并入原顾客端用例的数据驱动表（`BusinessErrorCodeTests`）——`54301`–`54303`→`E_INPUT`、`54304`–`54306`→`E_FORBIDDEN`、`54307`→`E_NOTFOUND`、`54308`→`E_RULE`。这些码由 v1.1 的 `sp_adjust_inventory` 抛出，缺映射会退化为 `E_INTERNAL`（HTTP 500）。实跑 `pass=18 fail=0 skip=0 total=18`，分母不变，第二阶段“七套 118/0”的计数口径不受影响。
+
 待办：① C 的 `run.py` 与 `app/auth`（包里给出 `bp` 即被应用工厂自动注册，不用改 `app/__init__.py`）；② B 用 `sp_create_order` 与一次故障回滚核对事务 helper 的提交/回滚语义；③ C 定顾客端 `cust_app` 的凭据交付方式（OI-10；契约 §1.7 已于 2026-11-06 定稿，见 `application-contract.md`）。
 
 ## 9. 变更记录
@@ -108,3 +110,4 @@ p_bit(value) / p_decimal(value, precision, scale) / p_datetime(value)
 | 2026-11-06 | 落实 OI-16：`open_connection` 每次连接前关闭驱动池（`pyodbc.pooling = False`），§1 签名表、§2 身份口径与 §8 现状同步；测试 13 → 17 条 |
 | 2026-11-07 | 补顾客端 530xx 映射用例，common 17 → 18 条；§8 记录契约 §1.2 `sp_customer_register` 的整份 `11a` 事务内核验 |
 | 2026-11-09 | §8 记录 A 域 `/api/master` JSON 接口层：与页面共用实体 / 动作表与 `service`，入参转表单同形字符串，写动作校验 CSRF 头；五个签名不变，测试 12 条 |
+| 2026-11-17 | 补 54301–54308 库存调整错误码映射（S3-01）；common 测试并入同一数据驱动用例，分母仍 18 |

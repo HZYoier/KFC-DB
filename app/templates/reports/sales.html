@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>销售报表 · KFC-DB</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, "Microsoft YaHei", sans-serif; }
+    body { margin: 0; background: #f4f1ea; color: #2b2b2b; }
+    main { width: min(96vw, 1100px); margin: 28px auto 48px; }
+    .top { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    h1 { margin: 0 0 4px; font-size: 24px; }
+    h2 { margin: 28px 0 10px; font-size: 18px; }
+    .muted { color: #777; font-size: 13px; }
+    .links a { margin-left: 8px; padding: 7px 10px; border: 1px solid #d7d0c4; border-radius: 7px; background: #fff; color: #2b2b2b; text-decoration: none; font: inherit; }
+    .error { margin: 14px 0; padding: 10px 12px; border-radius: 8px; background: #fdecea; color: #8c1d18; }
+    .form { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; margin: 14px 0; padding: 12px; border-radius: 10px; background: #fff; }
+    .form label { display: grid; gap: 4px; font-size: 12px; color: #555; }
+    input, button { font: inherit; }
+    input { padding: 7px 8px; border: 1px solid #d7d0c4; border-radius: 6px; }
+    button { padding: 7px 14px; border: 0; border-radius: 6px; background: #b3261e; color: #fff; cursor: pointer; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+    .card { padding: 14px; background: #fff; border: 1px solid #e6e0d5; border-radius: 10px; }
+    .card span { display: block; color: #777; font-size: 12px; }
+    .card b { font-size: 22px; font-variant-numeric: tabular-nums; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; font-size: 13px; }
+    th, td { padding: 8px 9px; border-bottom: 1px solid #eee9df; text-align: left; white-space: nowrap; }
+    th { background: #faf8f3; font-weight: 600; }
+    td.num { font-variant-numeric: tabular-nums; }
+    .empty { padding: 16px; color: #777; background: #fff; border: 1px solid #e6e0d5; border-radius: 10px; }
+    .hint { color: #777; font-size: 12px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top">
+      <div>
+        <h1>销售报表</h1>
+        <div class="muted">已结算口径：<code>PICKED_UP</code> + <code>COMPLETED</code>，金额为折后净额；日期含起止当天。</div>
+      </div>
+      <div class="links"><a href="{{ url_for('auth.index') }}">我的首页</a></div>
+    </div>
+
+    <form class="form" method="get">
+      <label>开始日期<input type="date" name="start" value="{{ start }}"></label>
+      <label>结束日期<input type="date" name="end" value="{{ end }}"></label>
+      <button type="submit">查询</button>
+    </form>
+
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+    {% if summary %}
+    <div class="cards">
+      <div class="card"><span>订单数</span><b>{{ summary.order_count }}</b></div>
+      <div class="card"><span>销售数量</span><b>{{ summary.sold_qty }}</b></div>
+      <div class="card"><span>销售金额</span><b>{{ summary.sales_amount }}</b></div>
+    </div>
+
+    <h2>商品明细</h2>
+    {% if items %}
+    <table>
+      <thead><tr><th>商品编号</th><th>商品</th><th>销售数量</th><th>销售金额</th><th>订单数</th></tr></thead>
+      <tbody>
+      {% for row in items %}
+        <tr>
+          <td>{{ row.product_id }}</td>
+          <td>{{ row.product_name }}</td>
+          <td class="num">{{ row.sold_qty }}</td>
+          <td class="num">{{ row.sales_amount }}</td>
+          <td class="num">{{ row.order_count }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">该区间没有已结算销售。</div>
+    {% endif %}
+    {% endif %}
+
+    <p class="hint">汇总与明细均来自 <code>sp_sales_report</code>；页面不重算金额、不补零行。</p>
+  </main>
+</body>
+</html>

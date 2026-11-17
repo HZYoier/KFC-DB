@@ -213,14 +213,30 @@ class ErrorPropagationTests(Base):
         self.open_mock.assert_not_called()
 
 
-class CustomerErrorCodeTests(unittest.TestCase):
-    """顾客端 530xx 必须在映射表里：sp_customer_register 抛的就是 53000。"""
+class BusinessErrorCodeTests(unittest.TestCase):
+    """业务错误号必须在映射表里：顾客端 530xx、库存调整 543xx。
 
-    def test_customer_codes_map_to_their_classes(self):
-        expected = {53000: "E_INPUT", 53001: "E_NOTFOUND", 53002: "E_RULE"}
+    53000 由 sp_customer_register 抛出；54301–54308 由 v1.1 的
+    sp_adjust_inventory 抛出。缺映射会退化成 E_INTERNAL（HTTP 500）。
+    """
+
+    def test_business_codes_map_to_their_classes(self):
+        expected = {
+            53000: "E_INPUT",
+            53001: "E_NOTFOUND",
+            53002: "E_RULE",
+            54301: "E_INPUT",
+            54302: "E_INPUT",
+            54303: "E_INPUT",
+            54304: "E_FORBIDDEN",
+            54305: "E_FORBIDDEN",
+            54306: "E_FORBIDDEN",
+            54307: "E_NOTFOUND",
+            54308: "E_RULE",
+        }
         for number, code in expected.items():
             with self.subTest(number=number):
-                err = errors.from_exception(sql_error("顾客端错误。 (%d)" % number))
+                err = errors.from_exception(sql_error("业务错误。 (%d)" % number))
                 self.assertEqual(err.code, code)
 
 

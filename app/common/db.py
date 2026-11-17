@@ -63,6 +63,11 @@ def p_decimal(value, precision: int, scale: int) -> SqlParam:
     return SqlParam(value, pyodbc.SQL_DECIMAL, precision, scale)
 
 
+def p_date(value) -> SqlParam:
+    """DATE 参数（第三阶段报表的起止日期）；用 datetime.date，不传字符串。"""
+    return SqlParam(value, pyodbc.SQL_TYPE_DATE)
+
+
 def p_datetime(value) -> SqlParam:
     return SqlParam(value, pyodbc.SQL_TYPE_TIMESTAMP)
 
