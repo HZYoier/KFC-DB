@@ -4,7 +4,7 @@
 
 **Architecture:** 沿用前两阶段的业务线——A 主数据、定价与会员，B 订单、支付与履约，C 库存、补货、权限与集成。第三阶段不改这条线，改的是"业务规则放在哪里"：原先散在页面层或过程里的计算下沉为数据库对象，页面只负责取参、调用和展示；数据库结构只做加法，形成 v1.1。
 
-**Spec:** 教学安排《第三阶段 · 第 10—13 周 数据库编程与事务处理》的第 10 周、第 11 周两份讲解（2026-11-12 收到），以及同一份阶段安排里的周次表。第 12、13 周的详细讲解尚未收到，本计划按周次表推导这两周的任务，并在 §2 中标注为待核项；讲解原文按前两阶段约定不归档，C 核对后只保留编号化摘录。
+**Spec:** 教学安排《第三阶段 · 第 10—13 周 数据库编程与事务处理》的第 10、11 周讲解（2026-11-12 收到）与第 12 周讲解（2026-11-18 收到），以及同一份阶段安排里的周次表。第 13 周的详细讲解尚未收到，本计划按周次表推导并发控制部分，并在 §2 中标为待核；讲解原文按前两阶段约定不归档，C 核对后只保留编号化摘录。
 
 ## 0. 阶段目标与四个子阶段
 
@@ -79,15 +79,17 @@
 | R11-08 | 触发器一次可能处理多行，不能只用一个变量存一行；结合 `inserted` / `deleted`；考虑插入、修改、删除；业务不要过重 | 触发器的多行测试与实现评审清单（§5.4） | B / C |
 | R11-09 | 窗口函数不减少行数；累计值明确排序；移动平均说明窗口大小 | 三条查询各配"行数前后一致"与"窗口帧"说明 | A / B |
 
-### 2.3 第 12—13 周（3.3、3.4，待核）
+### 2.3 第 12—13 周（3.3、3.4；第 12 周已核对，第 13 周待核）
 
 | 编号 | 周次表要求 | 本仓落点 | 主笔 |
 | --- | --- | --- | --- |
-| R3-01 | 完成一项层级递归查询，结果层级正确 | `24b_recursive_query.sql`：订单明细的套餐组件树 | B |
-| R3-02 | 实现订单完成事务，验证提交与回滚 | `25b_tx_order_completion.sql` | B |
+| R3-01 | 完成一项层级递归查询，结果层级正确 | `24b_recursive_query.sql`：订单明细的套餐组件树（已有结构说明） | B |
+| R3-02 | 实现订单完成事务，验证提交与回滚 | `25b_tx_order_completion.sql`：围绕 `sp_finish_production` 的制作完成事务（含库存实扣） | B |
 | R3-03 | 实现模拟补货入库事务，验证提交与回滚 | `25c_tx_replenishment_receipt.sql` | C |
 | R3-04 | 围绕库存与补货记录完成锁等待、隔离级别、死锁实验，并验证改进方案 | `26a_isolation_experiment.sql`（A）、`26c_lock_deadlock_experiment.sql`（C） | A / C |
 | R3-05 | 两个会话的实验脚本、锁信息、运行结果与分析；能指出被锁数据、等待关系、死锁原因和解决方法 | `docs/stage3/concurrency.md` + `result/stage3/c-concurrency-*.txt` | C（A/B 提供各自会话与分析） |
+
+**2026-11-18 按第十二周讲解修订：** R3-01 的讲解示例是“商品分类—子分类”，本库 `Category` 没有父级列；作业同时允许“已有结构说明”，故仍采用 `SalesOrderItem.parent_order_item_id` 的套餐组件树，不为此扩 v1.1。R3-02 的事务主体定为制作完成（`sp_finish_production`），因为本库的库存实扣只发生在 `sp_consume_order_inventory`，取餐/送达终态不再扣减；详见 §6.2。
 
 ## 3. 分工原则
 
@@ -218,37 +220,45 @@ operated_at        DATETIME2(0) NOT NULL
 
 | 成员 | 负责范围 |
 | --- | --- |
-| A | 销售口径复核与事务前置数据核对；订单完成事务的金额/折扣断言素材；A 域回归 |
-| B | 递归查询（`24b`）；订单完成事务（`25b`）；提交与回滚证据；B 域回归 |
+| A | 销售口径复核与事务前置数据核对；订单完成事务的金额/折扣断言素材；A 域回归；README/阶段报告素材与 AI 记录 |
+| B | 递归查询（`24b`）；订单完成事务（`25b`，制作完成实扣）；提交与回滚证据；B 域回归 |
 | C | 补货入库事务（`25c`）；提交与回滚证据；`verify_stage3.sql` 汇总骨架；C 域回归 |
 
 ### 6.1 层级递归查询（B）
 
 以 `SalesOrderItem.parent_order_item_id` 自引用为树：输入一个 `@order_id`，从顶层售卖项出发递归展开套餐组件，返回层级、路径、父项、商品、数量、单价、行金额与"相对整单的展开数量"（父项数量 × 子项份数）。业务含义是配餐展开与套餐成本核算：收银只卖父项、配餐要知道实际要做几个子件。
 
-当前种子数据只有一层套餐，且 `sp_set_combo_component` 在第一阶段明确拒绝嵌套套餐，所以真实订单里通常只有一层。B 在回滚事务里直接构造一组两层明细（父套餐 → 子套餐 → 单品）验证多级，并在文档里写明：查询按"将来允许嵌套"写，当前应用规则不产生这种数据，测试数据只用于证明递归本身正确；用 `OPTION (MAXRECURSION 10)` 防失控，并在 `WHERE` 里加路径判重防环。查询只读，不留测试数据。
+**层级对象为什么不是分类树：** 第十二周讲解以“商品分类—子分类”为例，但本库 `Category` 只有 `category_id / category_name / status`，没有父级列；作业同时允许“层级表或**已有结构说明**”。改用分类树需要给 `Category` 增加 `parent_category_id` 并重开 v1.1 冻结范围，还要同步 C 的 `20`/schema 测试与 B 的 `13b` 列数检查，风险高于收益。因此本阶段以已有的 `SalesOrderItem.parent_order_item_id` 作为层级结构，在 `recursive_query.sql` 里写清自引用关系、根节点定义（`parent_order_item_id IS NULL` 的售卖项）与样例数据；若后续课程明确要求分类树，再按新冻结变更补 `24a`。
+
+递归写法至少包含：锚点（某订单的顶层售卖项）、递归连接（子项 `parent_order_item_id = 父项 order_item_id`）、终止条件（没有子项）；`parent_order_item_id` 外键不能阻止成环，`WHERE` 里用路径判重防环，`OPTION (MAXRECURSION 10)` 防失控；路径列在锚点与递归两段用同一数据类型和长度。
+
+当前种子数据只有一层套餐，且 `sp_set_combo_component` 在第一阶段明确拒绝嵌套套餐，所以真实订单里通常只有一层。B 在回滚事务里直接构造一组两层明细（父套餐 → 子套餐 → 单品）验证多级，并在文档里写明：查询按"将来允许嵌套"写，当前应用规则不产生这种数据，测试数据只用于证明递归本身正确；查询只读，不留测试数据。分别查根节点、中间节点、叶子节点与不存在的 `@order_id`/明细，结果与样例关系逐层对照。
 
 ### 6.2 订单完成事务（B）
 
-`25b_tx_order_completion.sql` 用显式事务演示两条路径：
+**先定库存扣减入口。** 本库不是“下单即实扣”：`sp_create_order` / `sp_customer_place_order` 只调 `sp_lock_order_inventory` 锁定量；真正的 `on_hand_qty` 与 `locked_qty` 同时扣减发生在 `sp_finish_production` 调用的 `sp_consume_order_inventory`，写 `CONSUME` 流水。取餐与送达（`sp_pick_up_order` / `sp_confirm_delivery`）只改订单/配送状态与积分，**不再扣库存**。第十二周的统一入口就是“制作完成 → `sp_consume_order_inventory`”，一个订单只扣一次。
 
-- **提交路径**：选一笔已支付/制作完成的测试订单，`BEGIN TRAN` → 调既有的取餐或送达过程 → 断言订单状态、`completed_at`、积分流水、库存流水都已落库 → `COMMIT` → 重新查询确认持久化；
-- **回滚路径**：同一形状再开一个事务，过程调用成功后人为注入一次失败（例如金额断言不成立或重复完成），验证 `@@TRANCOUNT` 归零、订单状态、积分、库存流水全部回到事务前，且没有留下半条记录。
+`25b_tx_order_completion.sql` 因此以 `sp_finish_production` 为事务主体，用显式事务演示两条路径：
 
-提交路径在迁移后的临时副本库上执行，避免主库测试订单被写死；回滚路径可在主库执行（不留数据）。两条路径都记录事务前后行数与关键值，脚本可重复运行。
+- **提交路径**：选一笔已支付、状态为 `IN_PRODUCTION` 的测试订单，`BEGIN TRAN` → 断言订单有 `SELLABLE` 明细、金额可核对 → 调 `sp_finish_production` → 断言订单状态变为 `READY_FOR_PICKUP` / `READY_FOR_DELIVERY`、`production_finished_at` 已写、对应原料的 `on_hand_qty` 与 `locked_qty` 同减、`InventoryMovement` 出现 `CONSUME` 流水（外送订单另有 `Delivery` 行）→ `COMMIT` → 重新查询确认持久化；
+- **拒绝路径**：对不存在、已完成/已制作完成、无明细或库存/锁定量不足的订单调用，必须返回明确错误码且不产生任何库存变化；连续调用两次 `sp_finish_production`，第二次必须被状态守卫拒绝，证明“重复调用不再增加”；
+- **回滚路径**：同一形状再开一个事务，`sp_finish_production` 成功后人为 `THROW`，验证 `@@TRANCOUNT` 归零、订单状态、`production_finished_at`、`Delivery`、库存与 `InventoryMovement` 全部回到事务前，且没有留下半条记录。
+
+金额核对：v1.1 订单的 `SalesOrder.total_amount` 必须等于明细 `SUM(gross_amount - discount_amount)`；v1.0 存量订单两列折扣为 0，按毛额核对。A 提供这条金额/折扣断言素材，B 在 25b 里落地。脚本每次测试前重置夹具；提交路径在迁移后的临时副本库上执行，回滚与拒绝路径可在主库执行（不留数据）。两条路径都记录事务前后行数与关键值，脚本可重复运行。
 
 ### 6.3 补货入库事务（C）
 
 `25c_tx_replenishment_receipt.sql` 覆盖"建议 → 采购单 → 收货"：
 
-- **提交路径**：批准建议生成采购单，分两次收货（部分到货、全部到货），断言 `PurchaseOrder` 状态、`Inventory.on_hand_qty`、`InventoryMovement` 与建议状态同步推进，`COMMIT` 后复查；
+- **提交路径**：批准建议生成采购单，分两次收货（部分到货、全部到货），断言 `PurchaseOrder` 状态、`Inventory.on_hand_qty`、`InventoryMovement` 与建议状态同步推进，`COMMIT` 后复查；采购单编号、商品与数量的对应关系保留在明细里；
+- **拒绝路径**：商品不存在、数量非正、单据状态不符或超收必须返回明确错误；对同一张已入库/已关闭单据再次收货，必须被状态守卫拒绝，库存不得再次增加；
 - **回滚路径**：在第二次收货时制造失败（超收、状态不符或数量非法），验证采购单、库存、流水、建议状态全部回到事务前，部分收货也不残留。
 
-与 6.2 一样，提交路径在临时副本上做，回滚路径留在主库；脚本记录 `@@TRANCOUNT`、受影响行数、关键数量前后值。
+与 6.2 一样，提交路径在临时副本上做，回滚与拒绝路径留在主库；每次测试前重置夹具；脚本记录 `@@TRANCOUNT`、受影响行数、关键数量前后值。
 
 ### 6.4 3.3 完成标准
 
-递归结果层级正确（一层与临时两层两种数据都验证）；两个事务各有提交成功与失败回滚的原始输出；回滚后无半条订单/库存/积分/采购记录；`regression` 38/0 与七套 118/0 仍全绿；`verify_stage3.sql` 能汇总本阶段全部断言。
+递归结果层级正确（根/中间/叶子/不存在编号，按样例关系逐层对照；一层与临时两层都验证）；两个事务各有提交成功、失败回滚与重复调用的原始输出；订单事务证明库存只扣一次（制作完成实扣，取餐/送达不再扣），补货事务证明同单不能重复加库存；回滚后无半条订单/库存/积分/采购记录；`regression` 38/0 与七套 118/0 仍全绿；`verify_stage3.sql` 能汇总本阶段全部断言；README、阶段报告素材与 AI 记录同步。
 
 ## 7. 子阶段 3.4：并发控制（第 13 周）
 
@@ -296,7 +306,7 @@ operated_at        DATETIME2(0) NOT NULL
 | `sql/stage3/21a_master_programmability.sql`、`21b_order_programmability.sql`、`21c_inventory_programmability.sql` | A、B、C 各自文件 | 各自域的过程/函数；`v_settled_sales_line` 在 `21b`；不提交外层事务 |
 | `sql/stage3/22b_order_triggers.sql`、`22c_inventory_triggers.sql` | B、C 各自文件 | 订单完成校验、库存审计；集合处理，无游标 |
 | `sql/stage3/23a_window_queries.sql`、`23b_window_queries.sql` | A、B 各自文件 | 排名与移动平均、累计值；配业务说明 |
-| `sql/stage3/24b_recursive_query.sql`、`25b_tx_order_completion.sql` | B | 递归树与订单完成事务；提交/回滚两路径 |
+| `sql/stage3/24b_recursive_query.sql`、`25b_tx_order_completion.sql` | B | 套餐组件递归树；以制作完成（实扣库存）为主体的订单事务，提交/拒绝/回滚三路径 |
 | `sql/stage3/25c_tx_replenishment_receipt.sql` | C | 补货入库事务；提交/回滚两路径 |
 | `sql/stage3/26a_isolation_experiment.sql`、`26c_lock_deadlock_experiment.sql` | A、C 各自文件 | 双会话脚本；固定等待与超时，输出可直接留证 |
 | `sql/stage3/27_permissions.sql` | C | 新权限码、RolePermission、GRANT、目录/映射/实际授权核对 |
@@ -317,7 +327,7 @@ operated_at        DATETIME2(0) NOT NULL
 1. **3.0 冻结（11-12—11-13）**：三人确认 v1.1 的加法范围（审计表、折扣两列）、折扣政策、已结算口径、触发器不变量、权限映射与文件命名；C 建 `source-requirements.md` 并标注第 12、13 周待核。未冻结不开写。
 2. **3.1（11-13—11-15）**：B 先交 `v_settled_sales_line` 与 `sp_sales_report` 骨架；A 交两个函数；C 交 `sp_adjust_inventory` 复核与 `fn_replenishment_qty`；C 串 `run_stage3.sql` 骨架；三人各自跑通正反例，冻结 3.1 签名。
 3. **3.2（11-16—11-22）**：C 建审计表与触发器，B 建订单完成触发器并排查旧夹具，A/B 交三条窗口查询；C 起 `27_permissions.sql`；全组跑一遍 v1.0 的 38 条回归与七套应用测试，变红先修触发器/夹具，不放宽断言。
-4. **3.3（11-23—11-29）**：B 交递归查询与订单完成事务，C 交补货入库事务；提交路径在临时副本、回滚路径在主库；C 起 `verify_stage3.sql`，A 复核销售口径与金额断言。
+4. **3.3（11-23—11-29）**：B 交递归查询与制作完成事务（`sp_finish_production`，库存只在此实扣），C 交补货入库事务；提交路径在临时副本、回滚与拒绝路径在主库；C 起 `verify_stage3.sql`，A 复核销售口径、金额/折扣断言与“取餐/送达不再扣库存”。
 5. **3.4（11-30—12-06）**：C 领先跑锁等待与死锁，A 做隔离实验，B 补订单侧分析；C 汇总 `concurrency.md` 与测试报告；A 出组级报告，B/C 出成员报告。
 6. **收口（12-07 前）**：v1.1 迁移在干净副本上从 v1.0 一次通过；`regression` 38/0、七套 118/0、`verify_stage3.sql` 全绿；README、字典、ER 图、操作手册与 v1.1 一致。
 
@@ -350,7 +360,7 @@ operated_at        DATETIME2(0) NOT NULL
 
 **第 10 周只剩四天。** 五个对象、正反例与文档要在 11-15 前收口。缓解：3.1 先保"五个对象可调用 + 七类用例"，报表页与润色放 3.2 并行；宁可少一个页面，不缺口试脚本。
 
-**第 12、13 周要求可能比推导更细。** 讲解未到，递归查询的层级对象、事务的验收点、并发实验的期望现象都可能被补充要求改变。缓解：两周的脚本与文档留出可替换的边界（递归只换查询、事务只换脚本、并发只换会话），不把它们的结论提前写死进 v1.1 迁移。
+**第 13 周要求可能比推导更细。** 第 12 周讲解已核对并据此修正了订单事务边界；第 13 周讲解未到，并发实验的期望现象与死锁改进验收点仍可能被补充要求改变。缓解：并发脚本与文档留出可替换的边界（只换会话与断言），不把结论提前写死进 v1.1 迁移。
 
 **范围膨胀。** 第三阶段只做教学要求的对象与两个事务，不顺手加新业务表、不重做报表系统、不改前两阶段已冻结的接口。确实需要新表时先登记开放问题，三人同意后再进 v1.1。
 
@@ -362,8 +372,8 @@ operated_at        DATETIME2(0) NOT NULL
 | 函数 | `function.sql` | `21a_master_programmability.sql`（折扣、销售汇总）+ `21c`（补货量） | A / C |
 | 触发器 | `trigger.sql` | `22b_order_triggers.sql` + `22c_inventory_triggers.sql` | B / C |
 | 窗口查询 | `window_query.sql` | `23a_window_queries.sql`（排名、移动平均）+ `23b_window_queries.sql`（累计） | A / B |
-| 递归查询 | `recursive_query.sql` | `24b_recursive_query.sql` | B |
-| 业务事务 | 订单完成 / 补货入库 | `25b_tx_order_completion.sql` + `25c_tx_replenishment_receipt.sql` | B / C |
+| 递归查询 | `recursive_query.sql` | `24b_recursive_query.sql`（套餐组件树；已有结构说明） | B |
+| 业务事务 | 订单完成（制作完成实扣）/ 补货入库 | `25b_tx_order_completion.sql` + `25c_tx_replenishment_receipt.sql` | B / C |
 | 并发实验 | 双会话脚本、锁信息、分析 | `26a_isolation_experiment.sql` + `26c_lock_deadlock_experiment.sql` + `docs/stage3/concurrency.md` | A / C |
 | 结构 | v1.1 增量 | `20_schema_v1_1.sql` + `27_permissions.sql` + `run_stage3.sql` + `verify_stage3.sql` | C |
 | 测试 | 调用与测试脚本、结果记录 | `tests/stage3/` + `result/stage3/` + `docs/stage3/test-report.md` | A / B / C，C 汇总 |
@@ -381,11 +391,12 @@ operated_at        DATETIME2(0) NOT NULL
 | 2026-11-12 | 3.0 口径冻结：`docs/stage3/sales-semantics.md` 落稿（F-01—F-04）；`21a_master_programmability.sql` 与 A 域测试落稿（折扣 27/27、汇总 15/15，tempdb 桩库）。依据内联 TVF 的 208 实测，`run_stage3.sql` 顺序由 `21a → 21b` 改为 `21b → 21a`；表值函数默认参数不能省略，调用一律写满三位 |
 | 2026-11-14 | A 提前落稿 `23a_window_queries.sql`（排名 + 移动平均）与 `26a_isolation_experiment.sql`（RC/RR 双会话实验），窗口测试 10/10 并入 A 域入口（三套 52/0）；26a 在 `KFC_DB(v1.0)` 实测 RR 两次读 100、RC 第二次读 105，证据在 `result/stage3/a-concurrency-26a-*.txt`。`sales-semantics.md` 补附录 A（R10-06 应用层计算清单） |
 | 2026-11-17 | 落实 S3-01：`app/common/errors.py` 映射 54301–54308，common 测试仍 18/0；A 的 `app/reports/` 报表页骨架落地（route/service/dao + 模板，fake-DAO 9/0），只调 `sp_sales_report`、不在 Python 汇总；补 `28a_stage3_regression.sql` 草稿（依赖 21b/21a，待真库）；26a 分析稿与 S3-02 回执进 `result/stage3/` |
+| 2026-11-18 | 收到第十二周讲解并按原文核对：R3-01 保留套餐组件树，理由是本库 `Category` 无父级列、作业允许“已有结构说明”，不扩 v1.1；R3-02 事务主体由取餐/送达改为 `sp_finish_production`（`sp_consume_order_inventory` 是唯一实扣入口），补拒绝路径、重复调用与“终态不再扣库存”验收；R3-03 补货事务与原文一致。C 需在 `source-requirements.md` 同步 R3-01/R3-02 的落点与状态 |
 
 ## 13. 本次设计自查
 
 - 第 10 周六项任务（销售统计、库存调整、补货量、销售汇总、折扣、整合）全部有落点与主笔，R10-01—R10-10 无遗漏；
-- 第 11 周五项任务与三条注意事项全部有落点，R11-01—R11-09 无遗漏；第 12、13 周按周次表登记 R3-01—R3-05，并明确"待核"；
+- 第 11 周五项任务与三条注意事项全部有落点，R11-01—R11-09 无遗漏；第 12 周讲解已核对（递归查询、订单完成事务、补货入库事务、重复调用与回滚），第 13 周仍按周次表登记并标“待核”；
 - 四个子阶段各有可验收的收敛日与完成标准，上游签名冻结后才开下游；
 - 每个对象/脚本只有一个属主，合并入口与权限归 C，跨域调用只经冻结签名；
 - v1.1 只有加法，`run_stage3.sql` 单事务、失败回滚、重复执行被版本标记拦住，不删库不删表；
