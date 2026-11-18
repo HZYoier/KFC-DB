@@ -23,6 +23,7 @@
 </head>
 <body>
   {% set role_codes = identity.roles | map(attribute='role_code') | list %}
+  {% set permission_codes = identity.permissions | map(attribute='permission_code') | list %}
   <main>
     <section class="card">
       <h1>{{ identity.employee.employee_name }}</h1>
@@ -37,6 +38,9 @@
       <div class="actions">
         {% if 'store_manager' in role_codes %}
           <a class="primary" href="{{ url_for('master.index') }}">主数据管理</a>
+        {% endif %}
+        {% if 'sp_sales_report' in permission_codes %}
+          <a href="{{ url_for('reports.sales') }}">销售报表</a>
         {% endif %}
         {% if identity.employee.job_code in ('STORE_MANAGER', 'SHIFT_MANAGER') %}
           <a href="{{ url_for('inventory.index') }}">库存与补货</a>

@@ -1,0 +1,43 @@
+C 第三阶段 25c 补货入库事务证据
+日期：2026-11-18
+环境：SQL Server 2025 Express（.\SQLEXPRESS），ODBC Driver 18，sqlcmd 17
+数据库：KFC_DB，已从 run_all -> capture_baseline -> run_migration 到 v1.0，并应用 C 的
+        20_schema_v1_1.sql、21c_inventory_programmability.sql、22c_inventory_triggers.sql。
+说明：25c 不是迁移入口的一部分；提交模式会留下测试原料/采购单，因此只在一次性测试库上执行，
+      测试后整库删除；回滚模式不留下测试数据。
+
+1. 回滚路径
+命令：
+  sqlcmd -S '.\SQLEXPRESS' -E -C -f 65001 -b -W -d KFC_DB
+    -v Mode=rollback -i 'D:\DBLab\KFC-DB\sql\stage3\25c_tx_replenishment_receipt.sql'
+输出：
+  RESULT: c-transaction replenishment mode=rollback pass=14 fail=0 total=14
+退出码：0。
+覆盖：唯一测试原料/库存、PENDING 建议、提交、审批生成 APPROVED 采购单、第一次部分收货
+4.000；第二次超收 7.000 被 `sp_receive_inventory` 以 50000“不能超过未收数量”拒绝，随后
+整个外层事务回滚；断言原料、库存、建议、采购单、流水、InventoryAudit、审计均无残留，
+@@TRANCOUNT=0。
+
+2. 提交路径
+命令：
+  sqlcmd -S '.\SQLEXPRESS' -E -C -f 65001 -b -W -d KFC_DB
+    -v Mode=commit -i 'D:\DBLab\KFC-DB\sql\stage3\25c_tx_replenishment_receipt.sql'
+输出：
+  RESULT: c-transaction replenishment mode=commit pass=18 fail=0 total=18
+退出码：0。
+覆盖：建议 PENDING -> SUBMITTED -> APPROVED，同事务生成 APPROVED 采购单；第一次收货
+4.000 后 PARTIALLY_RECEIVED、库存 104.000、received_qty=4.000、RECEIPT 流水；第二次收货
+6.000 后 CLOSED、库存 110.000、received_qty=10.000、建议 CLOSED、两条 RECEIVE_INVENTORY
+审计；对已关闭采购单再次收货被 50000 拒绝且库存不变；不存在采购单被 50000 拒绝；数量 0
+被 50000 拒绝；@@TRANCOUNT=0。
+
+3. 提交后现场
+  ingredient_id|ingredient_name|on_hand_qty|purchase_order_id|purchase_status|ordered_qty|received_qty|suggestion_status
+  8|C25-E7FB9132791641C5A7B693A7A08B91CE|110.000|4|CLOSED|10.000|10.000|CLOSED
+
+4. 边界
+- 本次提交路径在一次性 KFC_DB 上执行，验证完成后整库删除；计划要求的生产副本演练仍应在
+  迁移后的临时副本上复跑。
+- 25c 依赖 v1.0 的 sp_create_replenishment_suggestion / sp_submit_replenishment_suggestion /
+  sp_approve_replenishment_suggestion / sp_receive_inventory；不修改这些过程。
+- 回滚路径的断言还覆盖 22c 的 InventoryAudit 无残留。
