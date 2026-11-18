@@ -32,7 +32,7 @@
 
 ## 4. A 自己的收尾
 
-- 提供 25b 的金额/折扣断言素材（`total_amount` 与明细净额之和）；
+- 提供 25b 的金额/折扣断言素材（`total_amount` 与明细净额之和），已落 `result/stage3/a-order-tx-assertions.md`；
 - 第 12 周 README、阶段报告素材与 AI 记录按计划 §6.4 同步；
 - `app/reports/` 真库联调仍等 B 的 `21b`。
 
