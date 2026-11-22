@@ -1,0 +1,239 @@
+C 第三阶段并发与域回归证据（2026-11-22）
+环境：SQL Server Express .\SQLEXPRESS；Windows 集成登录；ODBC 18 sqlcmd。
+部署：run_all → capture_baseline → run_migration → 20 → 21c → 22c，退出码均为 0。
+复跑：docs/stage3/concurrency.md；使用真实 Inventory 的两个启用原料。
+
+1. 首轮差异与归因
+沙箱连接报 08001 / SSPI 凭证不可用。授权后 Windows 集成登录通过。
+首轮 28c 为 63/0；26c 会话 1 已持锁并通过，另一个连接观察 DMV 时标签不可见。
+标签修正后两边均有 RESULT，临时驱动脚本未保留进程句柄，未取得退出码。
+等待与超时通过，死锁牺牲者返回 1205；system_health 环形缓冲区未返回匹配的死锁图。
+各轮一次性库均已清理。
+
+2. 修正
+在独立批次设置 CONTEXT_INFO，观察查询排除当前连接；驱动脚本保留进程句柄核对退出码。
+改从默认 system_health 的事件文件读取本库死锁图，再从空库重跑部署和断言。
+
+3. 终轮 28c
+RESULT: c-programmability schema pass=14 fail=0 total=14
+RESULT: c-programmability replenishment pass=10 fail=0 total=10
+RESULT: c-programmability adjust_inventory pass=15 fail=0 total=15
+RESULT: c-programmability files=3 failed=0
+RESULT: c-triggers inventory_audit pass=10 fail=0 total=10
+RESULT: c-triggers files=1 failed=0
+RESULT: c-transaction replenishment mode=rollback pass=14 fail=0 total=14
+RESULT: stage3-c-regression suites=5 pass=63 fail=0
+退出码 0。
+
+4. 终轮 26c
+每轮两会话退出码均为 0；以下为原始输出摘录。
+
+wait-1
+  S1 2026-11-22 14:59:37.3994500     78 wait                                       1                    1                    2
+  S1 26c first lock: spid=78 ingredient_id=1
+  S1 RESULT: 26c pass=1 fail=0
+  S1 elapsed_ms=71 open_transactions=0
+  S2 2026-11-22 14:59:37.9213194     70 wait                                       2                    1                    2
+  S2 26c first lock: spid=70 ingredient_id=1
+  S2 RESULT: 26c pass=1 fail=0
+  S2 elapsed_ms=11588 open_transactions=0
+  DMV session_id|blocking_session_id|wait_type|wait_time|wait_resource
+  70|78|LCK_M_U|131|KEY: 6:72057594048806912 (1b7fe5b8af93)
+  DMV lock 70|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  DMV lock 70|KEY|U|WAIT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 78|KEY|X|GRANT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 78|PAGE|IX|GRANT|72057594048806912|1:752|Inventory
+
+wait-2
+  S1 2026-11-22 14:59:49.8100936     71 wait                                       1                    1                    2
+  S1 26c first lock: spid=71 ingredient_id=1
+  S1 RESULT: 26c pass=1 fail=0
+  S1 elapsed_ms=73 open_transactions=0
+  S2 2026-11-22 14:59:50.3462366     78 wait                                       2                    1                    2
+  S2 26c first lock: spid=78 ingredient_id=1
+  S2 RESULT: 26c pass=1 fail=0
+  S2 elapsed_ms=11581 open_transactions=0
+  DMV session_id|blocking_session_id|wait_type|wait_time|wait_resource
+  78|71|LCK_M_U|270|KEY: 6:72057594048806912 (1b7fe5b8af93)
+  DMV lock 71|KEY|X|GRANT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 71|PAGE|IX|GRANT|72057594048806912|1:752|Inventory
+  DMV lock 78|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  DMV lock 78|KEY|U|WAIT|72057594048806912|(1b7fe5b8af93)|Inventory
+
+wait-3
+  S1 2026-11-22 15:00:02.2675913     71 wait                                       1                    1                    2
+  S1 26c first lock: spid=71 ingredient_id=1
+  S1 RESULT: 26c pass=1 fail=0
+  S1 elapsed_ms=60 open_transactions=0
+  S2 2026-11-22 15:00:02.7405840     70 wait                                       2                    1                    2
+  S2 26c first lock: spid=70 ingredient_id=1
+  S2 RESULT: 26c pass=1 fail=0
+  S2 elapsed_ms=11591 open_transactions=0
+  DMV session_id|blocking_session_id|wait_type|wait_time|wait_resource
+  70|71|LCK_M_U|171|KEY: 6:72057594048806912 (1b7fe5b8af93)
+  DMV lock 70|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  DMV lock 70|KEY|U|WAIT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 71|KEY|X|GRANT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 71|PAGE|IX|GRANT|72057594048806912|1:752|Inventory
+
+timeout-1
+  S1 2026-11-22 15:00:14.6030415     71 timeout                                    1                    1                    2
+  S1 26c first lock: spid=71 ingredient_id=1
+  S1 RESULT: 26c pass=1 fail=0
+  S1 elapsed_ms=57 open_transactions=0
+  S2 2026-11-22 15:00:15.0623832     70 timeout                                    2                    1                    2
+  S2 1222 Lock request time out period exceeded.
+  S2 RESULT: 26c pass=1 fail=0
+  S2 elapsed_ms=3009 open_transactions=0
+  DMV session_id|blocking_session_id|wait_type|wait_time|wait_resource
+  70|71|LCK_M_U|189|KEY: 6:72057594048806912 (1b7fe5b8af93)
+  DMV lock 70|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  DMV lock 70|KEY|U|WAIT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 71|KEY|X|GRANT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 71|PAGE|IX|GRANT|72057594048806912|1:752|Inventory
+
+timeout-2
+  S1 2026-11-22 15:00:26.9533880     71 timeout                                    1                    1                    2
+  S1 26c first lock: spid=71 ingredient_id=1
+  S1 RESULT: 26c pass=1 fail=0
+  S1 elapsed_ms=57 open_transactions=0
+  S2 2026-11-22 15:00:27.3958569     70 timeout                                    2                    1                    2
+  S2 1222 Lock request time out period exceeded.
+  S2 RESULT: 26c pass=1 fail=0
+  S2 elapsed_ms=3007 open_transactions=0
+  DMV session_id|blocking_session_id|wait_type|wait_time|wait_resource
+  70|71|LCK_M_U|167|KEY: 6:72057594048806912 (1b7fe5b8af93)
+  DMV lock 70|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  DMV lock 70|KEY|U|WAIT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 71|KEY|X|GRANT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 71|PAGE|IX|GRANT|72057594048806912|1:752|Inventory
+
+timeout-3
+  S1 2026-11-22 15:00:39.3245702     73 timeout                                    1                    1                    2
+  S1 26c first lock: spid=73 ingredient_id=1
+  S1 RESULT: 26c pass=1 fail=0
+  S1 elapsed_ms=67 open_transactions=0
+  S2 2026-11-22 15:00:39.8297144     71 timeout                                    2                    1                    2
+  S2 1222 Lock request time out period exceeded.
+  S2 RESULT: 26c pass=1 fail=0
+  S2 elapsed_ms=3009 open_transactions=0
+  DMV session_id|blocking_session_id|wait_type|wait_time|wait_resource
+  71|73|LCK_M_U|160|KEY: 6:72057594048806912 (1b7fe5b8af93)
+  DMV lock 71|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  DMV lock 71|KEY|U|WAIT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 73|KEY|X|GRANT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 73|PAGE|IX|GRANT|72057594048806912|1:752|Inventory
+
+deadlock-1
+  S1 2026-11-22 15:00:52.0135349     73 deadlock                                   1                    1                    2
+  S1 26c first lock: spid=73 ingredient_id=1
+  S1 RESULT: 26c pass=1 fail=0
+  S1 elapsed_ms=13452 open_transactions=0
+  S2 2026-11-22 15:00:52.5162091     70 deadlock                                   2                    2                    1
+  S2 1205 Transaction (Process ID 70) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction.
+  S2 26c first lock: spid=70 ingredient_id=2
+  S2 RESULT: 26c pass=1 fail=0
+  S2 elapsed_ms=12950 open_transactions=0
+  DMV session_id|blocking_session_id|wait_type|wait_time|wait_resource
+  70|73|LCK_M_U|173|KEY: 6:72057594048806912 (1b7fe5b8af93)
+  DMV lock 70|KEY|U|GRANT|72057594048806912|(f03d7d8b0dcc)|Inventory
+  DMV lock 70|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  DMV lock 70|KEY|U|WAIT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 73|KEY|U|GRANT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 73|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  system_health UTC 2026-11-22 15:01:05.4660000（已去除登录名、主机与 SQL 文本）
+  <deadlock><victim-list><victimProcess id="process1eae265f828" /></victim-list><process-list><process id="process1eae265f828" waitresource="KEY: 6:72057594048806912 (1b7fe5b8af93)" lockMode="U" spid="70" priority="-5" currentdb="6" /><process id="process1eaf5843438" waitresource="KEY: 6:72057594048806912 (f03d7d8b0dcc)" lockMode="U" spid="73" priority="0" currentdb="6" /></process-list><resource-list><keylock hobtid="72057594048806912" dbid="6" objectname="KFC_DB.dbo.Inventory" indexname="PK_Inventory" id="lock1eae2a3dd80" mode="U" associatedObjectId="72057594048806912"><owner-list><owner id="process1eaf5843438" mode="U" /></owner-list><waiter-list><waiter id="process1eae265f828" mode="U" requestType="wait" /></waiter-list></keylock><keylock hobtid="72057594048806912" dbid="6" objectname="KFC_DB.dbo.Inventory" indexname="PK_Inventory" id="lock1eae2a3e200" mode="U" associatedObjectId="72057594048806912"><owner-list><owner id="process1eae265f828" mode="U" /></owner-list><waiter-list><waiter id="process1eaf5843438" mode="U" requestType="wait" /></waiter-list></keylock></resource-list></deadlock>
+
+deadlock-2
+  S1 2026-11-22 15:01:06.2095943     73 deadlock                                   1                    1                    2
+  S1 26c first lock: spid=73 ingredient_id=1
+  S1 RESULT: 26c pass=1 fail=0
+  S1 elapsed_ms=16792 open_transactions=0
+  S2 2026-11-22 15:01:06.7021931     70 deadlock                                   2                    2                    1
+  S2 1205 Transaction (Process ID 70) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction.
+  S2 26c first lock: spid=70 ingredient_id=2
+  S2 RESULT: 26c pass=1 fail=0
+  S2 elapsed_ms=16300 open_transactions=0
+  DMV session_id|blocking_session_id|wait_type|wait_time|wait_resource
+  70|73|LCK_M_U|158|KEY: 6:72057594048806912 (1b7fe5b8af93)
+  DMV lock 70|KEY|U|GRANT|72057594048806912|(f03d7d8b0dcc)|Inventory
+  DMV lock 70|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  DMV lock 70|KEY|U|WAIT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 73|KEY|U|GRANT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 73|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  system_health UTC 2026-11-22 15:01:23.0030000（已去除登录名、主机与 SQL 文本）
+  <deadlock><victim-list><victimProcess id="process1eafaae1048" /></victim-list><process-list><process id="process1eafaae1048" waitresource="KEY: 6:72057594048806912 (1b7fe5b8af93)" lockMode="U" spid="70" priority="-5" currentdb="6" /><process id="process1eaf5813048" waitresource="KEY: 6:72057594048806912 (f03d7d8b0dcc)" lockMode="U" spid="73" priority="0" currentdb="6" /></process-list><resource-list><keylock hobtid="72057594048806912" dbid="6" objectname="KFC_DB.dbo.Inventory" indexname="PK_Inventory" id="lock1eaf6d8e100" mode="U" associatedObjectId="72057594048806912"><owner-list><owner id="process1eaf5813048" mode="U" /></owner-list><waiter-list><waiter id="process1eafaae1048" mode="U" requestType="wait" /></waiter-list></keylock><keylock hobtid="72057594048806912" dbid="6" objectname="KFC_DB.dbo.Inventory" indexname="PK_Inventory" id="lock1eae2a3db00" mode="U" associatedObjectId="72057594048806912"><owner-list><owner id="process1eafaae1048" mode="U" /></owner-list><waiter-list><waiter id="process1eaf5813048" mode="U" requestType="wait" /></waiter-list></keylock></resource-list></deadlock>
+
+deadlock-3
+  S1 2026-11-22 15:01:23.7842817     73 deadlock                                   1                    1                    2
+  S1 26c first lock: spid=73 ingredient_id=1
+  S1 RESULT: 26c pass=1 fail=0
+  S1 elapsed_ms=16759 open_transactions=0
+  S2 2026-11-22 15:01:24.2709766     70 deadlock                                   2                    2                    1
+  S2 1205 Transaction (Process ID 70) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction.
+  S2 26c first lock: spid=70 ingredient_id=2
+  S2 RESULT: 26c pass=1 fail=0
+  S2 elapsed_ms=16272 open_transactions=0
+  DMV session_id|blocking_session_id|wait_type|wait_time|wait_resource
+  70|73|LCK_M_U|177|KEY: 6:72057594048806912 (1b7fe5b8af93)
+  DMV lock 70|KEY|U|GRANT|72057594048806912|(f03d7d8b0dcc)|Inventory
+  DMV lock 70|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  DMV lock 70|KEY|U|WAIT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 73|KEY|U|GRANT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 73|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  system_health UTC 2026-11-22 15:01:40.5430000（已去除登录名、主机与 SQL 文本）
+  <deadlock><victim-list><victimProcess id="process1eae265ec58" /></victim-list><process-list><process id="process1eae265ec58" waitresource="KEY: 6:72057594048806912 (1b7fe5b8af93)" lockMode="U" spid="70" priority="-5" currentdb="6" /><process id="process1eae2551438" waitresource="KEY: 6:72057594048806912 (f03d7d8b0dcc)" lockMode="U" spid="73" priority="0" currentdb="6" /></process-list><resource-list><keylock hobtid="72057594048806912" dbid="6" objectname="KFC_DB.dbo.Inventory" indexname="PK_Inventory" id="lock1eae2a40080" mode="U" associatedObjectId="72057594048806912"><owner-list><owner id="process1eae2551438" mode="U" /></owner-list><waiter-list><waiter id="process1eae265ec58" mode="U" requestType="wait" /></waiter-list></keylock><keylock hobtid="72057594048806912" dbid="6" objectname="KFC_DB.dbo.Inventory" indexname="PK_Inventory" id="lock1eaf6d8e100" mode="U" associatedObjectId="72057594048806912"><owner-list><owner id="process1eae265ec58" mode="U" /></owner-list><waiter-list><waiter id="process1eae2551438" mode="U" requestType="wait" /></waiter-list></keylock></resource-list></deadlock>
+
+ordered-1
+  S1 2026-11-22 15:01:41.1345089     73 ordered                                    1                    1                    2
+  S1 26c first lock: spid=73 ingredient_id=1
+  S1 RESULT: 26c pass=1 fail=0
+  S1 elapsed_ms=12001 open_transactions=0
+  S2 2026-11-22 15:01:41.5831500     70 ordered                                    2                    1                    2
+  S2 26c first lock: spid=70 ingredient_id=1
+  S2 RESULT: 26c pass=1 fail=0
+  S2 elapsed_ms=11553 open_transactions=0
+  DMV session_id|blocking_session_id|wait_type|wait_time|wait_resource
+  70|73|LCK_M_U|170|KEY: 6:72057594048806912 (1b7fe5b8af93)
+  DMV lock 70|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  DMV lock 70|KEY|U|WAIT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 73|KEY|U|GRANT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 73|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+
+ordered-2
+  S1 2026-11-22 15:01:53.3961936     71 ordered                                    1                    1                    2
+  S1 26c first lock: spid=71 ingredient_id=1
+  S1 RESULT: 26c pass=1 fail=0
+  S1 elapsed_ms=12016 open_transactions=0
+  S2 2026-11-22 15:01:53.8756977     70 ordered                                    2                    1                    2
+  S2 26c first lock: spid=70 ingredient_id=1
+  S2 RESULT: 26c pass=1 fail=0
+  S2 elapsed_ms=11536 open_transactions=0
+  DMV session_id|blocking_session_id|wait_type|wait_time|wait_resource
+  70|71|LCK_M_U|181|KEY: 6:72057594048806912 (1b7fe5b8af93)
+  DMV lock 70|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  DMV lock 70|KEY|U|WAIT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 71|KEY|U|GRANT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 71|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+
+ordered-3
+  S1 2026-11-22 15:02:05.6774445     71 ordered                                    1                    1                    2
+  S1 26c first lock: spid=71 ingredient_id=1
+  S1 RESULT: 26c pass=1 fail=0
+  S1 elapsed_ms=12017 open_transactions=0
+  S2 2026-11-22 15:02:06.1057591     70 ordered                                    2                    1                    2
+  S2 26c first lock: spid=70 ingredient_id=1
+  S2 RESULT: 26c pass=1 fail=0
+  S2 elapsed_ms=11588 open_transactions=0
+  DMV session_id|blocking_session_id|wait_type|wait_time|wait_resource
+  70|71|LCK_M_U|175|KEY: 6:72057594048806912 (1b7fe5b8af93)
+  DMV lock 70|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+  DMV lock 70|KEY|U|WAIT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 71|KEY|U|GRANT|72057594048806912|(1b7fe5b8af93)|Inventory
+  DMV lock 71|PAGE|IU|GRANT|72057594048806912|1:752|Inventory
+
+5. 回滚与清理
+业务行 SHA-256（Inventory、InventoryMovement、InventoryAudit、ReplenishmentSuggestion、AuditLog）
+  26c 前 C0C045323048AEA34E03DBC097BC67F6B5FC1BC5B14B69F6C8BEA5E3B5981A24
+  26c 后 C0C045323048AEA34E03DBC097BC67F6B5FC1BC5B14B69F6C8BEA5E3B5981A24
+四种模式各三轮通过；会话事务计数均为 0。清理退出码 0，DB_ID(KFC_DB) 为 NULL。

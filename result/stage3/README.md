@@ -2,14 +2,15 @@
 
 > 属主：C（总集成）。每个文件用字母前缀标属主：`a-` A、`b-` B、`c-` C。本目录只放可复跑的原始输出、说明与脚本，不放数据库口令、连接串或未脱敏日志。
 
-## C 域本轮证据（2026-11-15 / 2026-11-18）
+## C 域证据
 
 | 文件 | 内容 | 结果 |
 | --- | --- | --- |
 | [c-stage3-31-2026-11-15.txt](c-stage3-31-2026-11-15.txt) | 真实 v1.0 上增量执行 20/21c/22c；C 域 3.1 测试、库存审计触发器、10c、13a/13b-write/13c、七套应用 | C 对象测试全绿；七套 118/0；13b baseline 形状待 B 按 S3-03 更新 |
 | [c-transaction-2026-11-18.txt](c-transaction-2026-11-18.txt) | 25c 补货入库事务：回滚路径 14/0、提交路径 18/0、重复/无效收货拒绝 | 一次性 KFC_DB 上完成，测试后整库删除 |
 | [scripts/c-programmability-demo-2026-11-15.sql](scripts/c-programmability-demo-2026-11-15.sql) | 输入/预期/实际/错误消息演示；写操作事务内回滚 | 可复跑 |
-| [并发实验说明](../../docs/stage3/concurrency.md) | 26c 锁等待、超时、死锁与同序加锁复跑步骤，附 A 的隔离级别证据入口 | 26c 实测待 SQL Express Windows 登录恢复 |
+| [并发实验说明](../../docs/stage3/concurrency.md) | 26c 锁等待、超时、死锁与同序加锁复跑步骤，附 A 的隔离级别证据入口 | 26c 四模式各三轮通过 |
+| [c-concurrency-2026-11-22.txt](c-concurrency-2026-11-22.txt) | 26c 等待、超时、死锁 XML、同序加锁、回滚复查；28c 固定分母验收 | 四模式各三轮；28c 63/0；一次性库已清理 |
 
 ## 复跑前提
 
@@ -28,7 +29,7 @@ db37740fb0e389775c76e507b3a87cc88a41d1058460cf3a086951f9fae0b3b8  sql/stage3/20_
 87cbb779e89b83f2350fc338016b66f528489730b21e392d702fe99e09b4e121  sql/stage3/22c_inventory_triggers.sql
 d9998ebb38df52837adca6945137a424f911b0b94eb6929642203a9beff43006  sql/stage3/25c_tx_replenishment_receipt.sql
 63d0d33edcdedffa69ae1d2eecffd57d6a6901cb58b5ac1a0e648b1cfc97cefe  sql/stage3/run_stage3.sql
-65dc4327669d14ba802ec321e263a1bb0ac62a4b9511da0cbf0e5ffd5297cce1  sql/stage3/26c_lock_deadlock_experiment.sql
+06b8505e080629c834e5ce1851f3f5d7271764fb7f4ee0c5d2776ac12b81dc1e  sql/stage3/26c_lock_deadlock_experiment.sql
 1fe97210936fa358a89c6d21480d1a349c297fee91f607a1531fd44320f3688a  sql/stage3/28c_stage3_regression.sql
 f72d480ededed1a3c08dca646dc212db5dd4f0526ee1952f1c1a69aa241d4cc7  sql/stage3/verify_stage3.sql
 3ef41efb4bde480eda767b917b24610dd54358de5848d0a0fe0256b5acf71246  tests/stage3/c_programmability/test_20_schema_v1_1.sql
@@ -42,6 +43,7 @@ b6e955085420767212658a1d208d096aa076c9804bfcb0c1c152afc0b539cb83  tests/stage3/c
 ca361e5f6a2581e91d28a2caf2820a989469643690a5f57d299d500db8c3aa67  result/stage3/scripts/c-programmability-demo-2026-11-15.sql
 c67fd2a597330e3f0e743bc627a257bc05b3e9ec15f388cc927ec7ad49865170  result/stage3/c-stage3-31-2026-11-15.txt
 a092a725aa56a45b7c0316f0b548cfa795fd736959468ad3960e1326482c6774  result/stage3/c-transaction-2026-11-18.txt
+3ae340066be209b9f79e61bfa31cc67c9c73019a1adf26a82b6ee4830c88d972  result/stage3/c-concurrency-2026-11-22.txt
 ```
 
 ## 边界

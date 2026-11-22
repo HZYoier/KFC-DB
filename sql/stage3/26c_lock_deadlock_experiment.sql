@@ -6,6 +6,11 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 SET LANGUAGE us_english;
+GO
+
+-- 单独提交会话标签批次，使并发观察会话能在业务批次执行期间读到标签。
+SET CONTEXT_INFO 0x323663;
+GO
 
 DECLARE @mode VARCHAR(32) = '$(Mode)', @session INT = TRY_CONVERT(INT, '$(Session)');
 DECLARE @a BIGINT = TRY_CONVERT(BIGINT, '$(IngredientA)'),
@@ -21,7 +26,8 @@ BEGIN
     SELECT s.session_id, r.blocking_session_id, r.wait_type, r.wait_time, r.wait_resource
     FROM sys.dm_exec_sessions AS s
     JOIN sys.dm_exec_requests AS r ON r.session_id = s.session_id
-    WHERE r.database_id = DB_ID() AND SUBSTRING(s.context_info, 1, 3) = 0x323663;
+    WHERE r.database_id = DB_ID() AND s.session_id <> @@SPID
+      AND SUBSTRING(s.context_info, 1, 3) = 0x323663;
 
     SELECT l.request_session_id, l.resource_type, l.request_mode, l.request_status,
            l.resource_associated_entity_id, l.resource_description,
@@ -29,7 +35,8 @@ BEGIN
     FROM sys.dm_tran_locks AS l
     JOIN sys.dm_exec_sessions AS s ON s.session_id = l.request_session_id
     LEFT JOIN sys.partitions AS p ON p.hobt_id = l.resource_associated_entity_id
-    WHERE l.resource_database_id = DB_ID() AND SUBSTRING(s.context_info, 1, 3) = 0x323663
+    WHERE l.resource_database_id = DB_ID() AND s.session_id <> @@SPID
+      AND SUBSTRING(s.context_info, 1, 3) = 0x323663
     ORDER BY l.request_session_id, l.request_status, l.resource_type;
     RETURN;
 END;
@@ -37,20 +44,24 @@ END;
 IF @mode = 'graph'
 BEGIN
     DECLARE @db_id INT = DB_ID();
-    -- 读取最近的本库死锁图；用事件 UTC 时间、SPID 和对象名匹配本轮。
-    ;WITH health AS
-    (
-        SELECT TRY_CAST(t.target_data AS XML) AS data
-        FROM sys.dm_xe_sessions AS s
-        JOIN sys.dm_xe_session_targets AS t ON t.event_session_address = s.address
-        WHERE s.name = N'system_health' AND t.target_name = N'ring_buffer'
-    )
-    SELECT TOP (10) e.event.value('(@timestamp)[1]', 'datetimeoffset(3)') AS event_utc,
-           e.event.query('(data/value/deadlock)[1]') AS deadlock_graph
-    FROM health
-    CROSS APPLY health.data.nodes('/RingBufferTarget/event[@name="xml_deadlock_report"]') AS e(event)
-    WHERE e.event.exist('data/value/deadlock/process-list/process[@currentdb=sql:variable("@db_id")]') = 1
-    ORDER BY event_utc DESC;
+    -- 使用当前事件文件，避免高流量实例的环形目标截断 XML。
+    DECLARE @target XML;
+    SELECT @target = CONVERT(XML, t.target_data)
+    FROM sys.dm_xe_sessions AS s
+    JOIN sys.dm_xe_session_targets AS t ON t.event_session_address = s.address
+    WHERE s.name = N'system_health' AND t.target_name = N'event_file';
+
+    DECLARE @path NVARCHAR(260) = @target.value('(/EventFileTarget/File/@name)[1]', 'nvarchar(260)');
+    IF @path IS NULL
+        THROW 54941, N'26c: system_health event_file is unavailable.', 1;
+
+    SELECT TOP (10) f.timestamp_utc AS event_utc,
+           x.data.query('(/event/data/value/deadlock)[1]') AS deadlock_graph
+    FROM sys.fn_xe_file_target_read_file(@path, NULL, NULL, NULL) AS f
+    CROSS APPLY (SELECT CONVERT(XML, f.event_data)) AS x(data)
+    WHERE f.object_name = N'xml_deadlock_report'
+      AND x.data.exist('/event/data/value/deadlock/process-list/process[@currentdb=sql:variable("@db_id")]') = 1
+    ORDER BY f.timestamp_utc DESC;
     RETURN;
 END;
 
@@ -78,7 +89,6 @@ END;
 IF @mode IN ('wait', 'timeout') AND @employee IS NULL
     THROW 54941, N'26c: the active test_store_manager fixture is missing.', 1;
 
-SET CONTEXT_INFO 0x323663;
 IF @mode = 'timeout' AND @session = 2
     SET LOCK_TIMEOUT 3000;
 ELSE

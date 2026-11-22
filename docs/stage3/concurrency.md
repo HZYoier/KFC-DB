@@ -1,6 +1,6 @@
 # 第三阶段并发实验
 
-A 的隔离级别对照已有原始输出。C 的 26c 脚本已编写，等待在一次性真实数据库上执行并归档。B 补订单完成事务的影响分析。
+A 的隔离级别对照已有原始输出。C 的 26c 已在一次性 v1.0 加 C 增量的数据库上完成四种模式各三轮。B 补订单完成事务的影响分析。
 
 ## 锁等待与超时
 
@@ -37,7 +37,7 @@ A 在 RCSI 关闭的 v1.0 实验库上，用独立实验表观察单行可见性
    & $sqlcmd @labArgs -v Mode=graph Session=0 IngredientA=0 IngredientB=0
    ```
 
-3. 按 `wait → timeout → deadlock → ordered` 分轮运行，每轮两端使用同一个 Mode。看到会话 1 输出 `26c first lock` 后立即启动会话 2。会话 1 停留 12 秒；在超时轮中，会话 2 启动后 3 秒内运行 `observe`。按 SPID、原料 ID、`wait_resource` 和锁状态关联结果。死锁轮结束后立即运行 `graph`，以 UTC 时间、两个 SPID 和库存对象匹配 `system_health` 环形缓冲区中的图。保存图时用 `-y 0` 保留完整 XML。
+3. 按 `wait → timeout → deadlock → ordered` 分轮运行，每轮两端使用同一个 Mode。看到会话 1 输出 `26c first lock` 后立即启动会话 2。会话 1 停留 12 秒；在超时轮中，会话 2 启动后 3 秒内运行 `observe`。按 SPID、原料 ID、`wait_resource` 和锁状态关联结果。死锁轮结束后立即运行 `graph`，以 UTC 时间、两个 SPID 和库存对象匹配 `system_health` 事件文件中的图（可能需等待事件写入后再次查询）。保存图时用 `-y 0` 保留完整 XML。
 4. 每种模式重复三轮。保留双方退出码与 `RESULT`、DMV 输出、死锁 XML 和复查结果。核对两边事务计数为 0，实验前后的业务数据一致，再清理一次性库。若启动过晚、缺少等待快照或死锁图无法匹配，本轮应重跑。将实测输出归档到 `result/stage3/c-concurrency-*.txt`。
 
-本轮 SQL Express Windows 集成登录在建立连接时返回 SSPI 凭证错误。上面的 26c 判据待实测。
+Windows 集成登录获准后，26c 四种模式各三轮通过。每轮双方回滚，五张业务相关表的行数据复查一致。28c 同次通过 63/0，测试库已清理。[26c 与 28c 实测证据](../../result/stage3/c-concurrency-2026-11-22.txt)
