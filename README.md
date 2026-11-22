@@ -76,7 +76,7 @@ KFC-DB/
 │       ├── b-order.drawio / .svg    订单与履约域子图（9 实体 10 联系）
 │       ├── c-inventory-security.drawio / .svg   库存权限域子图（12 实体 14 联系）
 │       └── stage2-model.drawio / .svg           合并总图（25 实体 35 联系，C 交付）
-└── result/                      执行证据（145 个文件：stage1/ 31 + stage2/ 101 + stage3/ 12 + 本目录 README）
+└── result/                      执行证据（147 个文件：stage1/ 31 + stage2/ 101 + stage3/ 14 + 本目录 README）
     ├── stage1/                  第一阶段证据：三机整跑、契约检查、对象清点、操作截图
     │   ├── README.md            证据清单：逐文件说明与全部 SHA-256
     │   ├── full-test-*.txt      三台机器各自从空库整跑的完整原始输出
