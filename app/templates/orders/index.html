@@ -12,7 +12,8 @@
 {% set descriptions = {'CASHIER':'登记顾客、创建订单并收款。','CHEF':'从已支付订单中开始制作。','PACKER':'核对商品明细，完成制作或确认自取。','WAITER':'按订单号和取餐码叫号。','RIDER':'认领待配送订单，或确认已送达。','STORE_MANAGER':'按订单号核对状态，处理取消和退款。'} %}
 {% set labels = {'order_id':'订单 ID','order_no':'订单号','order_status':'订单状态','pickup_code':'取餐码',
   'total_amount':'订单总额','ordered_at':'下单时间','product_name':'商品','item_role':'明细类型',
-  'quantity':'数量','unit_price':'成交单价','payment_status':'支付状态','paid_amount':'实付',
+  'quantity':'数量','unit_price':'成交单价','discount_rate':'会员折扣率','discount_amount':'会员折扣额',
+  'payment_status':'支付状态','paid_amount':'实付',
   'refunded_amount':'退款','fulfillment_method':'履约方式','delivery_status':'配送状态',
   'order_item_id':'明细 ID','parent_order_item_id':'父明细 ID','product_id':'商品 ID',
   'promotion_id':'促销 ID','delivery_id':'配送 ID','production_finished_at':'制作完成时间',
@@ -51,7 +52,8 @@
         {% elif key in ('order_status','payment_status','delivery_status') %}<span class="badge {{ tones.get(value,'') }}" title="{{ value }}">{{ state_labels.get(value,value) }}</span>
         {% elif key == 'fulfillment_method' %}{{ {'PICKUP':'自取','DELIVERY':'外送'}.get(value,value) }}
         {% elif key == 'item_role' %}{{ {'SELLABLE':'售卖项','COMPONENT':'套餐组件'}.get(value,value) }}
-        {% elif key in ('total_amount','paid_amount','refunded_amount','unit_price') %}<span class="amount">¥{{ value }}</span>
+        {% elif key == 'discount_rate' %}{{ '{:.2%}'.format(value) if value else '—' }}
+        {% elif key in ('total_amount','paid_amount','refunded_amount','unit_price','discount_amount') %}<span class="amount">¥{{ value }}</span>
         {% elif key == 'is_completed' %}{{ '是' if value else '否' }}
         {% else %}{{ value }}{% endif %}
         </td>
@@ -146,7 +148,8 @@
             <span class="order-no">{{ head[0].order_no }}</span></div>
             <div><small>订单总额</small><strong>¥{{ head[0].total_amount }}</strong></div></div>
           <h3 class="subhead">售卖明细</h3>
-          {{ table(items, ['product_name','quantity','unit_price','promotion_id']) }}
+          {% set discount_columns = ['discount_rate','discount_amount'] if items and 'discount_rate' in items[0] and 'discount_amount' in items[0] else [] %}
+          {{ table(items, ['product_name','quantity','unit_price'] + discount_columns + ['promotion_id']) }}
           <div class="panel-body">
             <form class="form-stack" method="post" action="{{ url_for('orders.action', action='pay') }}">
               {{ csrf_field() }}<input type="hidden" name="order_id" value="{{ head[0].order_id }}">

@@ -1,0 +1,37 @@
+B Stage 3 | 28b regression and cashier payment discount snapshots
+Date: 2026-11-18
+Command: .venv/Scripts/python.exe -X utf8 tests/stage3/b_programmability/run_b_stage3.py --sql-server localhost\MSSQLSERVER2
+Exit 0. The isolated database applies 20/21b/21a/21c/22b/22c and retains v1.0 grants.
+
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: regression files=4 expected_pass=38 fail=0 (13a 10 + 13b 5 + 13b 8 + 13c 15)
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: regression files=4 expected_pass=38 fail=0 (13a 10 + 13b 5 + 13b 8 + 13c 15)
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b sales report date guard 54201
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b sales report date guard 54202
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b batch completion and settled net lines
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54210
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54211
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54212
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54213
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54214
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: stage3-b-regression suites=2 pass=8 fail=0
+PASS v1.1 payment SQL snapshots render in the cashier page, including legacy rows
+RESULT: pass=21 fail=0 total=21
+PASS 24b real one-level order uses snapshot quantities without multiplying twice
+PASS 24b two levels, root/middle/leaf, missing order and missing item
+PASS 24b fixture rolled back
+25b | 25b PASS | 7 | 0
+PASS isolated database removed
+
+Actual v1.0 migration and original cashier result set column counts:
+PASS guest authorization, exact lookup, stock lock, cashier result sets and negative inputs
+PASS disposable database removed
+
+Stage 2 application regression:
+RESULT: pass=18 fail=0 skip=0 total=18
+RESULT: pass=10 fail=0 skip=0 total=10
+RESULT: pass=36 fail=0 skip=0 total=36
+RESULT: pass=20 fail=0 skip=0 total=20
+RESULT: pass=12 fail=0 skip=0 total=12
+RESULT: pass=10 fail=0 skip=0 total=10
+RESULT: pass=12 fail=0 skip=0 total=12
+RESULT: run-all files=7 failed=0

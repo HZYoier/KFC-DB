@@ -563,6 +563,7 @@ def main():
             expect_error(conn, 'EXEC dbo.sp_get_order_for_payment -1;', 52903)
             result = run(conn, f'EXEC dbo.sp_get_order_for_payment {int(order_id)};')
             assert len(result) == 2 and result[0][0][0] == order_id and len(result[1]) == 1
+            assert len(result[0][0]) == 5 and len(result[1][0]) == 6  # v1.0 payment contract
             status_row = run(conn, f'EXEC dbo.sp_get_order_operation_status {int(order_id)};')[0][0]
             assert list(status_row[3:6]) == [None, None, None]
             expect_error(conn, 'EXEC dbo.sp_list_orders_for_packing;', 229)

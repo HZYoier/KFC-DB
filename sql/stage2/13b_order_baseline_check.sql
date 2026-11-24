@@ -19,6 +19,18 @@ DECLARE @b13_tables TABLE (id INT PRIMARY KEY, name SYSNAME, columns_expected IN
 INSERT @b13_tables VALUES (1,N'SalesOrder',15),(2,N'SalesOrderItem',10),
     (3,N'Payment',11),(4,N'Delivery',8),(5,N'PointLedger',9);
 
+DECLARE @b13_v11 BIT = CASE WHEN EXISTS (
+    SELECT 1 FROM dbo.SchemaVersion WHERE version_code = N'v1.1'
+) THEN 1 ELSE 0 END;
+IF @b13_v11 = 1 AND (
+    SELECT COUNT(*) FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.SalesOrderItem', N'U')
+      AND system_type_id = TYPE_ID(N'decimal') AND is_nullable = 0
+      AND ((name = N'discount_rate' AND precision = 5 AND scale = 4)
+        OR (name = N'discount_amount' AND precision = 10 AND scale = 2))
+) <> 2
+    THROW 51961, N'13b: v1.1 discount snapshot shape mismatch.', 1;
+
 DECLARE @b13_i INT = 1, @b13_name SYSNAME, @b13_expected INT,
     @b13_source NVARCHAR(260), @b13_snapshot NVARCHAR(260), @b13_columns NVARCHAR(MAX),
     @b13_sql NVARCHAR(MAX), @b13_bad BIT, @b13_message NVARCHAR(2048);
@@ -28,11 +40,13 @@ BEGIN
     SELECT @b13_name = name, @b13_expected = columns_expected FROM @b13_tables WHERE id = @b13_i;
     SET @b13_source = N'dbo.' + QUOTENAME(@b13_name);
     SET @b13_snapshot = N'dbo.' + QUOTENAME(N'Baseline_' + @b13_name);
-    IF (SELECT COUNT(*) FROM sys.columns WHERE object_id = OBJECT_ID(@b13_source, N'U')) <> @b13_expected
+    IF (SELECT COUNT(*) FROM sys.columns WHERE object_id = OBJECT_ID(@b13_source, N'U'))
+           <> @b13_expected + CASE WHEN @b13_v11 = 1 AND @b13_i = 2 THEN 2 ELSE 0 END
        OR (SELECT COUNT(*) FROM sys.columns WHERE object_id = OBJECT_ID(@b13_snapshot, N'U')) <> @b13_expected + 1
        OR EXISTS (
            SELECT name, system_type_id, max_length, precision, scale, is_nullable
            FROM sys.columns WHERE object_id = OBJECT_ID(@b13_source, N'U')
+             AND NOT (@b13_v11 = 1 AND @b13_i = 2 AND name IN (N'discount_rate',N'discount_amount'))
            EXCEPT
            SELECT name, system_type_id, max_length, precision, scale, is_nullable
            FROM sys.columns WHERE object_id = OBJECT_ID(@b13_snapshot, N'U') AND name <> N'batch_id'
@@ -48,6 +62,7 @@ BEGIN
             THEN N'CONVERT(VARBINARY(MAX),' + QUOTENAME(name) + N')'
             ELSE QUOTENAME(name) END
         FROM sys.columns WHERE object_id = OBJECT_ID(@b13_source, N'U')
+          AND NOT (@b13_v11 = 1 AND @b13_i = 2 AND name IN (N'discount_rate',N'discount_amount'))
         ORDER BY column_id FOR XML PATH(''), TYPE
     ).value('.', 'nvarchar(max)'), 1, 1, N'');
     SET @b13_sql = N'SELECT @bad = CASE WHEN '

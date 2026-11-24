@@ -1,0 +1,33 @@
+B Stage 3: 13b / 21b / 22b / 23b isolated rehearsal
+Command: .venv/Scripts/python.exe -X utf8 tests/stage3/b_programmability/run_b_stage3.py --sql-server localhost\MSSQLSERVER2
+Scope: exact domain scripts, without 27_permissions.sql; v1.1 version marker is fixture metadata.
+Exit code: 0
+
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: regression files=4 expected_pass=38 fail=0 (13a 10 + 13b 5 + 13b 8 + 13c 15)
+PASS 01 13b v1.0 baseline
+PASS 02 domain scripts install in 20 -> 21b -> 21a -> 21c -> 22b -> 22c order
+PASS 03 v1.1 domain rehearsal passes all 38 legacy SQL checks with existing grants
+PASS 04 pre-existing lines have zero discount snapshots
+PASS 05 13b v1.1 still rejects base column drift
+PASS 06 13b v1.1 rejects unapproved additional columns
+PASS 07 sales report date validation
+PASS 08 empty report returns zero summary and empty breakdown
+PASS 09 both order paths persist same discount; cents and net total reconcile
+PASS 10 both order paths allocate a rounding residual beyond one line
+PASS 11 actual pickup and its completion trigger
+PASS 12 actual delivery after BOM edit consumes only reserved ingredients
+PASS 13 reject repeated completion and invalid transition
+PASS 14 set-based trigger accepts two valid updated rows
+PASS 15 one invalid row rejects whole batch with no half completion
+PASS 16 finish with no stock consumption is rejected
+PASS 17 terminal transition rejects empty lines or missing completion time
+PASS 18 a line without BOM or prior reservations needs no stock movement
+PASS 19 both terminal states count; midnight boundary and component exclusion
+PASS 20 reports agree with A summary on the same day
+PASS 21 daily cumulative net sales preserve day count and reconcile
+RESULT: pass=21 fail=0 total=21
+PASS isolated database removed
+
+Separate stage 2 unified application test: 118 pass, 0 fail, 0 skip (seven suites).
+The 38-item unified SQL regression passed both before and after installing the v1.1 domain objects.
+Both runs use the v1.0 grants expected by 13c; v1.1 permission verification awaits 27_permissions.sql.
