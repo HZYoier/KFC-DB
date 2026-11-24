@@ -92,6 +92,19 @@ sqlcmd -S localhost -E -C -f 65001 -b -d KFC_DB \
 
 失败处理：先保留原始失败行和 `THROW` 文案；不要改断言分母或放宽条件。若失败点在 21b 的视图/过程，交给 B；若在 A 的函数/窗口，由 A 修。
 
+**4b. 合并验收（等 B 的 `28b` 到齐后）**
+
+- [ ] `sql/stage3/verify_stage3.sql` 顺序跑 `28a/28b/28c`；缺少 28b 时会停在 `:r`，属预期
+- [ ] 证据写到 `result/stage3/a-verify-stage3-2026-11-22.txt`
+
+```bash
+sqlcmd -S localhost -E -C -f 65001 -b -d KFC_DB \
+  -i sql/stage3/verify_stage3.sql \
+  -o result/stage3/a-verify-stage3-2026-11-22.txt
+```
+
+`verify_stage3.sql` 由 C 维护；A 只跑并记录，失败时按 28a/28b/28c 的 `RESULT` 行定位域，不代改别域的断言。
+
 ## 5. 23a 窗口查询证据
 
 - [ ] 在真实 `v_settled_sales_line` 上跑两条查询，结果非空（或确认区间内确实无销售）
