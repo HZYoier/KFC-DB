@@ -77,7 +77,7 @@ GRANT EXECUTE ON dbo.sp_list_employee_roles TO role_store_manager;
 GO
 
 -- ---------------------------------------------------------------------------
--- 3. cust_app：WITHOUT LOGIN；三个顾客过程存在才授（13c 会断言缺失）
+-- 3. cust_app：WITHOUT LOGIN；四个顾客过程存在才授（13c 会断言缺失）
 -- ---------------------------------------------------------------------------
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -87,11 +87,13 @@ IF DATABASE_PRINCIPAL_ID(N'cust_app') IS NULL
 IF OBJECT_ID(N'dbo.sp_customer_register', N'P') IS NOT NULL
    AND OBJECT_ID(N'dbo.sp_customer_place_order', N'P') IS NOT NULL
    AND OBJECT_ID(N'dbo.sp_customer_list_orders', N'P') IS NOT NULL
+   AND OBJECT_ID(N'dbo.sp_customer_list_products', N'P') IS NOT NULL
 BEGIN
-    GRANT EXECUTE ON dbo.sp_customer_register     TO cust_app;
-    GRANT EXECUTE ON dbo.sp_customer_place_order  TO cust_app;
-    GRANT EXECUTE ON dbo.sp_customer_list_orders  TO cust_app;
-    PRINT N'12: cust_app grants applied (3 customer procedures).';
+    GRANT EXECUTE ON dbo.sp_customer_register       TO cust_app;
+    GRANT EXECUTE ON dbo.sp_customer_place_order    TO cust_app;
+    GRANT EXECUTE ON dbo.sp_customer_list_orders    TO cust_app;
+    GRANT EXECUTE ON dbo.sp_customer_list_products  TO cust_app;
+    PRINT N'12: cust_app grants applied (4 customer procedures).';
 END
 ELSE
     PRINT N'12: WARNING: customer procedures absent; cust_app grants skipped (13c must fail until OI-10 delivery).';

@@ -416,3 +416,38 @@ BEGIN
     END CATCH;
 END
 GO
+
+-- ---------------------------------------------------------------------------
+-- 4.5 顾客商品目录：只读启用商品与当前展示价，供 /customer 下单页显示名称/价格。
+--     不按 USER_NAME() 认人；只由 12_permissions 授给共享的 cust_app。
+--     价格仍取自 fn_get_effective_product_price，页面只展示、不重算。
+-- ---------------------------------------------------------------------------
+CREATE PROCEDURE dbo.sp_customer_list_products
+    @take INT = 100
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @take IS NULL OR @take < 1 OR @take > 200
+        THROW 53000, N'sp_customer_list_products：@take 必须在 1 到 200 之间。', 1;
+
+    SELECT TOP (@take)
+           p.product_id,
+           p.product_name,
+           price.effective_price,
+           price.promotion_id,
+           combo_contents = (
+               SELECT STRING_AGG(
+                          CONCAT(cp.product_name, N'×', CONVERT(NVARCHAR(20), cc.quantity)),
+                          N'、')
+                      WITHIN GROUP (ORDER BY cp.product_id)
+               FROM dbo.ComboComponent AS cc
+               JOIN dbo.Product AS cp ON cp.product_id = cc.child_product_id
+               WHERE cc.combo_product_id = p.product_id
+           )
+    FROM dbo.Product AS p
+    CROSS APPLY dbo.fn_get_effective_product_price(p.product_id, SYSDATETIME()) AS price
+    WHERE p.[status] = 'ACTIVE'
+    ORDER BY p.product_id;
+END
+GO

@@ -258,7 +258,7 @@ BEGIN CATCH
 END CATCH;
 GO
 
--- 7. cust_app：用户存在、只授三个顾客过程、不是角色成员
+-- 7. cust_app：用户存在、只授四个顾客过程、不是角色成员
 BEGIN TRY
     IF DATABASE_PRINCIPAL_ID(N'cust_app') IS NULL
         THROW 51941, N'13c-7：cust_app 用户不存在。', 1;
@@ -271,17 +271,19 @@ BEGIN TRY
           AND class = 1 AND state = 'G' AND permission_name = N'EXECUTE'
           AND major_id IN (OBJECT_ID(N'dbo.sp_customer_register'),
                            OBJECT_ID(N'dbo.sp_customer_place_order'),
-                           OBJECT_ID(N'dbo.sp_customer_list_orders'))) <> 3
-        THROW 51941, N'13c-7：cust_app 的三个顾客过程 EXECUTE 未齐。', 1;
+                           OBJECT_ID(N'dbo.sp_customer_list_orders'),
+                           OBJECT_ID(N'dbo.sp_customer_list_products'))) <> 4
+        THROW 51941, N'13c-7：cust_app 的四个顾客过程 EXECUTE 未齐。', 1;
     IF EXISTS (SELECT 1 FROM sys.database_permissions
                WHERE grantee_principal_id = DATABASE_PRINCIPAL_ID(N'cust_app')
                  AND class = 1 AND state = 'G'
                  AND major_id NOT IN (OBJECT_ID(N'dbo.sp_customer_register'),
                                       OBJECT_ID(N'dbo.sp_customer_place_order'),
-                                      OBJECT_ID(N'dbo.sp_customer_list_orders')))
-        THROW 51941, N'13c-7：cust_app 持有三个顾客过程以外的对象权限。', 1;
+                                      OBJECT_ID(N'dbo.sp_customer_list_orders'),
+                                      OBJECT_ID(N'dbo.sp_customer_list_products')))
+        THROW 51941, N'13c-7：cust_app 持有四个顾客过程以外的对象权限。', 1;
     UPDATE #counters SET pass = pass + 1;
-    PRINT N'PASS: 13c-7 cust_app 仅三个顾客过程、无角色成员';
+    PRINT N'PASS: 13c-7 cust_app 仅四个顾客过程、无角色成员';
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0 ROLLBACK;

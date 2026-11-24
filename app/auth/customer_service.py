@@ -2,8 +2,8 @@
 
 顾客端不是员工会话：它使用部署方显式映射到 `cust_app` 的 SQL 登录，
 凭据只从环境变量读，不从员工会话借用，也不回退到部署账户。
-商品目录本轮没有对顾客开放的查询过程，页面输入商品 ID 与数量；
-数据库过程仍负责商品、价格、库存和授权判定。
+商品目录经只读过程 `sp_customer_list_products` 返回，页面只展示名称与价格；
+下单仍由 `sp_customer_place_order` 在数据库内判定商品、价格、库存与授权。
 """
 
 from __future__ import annotations
@@ -99,6 +99,10 @@ def _items(value) -> str:
         seen.add(product_id)
         normalised.append({"product_id": product_id, "quantity": quantity})
     return json.dumps(normalised, ensure_ascii=False, separators=(",", ":"))
+
+
+def list_products(take=100):
+    return customer_dao.list_products(_session(), take)
 
 
 def register(mobile):

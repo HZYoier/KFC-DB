@@ -111,7 +111,7 @@ if ($who -ne 'cust_app') {
     throw "顾客连接返回 USER_NAME()=$who，期望 cust_app。"
 }
 
-$procNames = @('sp_customer_register', 'sp_customer_place_order', 'sp_customer_list_orders')
+$procNames = @('sp_customer_register', 'sp_customer_place_order', 'sp_customer_list_orders', 'sp_customer_list_products')
 foreach ($proc in $procNames) {
     $granted = Invoke-SqlScalar $customerConnection "SELECT CASE WHEN HAS_PERMS_BY_NAME(N'dbo.$proc', N'OBJECT', N'EXECUTE') = 1 THEN 1 ELSE 0 END;"
     if ($granted -ne 1) {
@@ -123,5 +123,5 @@ if ($denied -ne 0) {
     throw 'cust_app 不应拥有 SalesOrder 的 SELECT；请检查授权。'
 }
 
-Write-Host 'RESULT: provisioned customer login; USER_NAME()=cust_app; three EXECUTE grants verified.'
+Write-Host 'RESULT: provisioned customer login; USER_NAME()=cust_app; four EXECUTE grants verified.'
 Write-Host '本机 .env 需要设置 KFC_CUST_DB_LOGIN / KFC_CUST_DB_PASSWORD；不要把口令写入仓库。'

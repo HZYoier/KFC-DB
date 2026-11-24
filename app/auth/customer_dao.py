@@ -9,10 +9,19 @@ from __future__ import annotations
 from app.common.db import (
     execute_procedure,
     p_datetime,
+    p_int,
     p_nvarchar,
     p_varchar,
     query_procedure,
 )
+
+
+def list_products(session, take: int = 100):
+    return query_procedure(
+        session,
+        "sp_customer_list_products",
+        [p_int(take)],
+    )
 
 
 def register(session, mobile: str):

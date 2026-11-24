@@ -278,7 +278,18 @@ BEGIN
        OR @pickup_code IS NULL OR LEN(@pickup_code) <> 20 OR @pickup_code COLLATE Latin1_General_100_BIN2 LIKE '%[^0-9A-F]%'
         THROW 53000, 'A valid mobile number and pickup code are required.', 1;
     SELECT o.order_id, o.order_no, o.order_status, o.fulfillment_method, o.total_amount,
-        o.ordered_at, o.pickup_code
+        o.ordered_at, o.pickup_code,
+        items_text = (
+            SELECT STRING_AGG(
+                       CONCAT(p.product_name, N'×', CONVERT(NVARCHAR(20), i.quantity)),
+                       N'、')
+                   WITHIN GROUP (ORDER BY i.order_item_id)
+            FROM dbo.SalesOrderItem AS i
+            JOIN dbo.Product AS p ON p.product_id = i.product_id
+            WHERE i.order_id = o.order_id
+              AND i.item_role = 'SELLABLE'
+              AND i.quantity > 0
+        )
     FROM dbo.SalesOrder o JOIN dbo.Customer c ON c.customer_id = o.customer_id
     WHERE c.mobile = @mobile AND c.status = 'ACTIVE' AND o.fulfillment_method = 'PICKUP'
         AND o.pickup_code = @pickup_code

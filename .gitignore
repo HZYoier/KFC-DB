@@ -4,6 +4,9 @@
 # 本地秘密：.env 只在本机存在，入仓的只有 config.example.env 的形状
 .env
 
+# 本地演示凭据：仅本机演示使用，不入库、不进压缩包
+.demo/
+
 # Python 运行产物
 __pycache__/
 *.py[cod]

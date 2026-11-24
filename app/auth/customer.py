@@ -14,7 +14,7 @@ from app.common.errors import AppError
 
 
 def _page(*, error=None, notice=None, registration=None, order=None,
-          orders=None, mobile="", items="", pickup=""):
+          orders=None, products=None, mobile="", items="", pickup=""):
     return render_template(
         "customer/index.html",
         error=error,
@@ -22,6 +22,7 @@ def _page(*, error=None, notice=None, registration=None, order=None,
         registration=registration,
         order=order,
         orders=orders,
+        products=products,
         mobile=mobile,
         items=items,
         pickup=pickup,
@@ -30,7 +31,13 @@ def _page(*, error=None, notice=None, registration=None, order=None,
 
 @bp.get("/customer")
 def customer_home():
-    return _page()
+    products = []
+    try:
+        products = customer_service.list_products()
+    except AppError:
+        # 商品目录不可用时仍允许进入页面；下单/查单会各自给出错误
+        pass
+    return _page(products=products)
 
 
 @bp.post("/customer/register")

@@ -38,6 +38,8 @@ KFC-DB/
 │   └── auth/                    登录 / 身份 / 顾客自助（C）
 ├── tests/stage2/                应用侧冒烟与集成脚本
 ├── requirements.txt             Python 依赖，写精确版本（Flask / pyodbc）
+├── demo_launcher.py             演示一键启动：检测实例/数据库、缺库建 v1.0、起应用并开浏览器
+├── start_demo.cmd / start_demo.sh  一键启动包装：调用 demo_launcher.py
 ├── config.example.env           连接配置示例；复制为 .env 后按本机改，.env 不入库
 ├── docs/                        设计与验收文档（62 份：顶层 7 + stage1/ 7 + stage2/ 34 + stage3/ 5 + er/ 9）
 │   ├── 主数据 / 订单履约 / 库存权限数据字典.md      三份字段级数据字典
@@ -239,7 +241,7 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -I -i "sql/stage2/regr
 
 - 第二步在**一个外层事务**里串 `11a → 11b → 11c → 12`，任一步失败整体回滚，库仍是 v0.1（预检码 `53500`–`53503`）。
 - 第三步必须在提交后跑，按 `SchemaVersion('v1.0')` 取批次号，期望 **38 条**（`13a` 10 + `13b` 5 + `13b` 8 + `13c` 15）。
-- 应用侧：复制 `config.example.env` 为 `.env` 填本机实例名，`python run.py` 启动；员工必须用**自己的数据库登录**（管理员按 `sql/stage2/provision_employee.template.ps1` 建），操作步骤见[操作手册](docs/stage2/user-manual.md)。
+- 应用侧：复制 `config.example.env` 为 `.env` 填本机实例名，`python run.py` 启动；本机演示可直接跑 `start_demo.cmd`（Windows）或 `./start_demo.sh`（Git Bash）。它会检测 SQL Server 实例与 `KFC_DB`，缺库时按 `sql/stage1/run_all.sql → capture_baseline → run_migration` 建到 v1.0，再启动应用并打开浏览器；`--check` 只检测、`--no-bootstrap` 禁止自动建库、`--server` 指定实例。若仓库本地存在被忽略的 `.demo/cust_app.txt`，启动器会加载顾客端共享凭据，`/customer` 可直接演示（下单卡片显示商品名称、展示价与套餐内容，查单返回订单商品摘要）；没有该文件时顾客端按设计 fail closed。它不会安装 SQL Server 实例，也不会替员工设口令。员工必须用**自己的数据库登录**（管理员按 `sql/stage2/provision_employee.template.ps1` 建），操作步骤见[操作手册](docs/stage2/user-manual.md)。
 - 测试汇总入口：`powershell -ExecutionPolicy Bypass -File tests/stage2/run-all.ps1`（默认 `conda run -n py_env3.11`，可用 `-CondaEnv` 或 `-Python` 改；没有 conda 的环境按 `tests/stage2/{common,auth,master,orders,inventory,customer,api}` 各自的 `run_*` 入口跑，见 OI-17）。七套的期望是 **118/0**、汇总行 `RESULT: run-all files=7 failed=0`。
 
 迁移协议与回滚细则见[迁移指南](docs/stage2/migration-guide.md)；A 域的实测结果见[第二阶段 A 报告](docs/stage2/reports/a-stage2-report.md)。
@@ -263,7 +265,7 @@ sqlcmd -S "localhost\MSSQLSERVER2" -E -N o -C -f 65001 -b -I -i "sql/stage2/regr
 - [第三阶段第 12 周交接](docs/stage3/week12-handoff.md) — 递归查询保留套餐树、订单事务改以 `sp_finish_production` 实扣、补货重复收货拒绝；B/C 行动项与依据
 - 第三阶段过程文档：[教学要求核对](docs/stage3/source-requirements.md)（R10/R11/R3 编号与落点）、[跨域开放问题](docs/stage3/open-issues.md)（S3-01—S3-03）
 - [**第二阶段组级阶段报告**](docs/stage2/reports/阶段报告.md) — 总报告：2.1 ER 重建、2.2 规范化与真实迁移、2.3 应用开发的设计与实现，27 张运行截图逐图标注执行步骤，附测试数字、限制与证据索引
-- 第二阶段过程文档（[目录索引](docs/stage2/README.md)：按用途分组，阶段报告置顶）：[操作手册](docs/stage2/user-manual.md)（启动、迁移顺序、七岗位与顾客端入口、全部可用界面的操作步骤）、[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（§2 八写六查已冻结，§2.4 四个查询/注册接口 2026-11-01 补入；§1 顾客端 `§1.7` 四条联合边界 2026-11-06 定稿、§1 冻结；三个顾客过程已随 `11a`/`11b` 交付并经 `cust_app` 实调）、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-21 的状态与决议唯一入口）、[业务规则映射](docs/stage2/business-rule-mapping.md)（35 条外键的基数与实现机制）、[重构方案](docs/stage2/refactoring-design.md)、[事务边界](docs/stage2/transaction-boundaries.md)、[访问层接口](docs/stage2/access-layer-contract.md)（`app/common/` 的五个签名、多结果集口径与错误码映射）
+- 第二阶段过程文档（[目录索引](docs/stage2/README.md)：按用途分组，阶段报告置顶）：[操作手册](docs/stage2/user-manual.md)（启动、迁移顺序、七岗位与顾客端入口、全部可用界面的操作步骤）、[教学要求核对](docs/stage2/source-requirements.md)（三份讲解 65 项编号与落点）、[跨域接口契约](docs/stage2/application-contract.md)（§2 八写六查已冻结，§2.4 四个查询/注册接口 2026-11-01 补入；§1 顾客端 `§1.7` 四条联合边界 2026-11-06 定稿、§1 冻结；四个顾客过程已随 `11a`/`11b` 交付并经 `cust_app` 实调（2026-11-24 增补商品目录））、[跨域开放问题](docs/stage2/open-issues.md)（OI-01–OI-21 的状态与决议唯一入口）、[业务规则映射](docs/stage2/business-rule-mapping.md)（35 条外键的基数与实现机制）、[重构方案](docs/stage2/refactoring-design.md)、[事务边界](docs/stage2/transaction-boundaries.md)、[访问层接口](docs/stage2/access-layer-contract.md)（`app/common/` 的五个签名、多结果集口径与错误码映射）
 - 三域分析：[A 域](docs/stage2/a-issues.md)问题清单 / [规范化](docs/stage2/a-normalization.md)、[B 域](docs/stage2/b-issues.md)问题清单 / [规范化](docs/stage2/b-normalization.md)、[C 域](docs/stage2/c-issues.md)问题清单 / [规范化](docs/stage2/c-normalization.md)、[命名口径](docs/stage2/naming.md)
 - [ER 图](docs/er/) — [图例](docs/er/legend.md)与三域子图（[主数据](docs/er/a-master.svg)、[订单](docs/er/b-order.svg)、[库存权限](docs/er/c-inventory-security.svg)）；合并总图（25 实体 35 联系）
 - [主数据数据字典](docs/主数据数据字典.md)、[订单履约数据字典](docs/订单履约数据字典.md)、[库存权限数据字典](docs/库存权限数据字典.md)
