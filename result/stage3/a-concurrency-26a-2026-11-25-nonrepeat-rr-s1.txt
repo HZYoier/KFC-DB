@@ -1,0 +1,6 @@
+phase         session_id  isolation_level on_hand_qty   
+------------- ----------- --------------- --------------
+S1-first-read          77               3         10.000
+phase          session_id  on_hand_qty   
+-------------- ----------- --------------
+S1-second-read          77         10.000

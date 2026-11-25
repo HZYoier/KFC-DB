@@ -1,0 +1,6 @@
+phase                 session_id  on_hand_qty   
+--------------------- ----------- --------------
+S1-update-uncommitted          77         15.000
+phase             session_id  on_hand_qty   
+----------------- ----------- --------------
+S1-after-rollback          77         10.000

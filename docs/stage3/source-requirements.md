@@ -44,7 +44,7 @@
 | R3-01 | 完成一项层级递归查询，结果层级正确 | `sql/stage3/24b_recursive_query.sql`：订单明细的套餐组件树（`SalesOrderItem.parent_order_item_id`；已有结构说明，不新增分类父级列） | B | 已落点（B 交付 2026-11-24） |
 | R3-02 | 实现订单完成事务，验证提交与回滚 | `sql/stage3/25b_tx_order_completion.sql`：以 `sp_finish_production` 为事务主体，库存只经 `sp_consume_order_inventory` 实扣；补拒绝、重复调用与回滚路径 | B | 已落点（B 交付 2026-11-24） |
 | R3-03 | 实现模拟补货入库事务，验证提交与回滚 | `sql/stage3/25c_tx_replenishment_receipt.sql`：提交、拒绝、重复收货不重复加库存、第二次收货失败回滚 | C | 已落点（提交 18/0、回滚 14/0，2026-11-18） |
-| R3-04 | 围绕库存与补货记录完成锁等待、隔离级别、死锁实验，并验证改进方案 | `26a_isolation_experiment.sql`（A：脏读/RC/RR）、`26b_order_concurrency.sql`（B：订单侧与 P×6 并发购买）、`26c_lock_deadlock_experiment.sql`（C：补货侧锁/死锁） | A / B / C | 已核对，待按 §7 新脚本与双会话证据重跑 |
+| R3-04 | 围绕库存与补货记录完成锁等待、隔离级别、死锁实验，并验证改进方案 | `26a_isolation_experiment.sql`（A：独立实验表模拟 P，脏读/RC/RR）、`26b_order_concurrency.sql`（B：订单侧与 P×6 并发购买）、`26c_lock_deadlock_experiment.sql`（C：补货侧锁/死锁） | A / B / C | 已核对，待按 §7 新脚本与双会话证据重跑 |
 | R3-05 | 两个会话的实验脚本、锁信息、运行结果与分析；能指出被锁数据、等待关系、死锁原因和解决方法 | `docs/stage3/concurrency.md` + `result/stage3/{a,b,c}-concurrency-*.txt` | C（A/B 提供段落） | 已核对，待 A/B/C 补证据 |
 | R3-06 | 两笔订单同时购买同一商品 P×6，只能一单成功，另一单库存不足，最终库存 4，失败单不得完成 | `26b_order_concurrency.sql` 的并发购买场景 + `25b` 订单事务 | B | 已核对，待实现 |
 | R3-07 | 阶段整理：README、代码/结果目录、阶段报告、组内分工、ai_log；教学版本 v2.0 | `README.md`、`result/stage3/`、`docs/stage3/reports/`、`docs/stage3/team-division.md`、`docs/AI使用记录.md` | A / C（各域提供） | 已核对，待收口 |

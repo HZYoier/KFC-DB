@@ -1,0 +1,3 @@
+phase           session_id  on_hand_qty   
+--------------- ----------- --------------
+S2-after-commit          87         15.000

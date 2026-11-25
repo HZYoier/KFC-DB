@@ -290,7 +290,7 @@ B 的订单会话在事务内调用 `25b`/`sp_finish_production`（或订单侧�
 
 ### 7.2 隔离级别（A）
 
-A 的 `26a_isolation_experiment.sql` 以库存 P 为对象，覆盖两组：
+A 的 `26a_isolation_experiment.sql` 以独立的 `Stage3IsolationLab_A` 模拟库存 P（初值 10，避免改真实 `Inventory`；真实库存上的订单/补货等待由 26b/26c 覆盖），覆盖两组：
 
 1. **脏读对照**：补货事务把 P 从 10 改为 15、暂不提交；另一个会话先 `READ UNCOMMITTED` 读到 15，补货回滚后恢复 10；重置后改用 `READ COMMITTED`，应等待或只读到已提交的 10。若 RCSI 开启，另记快照读结果；不修改数据库设置。
 2. **不可重复读与 RR**：A 在 `READ COMMITTED` 下第一次读 P=10，B 提交补货后 A 第二次读应看到 15；重置后 A 用 `REPEATABLE READ`，第一次读后保持事务，B 的补货被阻塞，A 第二次仍读 10，A 提交后 B 才能继续。结论要说明 RR 只保护已读取的数据，不等于解决所有并发问题。
