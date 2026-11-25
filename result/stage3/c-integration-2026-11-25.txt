@@ -1,0 +1,161 @@
+C 正式 v1.1 迁移与合并验收，2026-11-25
+源码基线 f715d7f，另含本轮 C 改动
+SQL Server 2025 Express 17.0.1000.7，Windows 集成登录
+
+1. 首轮差异与归因
+
+拉取时 27 缺失，迁移在 :r 27 退出 1。新连接核对 v0.1/v1.0、
+InventoryAudit 和 discount_rate 均不存在，权限 58/71、事务 0。
+
+已将数据库上下文更改为 "KFC_DB"。
+已将数据库上下文更改为 "KFC_DB"。
+20: InventoryAudit and SalesOrderItem discount columns created.
+已将数据库上下文更改为 "KFC_DB"。
+21c: sp_adjust_inventory upgraded and fn_replenishment_qty created.
+已将数据库上下文更改为 "KFC_DB"。
+22c: tr_Inventory_Audit created (set-based inventory audit).
+“sql/stage3/27_permissions.sql”: 文件名无效。
+
+version_code
+--------------------
+v0.1
+v1.0
+inventory_audit discount_rate codes       mappings    trancount
+--------------- ------------- ----------- ----------- -----------
+           NULL          NULL          58          71           0
+
+补 27 后首轮得到 6/7，末批次的 THROW 消息直接拼接触发 Msg 102。
+新连接核对权限与新增对象已回滚。
+
+RESULT: 27 new_permission_codes=6 new_role_grants=7
+消息 102，级别 15，状态 1，服务器 HBY\SQLEXPRESS，第 23 行
+“+”附近有语法错误。
+
+version_code
+--------------------
+v0.1
+v1.0
+
+----------- ----------- ----------- -----------
+       NULL          58          71           0
+
+修正迁移后，原种子两笔已结算销售同日。28a 的 S-11 用最大、最小日期
+构造倒置边界，两个实参相等使函数正确返回当天销售。
+
+RESULT: a-programmability discount pass=27 fail=0 total=27
+RESULT: a-programmability sales-summary pass=14 fail=1 total=15
+消息 54998，级别 16，状态 1，服务器 HBY\SQLEXPRESS，第 190 行
+销售汇总测试存在失败断言，见上方结果集与计数。
+
+B 旧演练写入模拟 v1.1 标记却沿用 v1.0 权限，13c 拒绝，待 B 更新入口。
+
+FAIL: 13c-1 13c-1：Permission 码数与版本不符。
+FAIL: 13c-4 13c-4：v1.1 新增角色映射与预期不符。
+FAIL: 13c-5 13c-5：Permission 去重码数与版本不符。
+FAIL: 13c-6 13c-6：RolePermission 对应的预期 GRANT 数与版本不符。
+13c：存在失败断言。 (51998) (SQLMoreResults)')
+
+2. 修正清单
+
+- 落 27，扩充 CHECK 白名单，新增 6 码和 7 行明确的角色映射及实际 GRANT。
+- 13c 按 SchemaVersion 核对 58/71 或 64/78，保留分母 15。
+- 把 THROW 消息先赋变量。取得迁移会话锁后检查版本，拒绝重入。
+- 先跑两版旧回归，再在带标记的一次性库调整一笔已结算自提种子的日期。
+- 原样运行 28a/28b/28c，增加 123 条汇总；SQL 登录路径由 Flask 测试客户端用
+  Windows 集成连接及 EXECUTE AS USER 验证真实数据库身份。
+
+3. 终轮输出（以下从实际执行输出中摘录）
+
+第一阶段部署及第二阶段 v1.0
+
+RESULT: pass=13 fail=0
+RESULT: pass=15 fail=0
+RESULT: pass=18 fail=0
+
+RESULT: migration committed (v1.0 marker written; 11a/11b/11c/12).
+
+RESULT: pass=10 fail=0
+RESULT 13b baseline: pass=5 fail=0 total=5
+RESULT 13b write signatures: pass=8 fail=0 total=8
+PASS: 13c-1 Permission 58 / RolePermission 71 / 新增码集合一致
+PASS: 13c-4 新增 19 行（context 7 / A 4 / B 6 / C 1）/ v1.1 新增 0 行
+PASS: 13c-6 71 对 role_* GRANT 与映射逐对相等
+RESULT: pass=15 fail=0
+RESULT: regression files=4 expected_pass=38 fail=0 (13a 10 + 13b 5 + 13b 8 + 13c 15)
+
+正式 v1.1
+
+20: InventoryAudit and SalesOrderItem discount columns created.
+21c: sp_adjust_inventory upgraded and fn_replenishment_qty created.
+22c: tr_Inventory_Audit created (set-based inventory audit).
+RESULT: 27 new_permission_codes=6 new_role_grants=7
+RESULT: stage3 migration committed (v1.1 marker written; 20/21b/21a/21c/22b/22c/27).
+
+RESULT: pass=10 fail=0
+RESULT 13b baseline: pass=5 fail=0 total=5
+RESULT 13b write signatures: pass=8 fail=0 total=8
+PASS: 13c-1 Permission 64 / RolePermission 78 / 新增码集合一致
+PASS: 13c-4 新增 19 行（context 7 / A 4 / B 6 / C 1）/ v1.1 新增 7 行
+PASS: 13c-6 78 对 role_* GRANT 与映射逐对相等
+RESULT: pass=15 fail=0
+RESULT: regression files=4 expected_pass=38 fail=0 (13a 10 + 13b 5 + 13b 8 + 13c 15)
+
+重入拒绝，退出 1
+
+消息 54401，级别 16，状态 1，服务器 HBY\SQLEXPRESS，第 16 行
+run_stage3: database is already marked v1.1; do not apply the increment twice.
+
+正式三域验收、补货提交与应用
+
+first_date       last_date
+---------------- ----------------
+      2026-11-25       2026-11-26
+RESULT: settled sales fixture ready for distinct date boundaries.
+
+RESULT: a-programmability discount pass=27 fail=0 total=27
+RESULT: a-programmability sales-summary pass=15 fail=0 total=15
+RESULT: a-programmability windows pass=10 fail=0 total=10
+RESULT: stage3-a-regression suites=3 pass=52 fail=0
+RESULT: stage3-b-regression suites=2 pass=8 fail=0
+RESULT: c-programmability schema pass=14 fail=0 total=14
+RESULT: c-programmability replenishment pass=10 fail=0 total=10
+RESULT: c-programmability adjust_inventory pass=15 fail=0 total=15
+RESULT: c-programmability files=3 failed=0
+RESULT: c-triggers inventory_audit pass=10 fail=0 total=10
+RESULT: c-triggers files=1 failed=0
+RESULT: c-transaction replenishment mode=rollback pass=14 fail=0 total=14
+RESULT: stage3-c-regression suites=5 pass=63 fail=0
+RESULT: stage3-regression suites=10 pass=123 fail=0 (28a 52 + 28b 8 + 28c 63)
+
+RESULT: c-transaction replenishment mode=commit pass=18 fail=0 total=18
+
+=== common ===
+RESULT: pass=18 fail=0 skip=0 total=18
+=== auth ===
+RESULT: pass=10 fail=0 skip=0 total=10
+=== master ===
+RESULT: pass=36 fail=0 skip=0 total=36
+=== orders ===
+RESULT: pass=20 fail=0 skip=0 total=20
+=== inventory ===
+RESULT: pass=12 fail=0 skip=0 total=12
+=== customer ===
+RESULT: pass=10 fail=0 skip=0 total=10
+=== api ===
+RESULT: pass=12 fail=0 skip=0 total=12
+RESULT: run-all files=7 failed=0
+
+A app RESULT: pass=9 fail=0 skip=0 total=9
+
+C app RESULT: pass=8 fail=0 skip=0 total=8
+
+PASS SQL grants: manager reports and read-only audit; cashier receives 229 on both
+PASS matching report and TVF: (datetime.date(2026, 11, 25), datetime.date(2026, 11, 26)) (2, 2, Decimal('28.90')) (2, Decimal('28.90'))
+RESULT: Flask reports, empty range, audit read/filter/deny, shift replenishment verified
+
+独立调用 A/B 的 23a/23b 原始窗口脚本均退出 0。
+清理过程核对一次性库标记后删除数据库。
+
+db_id_after_cleanup trancount
+------------------- -----------
+               NULL           0

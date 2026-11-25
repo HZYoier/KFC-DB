@@ -181,6 +181,22 @@ def reject_suggestion(suggestion_id: int):
     )
 
 
+@bp.get("/audit")
+@login_required
+def audit():
+    identity = current_identity()
+    ingredient_id = request.args.get("ingredient_id", "")
+    try:
+        rows = service.list_audit(current_employee_session(), identity, ingredient_id)
+    except AppError as err:
+        if auth_service.clear_if_stale(err):
+            return redirect(url_for("auth.login", next=request.path))
+        return render_template(
+            "inventory/audit.html", rows=[], ingredient_id=ingredient_id, error=err.user_message,
+        ), err.http_status
+    return render_template("inventory/audit.html", rows=rows, ingredient_id=ingredient_id)
+
+
 @bp.get("/roles")
 @login_required
 def roles():

@@ -1,8 +1,6 @@
 -- ============================================================================
--- run_stage3.sql — v1.0 -> v1.1 增量入口（成员 C；2026-11-15 骨架）
--- 前置：v1.0 已由 run_migration.sql 提交；应用已停写；schema 目录中
---       21b/22b/27 等文件到齐。当前仓库 21b/22b/27 尚未交付时，本入口会
---       在 :r 处报文件不存在并随连接关闭整体回滚——这是有意的“未就绪”状态。
+-- run_stage3.sql — v1.0 -> v1.1 增量入口（成员 C）
+-- 前置：v1.0 已由 run_migration.sql 提交；应用已停写；从仓库根目录执行。
 -- 用法（仓库根目录；-b 遇错退出；CRLF/UTF-8）：
 --   sqlcmd -S '.\SQLEXPRESS' -E -C -f 65001 -b -I -i sql/stage3/run_stage3.sql
 -- 顺序：预检 -> 20 -> 21b -> 21a -> 21c -> 22b -> 22c -> 27 -> 事务内检查
@@ -33,6 +31,11 @@ DECLARE @batch_id BIGINT, @lock_rc INT;
 IF OBJECT_ID(N'dbo.SchemaVersion', N'U') IS NULL
     THROW 54400, N'run_stage3: SchemaVersion is missing; run capture_baseline/run_migration first.', 1;
 
+EXEC @lock_rc = sys.sp_getapplock @Resource = N'KFC_DB.Stage3Migration',
+    @LockMode = 'Exclusive', @LockOwner = 'Session', @LockTimeout = 0;
+IF @lock_rc < 0
+    THROW 54403, N'run_stage3: another session holds the Stage 3 migration lock.', 1;
+
 IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE version_code = N'v1.1')
     THROW 54401, N'run_stage3: database is already marked v1.1; do not apply the increment twice.', 1;
 
@@ -42,11 +45,6 @@ WHERE sv.version_code = N'v1.0';
 
 IF @batch_id IS NULL
     THROW 54402, N'run_stage3: SchemaVersion v1.0 is missing; run run_migration.sql first.', 1;
-
-EXEC @lock_rc = sys.sp_getapplock @Resource = N'KFC_DB.Stage3Migration',
-    @LockMode = 'Exclusive', @LockOwner = 'Session', @LockTimeout = 0;
-IF @lock_rc < 0
-    THROW 54403, N'run_stage3: another session holds the Stage 3 migration lock.', 1;
 GO
 
 -- ---------------------------------------------------------------------------
@@ -85,7 +83,10 @@ WHERE OBJECT_ID(N'dbo.' + expected.name, N'P') IS NULL
   AND OBJECT_ID(N'dbo.' + expected.name, N'TR') IS NULL;
 
 IF @missing <> N''
-    THROW 54404, N'run_stage3: required v1.1 objects are missing after domain scripts: ' + @missing, 1;
+BEGIN
+    DECLARE @missing_message NVARCHAR(2048) = N'run_stage3: required v1.1 objects are missing after domain scripts: ' + @missing;
+    THROW 54404, @missing_message, 1;
+END;
 
 IF OBJECT_ID(N'dbo.InventoryAudit', N'U') IS NULL
     THROW 54405, N'run_stage3: InventoryAudit is missing.', 1;
@@ -94,18 +95,20 @@ IF COL_LENGTH(N'dbo.SalesOrderItem', N'discount_rate') IS NULL
    OR COL_LENGTH(N'dbo.SalesOrderItem', N'discount_amount') IS NULL
     THROW 54406, N'run_stage3: SalesOrderItem discount columns are missing.', 1;
 
-IF (SELECT COUNT(*) FROM dbo.Permission) <> 70
-    THROW 54407, N'run_stage3: Permission must contain 70 codes after 27 (v1.0 58 + 12).', 1;
-IF (SELECT COUNT(*) FROM dbo.RolePermission) <> 90
-    THROW 54408, N'run_stage3: RolePermission must contain 90 rows after 27 (v1.0 71 + 19).', 1;
+IF (SELECT COUNT(*) FROM dbo.Permission) <> 64
+    THROW 54407, N'run_stage3: Permission must contain 64 codes after 27 (v1.0 58 + 6).', 1;
+IF (SELECT COUNT(*) FROM dbo.RolePermission) <> 78
+    THROW 54408, N'run_stage3: RolePermission must contain 78 rows after 27 (v1.0 71 + 7).', 1;
 
 IF (SELECT COUNT(*) FROM sys.triggers
     WHERE parent_id = OBJECT_ID(N'dbo.Inventory')
+      AND is_disabled = 0
       AND name = N'tr_Inventory_Audit') <> 1
     THROW 54409, N'run_stage3: tr_Inventory_Audit is not attached to Inventory.', 1;
 
 IF (SELECT COUNT(*) FROM sys.triggers
     WHERE parent_id = OBJECT_ID(N'dbo.SalesOrder')
+      AND is_disabled = 0
       AND name = N'tr_SalesOrder_Complete_Check') <> 1
     THROW 54410, N'run_stage3: tr_SalesOrder_Complete_Check is not attached to SalesOrder.', 1;
 

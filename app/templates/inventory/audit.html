@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>库存审计 · KFC-DB</title>
+  <style>
+    body { margin: 0; font-family: system-ui, "Microsoft YaHei", sans-serif; background: #f4f1ea; color: #2b2b2b; }
+    main { width: min(94vw, 1150px); margin: 28px auto; }
+    form { margin: 16px 0; }
+    input, button { padding: 7px; font: inherit; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; background: white; font-size: 14px; }
+    caption { text-align: left; margin-bottom: 8px; }
+    th, td { padding: 8px; border-bottom: 1px solid #eee9df; text-align: left; white-space: nowrap; }
+    th { background: #faf8f3; }
+    [role="alert"] { color: #8c1d18; }
+  </style>
+</head>
+<body>
+  <main>
+    <a href="{{ url_for('inventory.index') }}">库存与补货</a>
+    <h1>库存审计</h1>
+    <form method="get">
+      <label for="ingredient_id">原料 ID</label>
+      <input id="ingredient_id" name="ingredient_id" inputmode="numeric" value="{{ ingredient_id }}">
+      <button type="submit">查询</button>
+    </form>
+    {% if error %}<p role="alert">{{ error }}</p>
+    {% elif not rows %}<p>没有匹配的库存审计记录。</p>
+    {% else %}
+    <div class="table-wrap">
+      <table>
+        <caption>最近 100 条匹配记录</caption>
+        <thead>
+          <tr><th scope="col">记录 ID</th><th scope="col">原料 ID</th><th scope="col">操作时间</th>
+            <th scope="col">操作</th><th scope="col">数据库用户</th><th scope="col">员工 ID</th>
+            <th scope="col">现有量（前 → 后）</th><th scope="col">变动</th>
+            <th scope="col">锁定量（前 → 后）</th><th scope="col">变动</th></tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td>{{ row.inventory_audit_id }}</td><td>{{ row.ingredient_id }}</td>
+            <td>{{ row.operated_at }}</td><td>{{ row.operation_type }}</td><td>{{ row.operated_by }}</td>
+            <td>{{ row.employee_id if row.employee_id is not none else '—' }}</td>
+            <td>{{ row.before_on_hand if row.before_on_hand is not none else '—' }} → {{ row.after_on_hand if row.after_on_hand is not none else '—' }}</td>
+            <td>{{ row.delta_on_hand }}</td>
+            <td>{{ row.before_locked if row.before_locked is not none else '—' }} → {{ row.after_locked if row.after_locked is not none else '—' }}</td>
+            <td>{{ row.delta_locked }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </main>
+</body>
+</html>

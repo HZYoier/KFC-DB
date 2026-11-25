@@ -1,5 +1,5 @@
 -- ============================================================================
--- 13c_inventory_security_regression.sql — C 域 v1.0 提交后回归（成员 C；2026-11-03）
+-- 13c_inventory_security_regression.sql — C 域 v1.0/v1.1 提交后回归（成员 C；2026-11-03）
 -- 运行时机：run_migration.sql COMMIT 并写入 SchemaVersion('v1.0') 之后。
 -- 依赖：11a/11b/11c/12 已完成；baseline_c.sql 的同批快照；08/09c/09d 种子。
 -- 断言：C 域账本/建议/采购/审计边界、Permission 白名单/映射/实际 GRANT、
@@ -49,12 +49,9 @@ IF (SELECT COUNT(*) FROM dbo.BusinessRole WHERE status = N'ACTIVE'
     THROW 51940, N'13c：七个 ACTIVE 业务角色不齐。', 1;
 GO
 
--- ---------------------------------------------------------------------------
--- 1. 目录数量与旧数据保真
--- ---------------------------------------------------------------------------
-DECLARE @batch_id BIGINT = (SELECT sv.batch_id FROM dbo.SchemaVersion AS sv WHERE sv.version_code = N'v1.0');
-DECLARE @new_codes TABLE (permission_code VARCHAR(50) PRIMARY KEY);
-INSERT @new_codes VALUES
+DROP TABLE IF EXISTS #v10Codes, #v11Grants, #permissionCounts;
+CREATE TABLE #v10Codes (permission_code VARCHAR(50) COLLATE DATABASE_DEFAULT PRIMARY KEY);
+INSERT #v10Codes VALUES
  (N'sp_list_orders_for_payment'), (N'sp_get_order_for_payment'),
  (N'sp_get_order_operation_status'), (N'sp_list_orders_for_packing'),
  (N'sp_list_my_deliveries'), (N'sp_list_deliveries_available_for_pickup'),
@@ -62,16 +59,44 @@ INSERT @new_codes VALUES
  (N'sp_list_master_records'),
  (N'sp_list_sale_products'), (N'sp_find_customer_for_order'),
  (N'sp_register_customer_for_order');
+CREATE TABLE #v11Grants (
+    permission_code VARCHAR(50) COLLATE DATABASE_DEFAULT NOT NULL,
+    role_code VARCHAR(50) COLLATE DATABASE_DEFAULT NOT NULL,
+    PRIMARY KEY (permission_code, role_code)
+);
+CREATE TABLE #permissionCounts (codes INT NOT NULL, grants INT NOT NULL);
+IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE version_code = N'v1.1')
+BEGIN
+    INSERT #v11Grants VALUES
+        ('sp_sales_report', 'store_manager'), ('v_settled_sales_line', 'store_manager'),
+        ('fn_calculate_discount', 'store_manager'), ('fn_product_sales_summary', 'store_manager'),
+        ('fn_replenishment_qty', 'store_manager'), ('fn_replenishment_qty', 'shift_manager'),
+        ('InventoryAudit', 'store_manager');
+    INSERT #permissionCounts VALUES (64, 78);
+END;
+ELSE
+    INSERT #permissionCounts VALUES (58, 71);
+GO
+
+-- ---------------------------------------------------------------------------
+-- 1. 目录数量与旧数据保真
+-- ---------------------------------------------------------------------------
+DECLARE @codes INT = (SELECT codes FROM #permissionCounts),
+        @grants INT = (SELECT grants FROM #permissionCounts);
 BEGIN TRY
-    IF (SELECT COUNT(*) FROM dbo.Permission) <> 58
-        THROW 51941, N'13c-1：Permission 不是 58 码。', 1;
-    IF (SELECT COUNT(*) FROM dbo.RolePermission) <> 71
-        THROW 51941, N'13c-1：RolePermission 不是 71 行。', 1;
+    IF (SELECT COUNT(*) FROM dbo.Permission) <> @codes
+        THROW 51941, N'13c-1：Permission 码数与版本不符。', 1;
+    IF (SELECT COUNT(*) FROM dbo.RolePermission) <> @grants
+        THROW 51941, N'13c-1：RolePermission 行数与版本不符。', 1;
     IF (SELECT COUNT(*) FROM dbo.Permission
-        WHERE permission_code IN (SELECT permission_code FROM @new_codes)) <> 12
+        WHERE permission_code IN (SELECT permission_code FROM #v10Codes)) <> 12
         THROW 51941, N'13c-1：新增 12 码未全部进入 Permission。', 1;
+    IF EXISTS (SELECT permission_code FROM #v11Grants
+               EXCEPT SELECT permission_code FROM dbo.Permission)
+        THROW 51941, N'13c-1：v1.1 新增码未全部进入 Permission。', 1;
     UPDATE #counters SET pass = pass + 1;
-    PRINT N'PASS: 13c-1 Permission 58 / RolePermission 71 / 新增码集合一致';
+    PRINT N'PASS: 13c-1 Permission ' + CONVERT(NVARCHAR(10), @codes)
+        + N' / RolePermission ' + CONVERT(NVARCHAR(10), @grants) + N' / 新增码集合一致';
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0 ROLLBACK;
@@ -82,24 +107,15 @@ GO
 
 -- 2. 旧 46 个名称保真（Permission ⋈ 基线，仅旧码）
 DECLARE @batch_id BIGINT = (SELECT sv.batch_id FROM dbo.SchemaVersion AS sv WHERE sv.version_code = N'v1.0');
-DECLARE @new_codes TABLE (permission_code VARCHAR(50) PRIMARY KEY);
-INSERT @new_codes VALUES
- (N'sp_list_orders_for_payment'), (N'sp_get_order_for_payment'),
- (N'sp_get_order_operation_status'), (N'sp_list_orders_for_packing'),
- (N'sp_list_my_deliveries'), (N'sp_list_deliveries_available_for_pickup'),
- (N'sp_get_current_employee_context'), (N'sp_list_employee_roles'),
- (N'sp_list_master_records'),
- (N'sp_list_sale_products'), (N'sp_find_customer_for_order'),
- (N'sp_register_customer_for_order');
 BEGIN TRY
     IF EXISTS (
         SELECT DISTINCT permission_code, permission_name FROM dbo.Baseline_RolePermission
-        WHERE batch_id = @batch_id AND permission_code NOT IN (SELECT permission_code FROM @new_codes)
+        WHERE batch_id = @batch_id AND permission_code NOT IN (SELECT permission_code FROM #v10Codes UNION SELECT permission_code FROM #v11Grants)
         EXCEPT
         SELECT permission_code, permission_name FROM dbo.Permission
     ) OR EXISTS (
         SELECT permission_code, permission_name FROM dbo.Permission
-        WHERE permission_code NOT IN (SELECT permission_code FROM @new_codes)
+        WHERE permission_code NOT IN (SELECT permission_code FROM #v10Codes UNION SELECT permission_code FROM #v11Grants)
         EXCEPT
         SELECT DISTINCT permission_code, permission_name FROM dbo.Baseline_RolePermission
         WHERE batch_id = @batch_id
@@ -117,28 +133,19 @@ GO
 
 -- 3. 旧 52 行（角色/码/状态）保真
 DECLARE @batch_id BIGINT = (SELECT sv.batch_id FROM dbo.SchemaVersion AS sv WHERE sv.version_code = N'v1.0');
-DECLARE @new_codes TABLE (permission_code VARCHAR(50) PRIMARY KEY);
-INSERT @new_codes VALUES
- (N'sp_list_orders_for_payment'), (N'sp_get_order_for_payment'),
- (N'sp_get_order_operation_status'), (N'sp_list_orders_for_packing'),
- (N'sp_list_my_deliveries'), (N'sp_list_deliveries_available_for_pickup'),
- (N'sp_get_current_employee_context'), (N'sp_list_employee_roles'),
- (N'sp_list_master_records'),
- (N'sp_list_sale_products'), (N'sp_find_customer_for_order'),
- (N'sp_register_customer_for_order');
 BEGIN TRY
     IF EXISTS (
         SELECT business_role_id, permission_code, status FROM dbo.Baseline_RolePermission
-        WHERE batch_id = @batch_id AND permission_code NOT IN (SELECT permission_code FROM @new_codes)
+        WHERE batch_id = @batch_id AND permission_code NOT IN (SELECT permission_code FROM #v10Codes UNION SELECT permission_code FROM #v11Grants)
         EXCEPT
         SELECT business_role_id, permission_code, status FROM dbo.RolePermission
-        WHERE permission_code NOT IN (SELECT permission_code FROM @new_codes)
+        WHERE permission_code NOT IN (SELECT permission_code FROM #v10Codes UNION SELECT permission_code FROM #v11Grants)
     ) OR EXISTS (
         SELECT business_role_id, permission_code, status FROM dbo.RolePermission
-        WHERE permission_code NOT IN (SELECT permission_code FROM @new_codes)
+        WHERE permission_code NOT IN (SELECT permission_code FROM #v10Codes UNION SELECT permission_code FROM #v11Grants)
         EXCEPT
         SELECT business_role_id, permission_code, status FROM dbo.Baseline_RolePermission
-        WHERE batch_id = @batch_id AND permission_code NOT IN (SELECT permission_code FROM @new_codes)
+        WHERE batch_id = @batch_id AND permission_code NOT IN (SELECT permission_code FROM #v10Codes UNION SELECT permission_code FROM #v11Grants)
     )
         THROW 51941, N'13c-3：旧 52 行角色/码/状态未保真。', 1;
     UPDATE #counters SET pass = pass + 1;
@@ -152,17 +159,8 @@ END CATCH;
 GO
 
 -- 4. 新增 19 行：context 7、A 四、B 六、C 员工角色查询
-DECLARE @new_codes TABLE (permission_code VARCHAR(50) PRIMARY KEY);
-INSERT @new_codes VALUES
- (N'sp_list_orders_for_payment'), (N'sp_get_order_for_payment'),
- (N'sp_get_order_operation_status'), (N'sp_list_orders_for_packing'),
- (N'sp_list_my_deliveries'), (N'sp_list_deliveries_available_for_pickup'),
- (N'sp_get_current_employee_context'), (N'sp_list_employee_roles'),
- (N'sp_list_master_records'),
- (N'sp_list_sale_products'), (N'sp_find_customer_for_order'),
- (N'sp_register_customer_for_order');
 BEGIN TRY
-    IF (SELECT COUNT(*) FROM dbo.RolePermission WHERE permission_code IN (SELECT permission_code FROM @new_codes)) <> 19
+    IF (SELECT COUNT(*) FROM dbo.RolePermission WHERE permission_code IN (SELECT permission_code FROM #v10Codes)) <> 19
         THROW 51941, N'13c-4：新增 RolePermission 不是 19 行。', 1;
     IF (SELECT COUNT(*) FROM dbo.RolePermission WHERE permission_code = N'sp_get_current_employee_context') <> 7
         THROW 51941, N'13c-4：身份上下文不是 7 个角色。', 1;
@@ -185,8 +183,20 @@ BEGIN TRY
                    WHERE rp.permission_code = N'sp_list_employee_roles'
                      AND br.role_code = N'store_manager') <> 1
         THROW 51941, N'13c-4：员工角色查询未创建或未映射到 store_manager。', 1;
+    DECLARE @actualV11 TABLE (permission_code VARCHAR(50), role_code VARCHAR(50), status VARCHAR(20));
+    INSERT @actualV11
+    SELECT rp.permission_code, br.role_code, rp.status
+    FROM dbo.RolePermission AS rp
+    JOIN dbo.BusinessRole AS br ON br.business_role_id = rp.business_role_id
+    WHERE rp.permission_code IN (SELECT permission_code FROM #v11Grants);
+    IF EXISTS (SELECT permission_code, role_code, 'ACTIVE' FROM #v11Grants
+               EXCEPT SELECT permission_code, role_code, status FROM @actualV11)
+       OR EXISTS (SELECT permission_code, role_code, status FROM @actualV11
+                  EXCEPT SELECT permission_code, role_code, 'ACTIVE' FROM #v11Grants)
+        THROW 51941, N'13c-4：v1.1 新增角色映射与预期不符。', 1;
+    DECLARE @v11_grants INT = (SELECT COUNT(*) FROM #v11Grants);
     UPDATE #counters SET pass = pass + 1;
-    PRINT N'PASS: 13c-4 新增 19 行（context 7 / A 4 / B 6 / C 1）';
+    PRINT N'PASS: 13c-4 新增 19 行（context 7 / A 4 / B 6 / C 1）/ v1.1 新增 ' + CONVERT(NVARCHAR(10), @v11_grants) + N' 行';
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0 ROLLBACK;
@@ -197,8 +207,8 @@ GO
 
 -- 5. 白名单 = 目录 = RolePermission 码集合
 BEGIN TRY
-    IF (SELECT COUNT(DISTINCT permission_code) FROM dbo.Permission) <> 58
-        THROW 51941, N'13c-5：Permission 去重码不是 58。', 1;
+    IF (SELECT COUNT(DISTINCT permission_code) FROM dbo.Permission) <> (SELECT codes FROM #permissionCounts)
+        THROW 51941, N'13c-5：Permission 去重码数与版本不符。', 1;
     IF EXISTS (SELECT permission_code FROM dbo.Permission
                EXCEPT SELECT permission_code FROM dbo.RolePermission)
        OR EXISTS (SELECT permission_code FROM dbo.RolePermission
@@ -216,40 +226,36 @@ GO
 
 -- 6. 实际 role_* GRANT 与 RolePermission 逐对相等
 BEGIN TRY
-    DECLARE @expected TABLE (role_name SYSNAME, object_name SYSNAME, permission_name SYSNAME);
-    INSERT @expected (role_name, object_name, permission_name)
-    SELECT N'role_' + br.role_code, rp.permission_code,
-           CASE WHEN o.type = 'V' THEN N'SELECT' ELSE N'EXECUTE' END
-    FROM dbo.RolePermission rp
-    JOIN dbo.BusinessRole br ON br.business_role_id = rp.business_role_id AND br.status = N'ACTIVE'
-    JOIN sys.objects o ON o.name = rp.permission_code AND o.schema_id = SCHEMA_ID(N'dbo')
-    WHERE o.type IN ('P', 'V');
-    IF (SELECT COUNT(*) FROM @expected) <> 71
-        THROW 51941, N'13c-6：RolePermission 对应的期望 GRANT 不是 71 对。', 1;
+    DECLARE @grant_count INT = (SELECT grants FROM #permissionCounts);
+    DECLARE @expected TABLE (principal_id INT NOT NULL, object_id INT NOT NULL, permission_name SYSNAME);
+    INSERT @expected (principal_id, object_id, permission_name)
+    SELECT r.principal_id, o.object_id,
+           CASE WHEN o.type IN ('V', 'IF', 'U') THEN N'SELECT' ELSE N'EXECUTE' END
+    FROM dbo.RolePermission AS rp
+    JOIN dbo.BusinessRole AS br ON br.business_role_id = rp.business_role_id AND br.status = N'ACTIVE'
+    JOIN sys.objects AS o ON o.name = rp.permission_code COLLATE DATABASE_DEFAULT AND o.schema_id = SCHEMA_ID(N'dbo')
+    JOIN sys.database_principals AS r ON r.name = N'role_' + br.role_code COLLATE DATABASE_DEFAULT
+    WHERE o.type IN ('P', 'V', 'IF', 'FN', 'U');
+    IF (SELECT COUNT(*) FROM @expected) <> @grant_count
+        THROW 51941, N'13c-6：RolePermission 对应的预期 GRANT 数与版本不符。', 1;
+
+    DECLARE @actual TABLE (principal_id INT, object_id INT, permission_name SYSNAME, minor_id INT, state CHAR(1));
+    INSERT @actual
+    SELECT r.principal_id, dp.major_id, dp.permission_name, dp.minor_id, dp.state
+    FROM sys.database_permissions AS dp
+    JOIN sys.database_principals AS r ON r.principal_id = dp.grantee_principal_id
+    WHERE r.name LIKE N'role[_]%' AND dp.class = 1 AND dp.state IN ('G', 'W')
+      AND dp.permission_name IN (N'EXECUTE', N'SELECT');
     IF EXISTS (
-        SELECT role_name, object_name, permission_name FROM @expected
-        EXCEPT
-        SELECT r.name COLLATE DATABASE_DEFAULT,
-               OBJECT_NAME(dp.major_id) COLLATE DATABASE_DEFAULT,
-               dp.permission_name COLLATE DATABASE_DEFAULT
-        FROM sys.database_permissions dp
-        JOIN sys.database_principals r ON r.principal_id = dp.grantee_principal_id
-        WHERE r.name LIKE N'role[_]%' AND dp.class = 1 AND dp.state = 'G'
-          AND dp.permission_name IN (N'EXECUTE', N'SELECT')
+        SELECT principal_id, object_id, permission_name, 0, 'G' FROM @expected
+        EXCEPT SELECT principal_id, object_id, permission_name, minor_id, state FROM @actual
     ) OR EXISTS (
-        SELECT r.name COLLATE DATABASE_DEFAULT,
-               OBJECT_NAME(dp.major_id) COLLATE DATABASE_DEFAULT,
-               dp.permission_name COLLATE DATABASE_DEFAULT
-        FROM sys.database_permissions dp
-        JOIN sys.database_principals r ON r.principal_id = dp.grantee_principal_id
-        WHERE r.name LIKE N'role[_]%' AND dp.class = 1 AND dp.state = 'G'
-          AND dp.permission_name IN (N'EXECUTE', N'SELECT')
-        EXCEPT
-        SELECT role_name, object_name, permission_name FROM @expected
+        SELECT principal_id, object_id, permission_name, minor_id, state FROM @actual
+        EXCEPT SELECT principal_id, object_id, permission_name, 0, 'G' FROM @expected
     )
         THROW 51941, N'13c-6：实际 role_* GRANT 与 RolePermission 映射不相等。', 1;
     UPDATE #counters SET pass = pass + 1;
-    PRINT N'PASS: 13c-6 71 对 role_* GRANT 与映射逐对相等';
+    PRINT N'PASS: 13c-6 ' + CONVERT(NVARCHAR(10), @grant_count) + N' 对 role_* GRANT 与映射逐对相等';
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0 ROLLBACK;

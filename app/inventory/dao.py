@@ -1,6 +1,6 @@
 """库存域 DAO：SQL 常量 + SqlParam，不 import pyodbc。
 
-查询走 C 的四个只读视图；写入走既有自持事务过程，应用层不包事务。
+查询走 C 的只读视图、补货函数和库存审计表；写入走既有自持事务过程。
 """
 
 from __future__ import annotations
@@ -56,6 +56,13 @@ _SQL_REPLENISHMENT_QTY = """
 SELECT dbo.fn_replenishment_qty(?, ?, ?) AS suggested_qty;
 """
 
+_SQL_AUDIT = """
+SELECT TOP (100) inventory_audit_id, ingredient_id, before_on_hand, after_on_hand,
+       delta_on_hand, before_locked, after_locked, delta_locked, operation_type,
+       operated_by, employee_id, operated_at
+FROM dbo.InventoryAudit
+"""
+
 
 def list_inventory(session):
     return query(session, _SQL_INVENTORY)
@@ -69,6 +76,13 @@ def list_movements(session, ingredient_id: int | None = None):
 
 def list_replenishment(session):
     return query(session, _SQL_REPLENISHMENT)
+
+
+def list_audit(session, ingredient_id: int | None = None):
+    ordering = " ORDER BY operated_at DESC, inventory_audit_id DESC;"
+    if ingredient_id is None:
+        return query(session, _SQL_AUDIT + ordering)
+    return query(session, _SQL_AUDIT + " WHERE ingredient_id = ?" + ordering, [p_bigint(ingredient_id)])
 
 
 def replenishment_qty(session, ingredient_id: int, target_qty, min_qty=None):

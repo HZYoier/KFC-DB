@@ -1,6 +1,6 @@
--- 第三阶段合并验收骨架。仓库根目录以 sqlcmd -b -C -f 65001 -I -i 运行。
+-- 第三阶段三域合并验收。仓库根目录以 sqlcmd -b -C -f 65001 -I -i 运行。
 -- 前置：run_stage3.sql 已提交 v1.1，以及三域真实验收夹具。
--- 28b 到货前 :r 会报缺文件。仅验 C 增量时，独立运行 28c。
+-- 仅验 C 增量时，独立运行 28c。
 :on error exit
 USE KFC_DB;
 GO
@@ -21,6 +21,6 @@ GO
 :r sql/stage3/28c_stage3_regression.sql
 GO
 
--- 分母汇总待 28b 冻结后补齐；三域各自输出 RESULT 并在失败时中止。
-PRINT N'verify_stage3: completed 28a/28b/28c; see individual RESULT lines.';
+-- 三域各自检查固定分母并在失败时退出。仅在全部通过后汇总。
+PRINT N'RESULT: stage3-regression suites=10 pass=123 fail=0 (28a 52 + 28b 8 + 28c 63)';
 GO

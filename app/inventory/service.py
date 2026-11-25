@@ -111,6 +111,12 @@ def list_employee_roles(session):
     return dao.list_employee_roles(session)
 
 
+def list_audit(session, identity, ingredient_id=None):
+    if not any(row["permission_code"] == "InventoryAudit" for row in identity["permissions"]):
+        raise AppError("E_FORBIDDEN")
+    return dao.list_audit(session, None if ingredient_id in (None, "") else _positive_id(ingredient_id))
+
+
 def adjust_inventory(session, employee_id, ingredient_id, on_hand_delta, reason):
     return dao.adjust_inventory(
         session,

@@ -1,0 +1,215 @@
+C 第十三周业务并发，2026-11-25
+一次性库按正式 run_stage3 迁移至 v1.1，基线 C-Stage3-Disposable。
+入口 tests/stage3/c_concurrency/run_c_business_concurrency.py。C 四模式各三轮。
+
+Microsoft SQL Server 2025 (RTM) - 17.0.1000.7 (X64)
+	Oct 21 2025 12:05:57
+	Copyright (C) 2025 Microsoft Corporation
+	Express Edition (64-bit) on Windows 10 Home China 10.0 <X64> (Build 26100: ) (Hypervisor)
+
+READ COMMITTED, RCSI = False
+order commits P 27 SPIDs [69, 71, 72]
+lock wait (72, 71, 'LCK_M_U', 'KEY: 6:72057594048806912 (5d937923d5a3)')
+ingredient=27 order=38 purchase=20 (Decimal('13.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+transactions open: 0/0/0
+order rolls back P 28 SPIDs [69, 71, 72]
+lock wait (72, 71, 'LCK_M_U', 'KEY: 6:72057594048806912 (39c9529c1a80)')
+ingredient=28 order=39 purchase=21 (Decimal('15.000'), Decimal('2.000')) IN_PRODUCTION CLOSED [('RECEIPT', Decimal('5.000'), Decimal('0.000'))]
+transactions open: 0/0/0
+reverse P/Q 29 30 observer/order/receipt SPIDs [69, 71, 72]
+lock wait (71, 72, 'LCK_M_S', 'KEY: 6:72057594048872448 (db6870883b7e)')
+receipt deadlock victim: ('40001', '[40001] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Transaction (Process ID 72) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction. (1205) (SQLExecDirectW)')
+ingredient=29 order=40 purchase=22 (Decimal('8.000'), Decimal('0.000')) READY_FOR_PICKUP ('APPROVED', Decimal('0.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000'))] [(Decimal('-2.000'), Decimal('-2.000'))]
+ingredient=30 order=41 purchase=23 (Decimal('6.000'), Decimal('0.000')) READY_FOR_PICKUP ('APPROVED', Decimal('0.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000'))] [(Decimal('-2.000'), Decimal('-2.000'))]
+transactions open: 0/0/0
+ordered P/Q 31 32 observer/order/receipt SPIDs [69, 71, 72]
+lock wait (72, 71, 'LCK_M_U', 'KEY: 6:72057594048806912 (d28bcaafb8df)')
+ingredient=31 order=42 purchase=24 (Decimal('13.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+ingredient=32 order=43 purchase=25 (Decimal('11.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+transactions open: 0/0/0
+order commits P 33 SPIDs [69, 71, 72]
+lock wait (72, 71, 'LCK_M_U', 'KEY: 6:72057594048806912 (19ff176abf84)')
+ingredient=33 order=44 purchase=26 (Decimal('13.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+transactions open: 0/0/0
+order rolls back P 34 SPIDs [69, 71, 72]
+lock wait (72, 71, 'LCK_M_U', 'KEY: 6:72057594048806912 (f2bd8f591ddb)')
+ingredient=34 order=45 purchase=27 (Decimal('15.000'), Decimal('2.000')) IN_PRODUCTION CLOSED [('RECEIPT', Decimal('5.000'), Decimal('0.000'))]
+transactions open: 0/0/0
+reverse P/Q 35 36 observer/order/receipt SPIDs [69, 71, 72]
+lock wait (71, 72, 'LCK_M_S', 'KEY: 6:72057594048872448 (8316810fd240)')
+receipt deadlock victim: ('40001', '[40001] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Transaction (Process ID 72) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction. (1205) (SQLExecDirectW)')
+ingredient=35 order=46 purchase=28 (Decimal('8.000'), Decimal('0.000')) READY_FOR_PICKUP ('APPROVED', Decimal('0.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000'))] [(Decimal('-2.000'), Decimal('-2.000'))]
+ingredient=36 order=47 purchase=29 (Decimal('6.000'), Decimal('0.000')) READY_FOR_PICKUP ('APPROVED', Decimal('0.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000'))] [(Decimal('-2.000'), Decimal('-2.000'))]
+transactions open: 0/0/0
+ordered P/Q 37 38 observer/order/receipt SPIDs [69, 71, 72]
+lock wait (72, 71, 'LCK_M_U', 'KEY: 6:72057594048806912 (96e7a4e6d2f8)')
+ingredient=37 order=48 purchase=30 (Decimal('13.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+ingredient=38 order=49 purchase=31 (Decimal('11.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+transactions open: 0/0/0
+order commits P 39 SPIDs [69, 71, 72]
+lock wait (72, 71, 'LCK_M_U', 'KEY: 6:72057594048806912 (249bb43b1192)')
+ingredient=39 order=50 purchase=32 (Decimal('13.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+transactions open: 0/0/0
+order rolls back P 40 SPIDs [69, 71, 72]
+lock wait (72, 71, 'LCK_M_U', 'KEY: 6:72057594048806912 (b5116aabefe0)')
+ingredient=40 order=51 purchase=33 (Decimal('15.000'), Decimal('2.000')) IN_PRODUCTION CLOSED [('RECEIPT', Decimal('5.000'), Decimal('0.000'))]
+transactions open: 0/0/0
+reverse P/Q 41 42 observer/order/receipt SPIDs [69, 71, 72]
+lock wait (71, 72, 'LCK_M_S', 'KEY: 6:72057594048872448 (6b949287e803)')
+receipt deadlock victim: ('40001', '[40001] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Transaction (Process ID 72) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction. (1205) (SQLExecDirectW)')
+ingredient=41 order=52 purchase=34 (Decimal('8.000'), Decimal('0.000')) READY_FOR_PICKUP ('APPROVED', Decimal('0.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000'))] [(Decimal('-2.000'), Decimal('-2.000'))]
+ingredient=42 order=53 purchase=35 (Decimal('6.000'), Decimal('0.000')) READY_FOR_PICKUP ('APPROVED', Decimal('0.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000'))] [(Decimal('-2.000'), Decimal('-2.000'))]
+transactions open: 0/0/0
+ordered P/Q 43 44 observer/order/receipt SPIDs [69, 71, 72]
+lock wait (72, 71, 'LCK_M_U', 'KEY: 6:72057594048806912 (5e53f2984dbf)')
+ingredient=43 order=54 purchase=36 (Decimal('13.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+ingredient=44 order=55 purchase=37 (Decimal('11.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+transactions open: 0/0/0
+RESULT: stage3-c-business-concurrency pass=12 fail=0
+
+system_health 图节选，按进程 SPID 与 DMV 等待资源匹配
+
+2026-11-25 11:37:05.3420000 UTC
+<deadlock>
+  <victim-list>
+    <victimProcess id="process14d3ddcb438" />
+  </victim-list>
+  <process-list>
+    <process id="process14d3ddcb438" spid="72" currentdb="6" waitresource="KEY: 6:72057594048806912 (ec2fe2458ed5)" lockMode="U" taskpriority="5" isolationlevel="read committed (2)" trancount="1">
+      <executionStack>
+        <frame procname="KFC_DB.dbo.sp_receive_inventory" line="111" stmtstart="7546" stmtend="7844" />
+        <frame procname="adhoc" line="1" stmtstart="34" stmtend="114" />
+        <frame procname="unknown" line="1" />
+      </executionStack>
+    </process>
+    <process id="process14d379fb828" spid="71" currentdb="6" waitresource="KEY: 6:72057594048872448 (6b949287e803)" lockMode="S" taskpriority="0" isolationlevel="read committed (2)" trancount="1">
+      <executionStack>
+        <frame procname="KFC_DB.dbo.sp_consume_order_inventory" line="51" stmtstart="2864" stmtend="3594" />
+        <frame procname="KFC_DB.dbo.sp_finish_production" line="36" stmtstart="3130" stmtend="3242" />
+        <frame procname="adhoc" line="1" stmtstart="18" stmtend="82" />
+        <frame procname="unknown" line="1" />
+      </executionStack>
+    </process>
+  </process-list>
+  <resource-list>
+    <keylock hobtid="72057594048806912" dbid="6" objectname="KFC_DB.dbo.Inventory" indexname="PK_Inventory" id="lock14d27a4ff80" mode="X" associatedObjectId="72057594048806912">
+      <owner-list>
+        <owner id="process14d379fb828" mode="X" />
+      </owner-list>
+      <waiter-list>
+        <waiter id="process14d3ddcb438" mode="U" requestType="wait" />
+      </waiter-list>
+    </keylock>
+    <keylock hobtid="72057594048872448" dbid="6" objectname="KFC_DB.dbo.InventoryMovement" indexname="PK_InventoryMovement" id="lock14d39dfe880" mode="X" associatedObjectId="72057594048872448">
+      <owner-list>
+        <owner id="process14d3ddcb438" mode="X" />
+      </owner-list>
+      <waiter-list>
+        <waiter id="process14d379fb828" mode="S" requestType="wait" />
+      </waiter-list>
+    </keylock>
+  </resource-list>
+</deadlock>
+
+2026-11-25 11:37:02.8330000 UTC
+<deadlock>
+  <victim-list>
+    <victimProcess id="process14d3ddcb438" />
+  </victim-list>
+  <process-list>
+    <process id="process14d3ddcb438" spid="72" currentdb="6" waitresource="KEY: 6:72057594048806912 (ab8307b77cee)" lockMode="U" taskpriority="5" isolationlevel="read committed (2)" trancount="1">
+      <executionStack>
+        <frame procname="KFC_DB.dbo.sp_receive_inventory" line="111" stmtstart="7546" stmtend="7844" />
+        <frame procname="adhoc" line="1" stmtstart="34" stmtend="114" />
+        <frame procname="unknown" line="1" />
+      </executionStack>
+    </process>
+    <process id="process14d3ddcb828" spid="71" currentdb="6" waitresource="KEY: 6:72057594048872448 (8316810fd240)" lockMode="S" taskpriority="0" isolationlevel="read committed (2)" trancount="1">
+      <executionStack>
+        <frame procname="KFC_DB.dbo.sp_consume_order_inventory" line="51" stmtstart="2864" stmtend="3594" />
+        <frame procname="KFC_DB.dbo.sp_finish_production" line="36" stmtstart="3130" stmtend="3242" />
+        <frame procname="adhoc" line="1" stmtstart="18" stmtend="82" />
+        <frame procname="unknown" line="1" />
+      </executionStack>
+    </process>
+  </process-list>
+  <resource-list>
+    <keylock hobtid="72057594048806912" dbid="6" objectname="KFC_DB.dbo.Inventory" indexname="PK_Inventory" id="lock14d39da3b80" mode="X" associatedObjectId="72057594048806912">
+      <owner-list>
+        <owner id="process14d3ddcb828" mode="X" />
+      </owner-list>
+      <waiter-list>
+        <waiter id="process14d3ddcb438" mode="U" requestType="wait" />
+      </waiter-list>
+    </keylock>
+    <keylock hobtid="72057594048872448" dbid="6" objectname="KFC_DB.dbo.InventoryMovement" indexname="PK_InventoryMovement" id="lock14d27a60680" mode="X" associatedObjectId="72057594048872448">
+      <owner-list>
+        <owner id="process14d3ddcb438" mode="X" />
+      </owner-list>
+      <waiter-list>
+        <waiter id="process14d3ddcb828" mode="S" requestType="wait" />
+      </waiter-list>
+    </keylock>
+  </resource-list>
+</deadlock>
+
+2026-11-25 11:36:57.8290000 UTC
+<deadlock>
+  <victim-list>
+    <victimProcess id="process14d3ddcb438" />
+  </victim-list>
+  <process-list>
+    <process id="process14d3ddcb438" spid="72" currentdb="6" waitresource="KEY: 6:72057594048806912 (60f7da727bb5)" lockMode="U" taskpriority="5" isolationlevel="read committed (2)" trancount="1">
+      <executionStack>
+        <frame procname="KFC_DB.dbo.sp_receive_inventory" line="111" stmtstart="7546" stmtend="7844" />
+        <frame procname="adhoc" line="1" stmtstart="34" stmtend="114" />
+        <frame procname="unknown" line="1" />
+      </executionStack>
+    </process>
+    <process id="process14d3ddcb828" spid="71" currentdb="6" waitresource="KEY: 6:72057594048872448 (db6870883b7e)" lockMode="S" taskpriority="0" isolationlevel="read committed (2)" trancount="1">
+      <executionStack>
+        <frame procname="KFC_DB.dbo.sp_consume_order_inventory" line="51" stmtstart="2864" stmtend="3594" />
+        <frame procname="KFC_DB.dbo.sp_finish_production" line="36" stmtstart="3130" stmtend="3242" />
+        <frame procname="adhoc" line="1" stmtstart="18" stmtend="82" />
+        <frame procname="unknown" line="1" />
+      </executionStack>
+    </process>
+  </process-list>
+  <resource-list>
+    <keylock hobtid="72057594048806912" dbid="6" objectname="KFC_DB.dbo.Inventory" indexname="PK_Inventory" id="lock14d2d180500" mode="X" associatedObjectId="72057594048806912">
+      <owner-list>
+        <owner id="process14d3ddcb828" mode="X" />
+      </owner-list>
+      <waiter-list>
+        <waiter id="process14d3ddcb438" mode="U" requestType="wait" />
+      </waiter-list>
+    </keylock>
+    <keylock hobtid="72057594048872448" dbid="6" objectname="KFC_DB.dbo.InventoryMovement" indexname="PK_InventoryMovement" id="lock14d27a5bb80" mode="X" associatedObjectId="72057594048872448">
+      <owner-list>
+        <owner id="process14d3ddcb438" mode="X" />
+      </owner-list>
+      <waiter-list>
+        <waiter id="process14d3ddcb828" mode="S" requestType="wait" />
+      </waiter-list>
+    </keylock>
+  </resource-list>
+</deadlock>
+
+B 业务并发复跑
+备独立 KFC_B_STAGE3_* 库，复用 B 的 expand/run_batches 运行正式迁移，调用 concurrency_v2.check。
+PASS 26b receipt/order 1 commit P 13.000 locked 0.000 order READY_FOR_PICKUP purchase CLOSED; trancount 0
+PASS 26b receipt/order 2 commit P 13.000 locked 0.000 order READY_FOR_PICKUP purchase CLOSED; trancount 0
+PASS 26b receipt/order 3 commit P 13.000 locked 0.000 order READY_FOR_PICKUP purchase CLOSED; trancount 0
+PASS 26b receipt/order 1 rollback P 15.000 locked 2.000 order IN_PRODUCTION purchase CLOSED; trancount 0
+PASS 26b receipt/order 2 rollback P 15.000 locked 2.000 order IN_PRODUCTION purchase CLOSED; trancount 0
+PASS 26b receipt/order 3 rollback P 15.000 locked 2.000 order IN_PRODUCTION purchase CLOSED; trancount 0
+PASS 26b competing P x 6 1 P=4 locked=0; one full order, no failed order header or orphan lines/locks [(25, 'B26-550abf39915442c4b36ba29405b810cc', 'READY_FOR_PICKUP')]
+PASS 26b competing P x 6 2 P=4 locked=0; one full order, no failed order header or orphan lines/locks [(26, 'B26-1e2c5784193b4d0aa8c9c29c49d6d3fc', 'READY_FOR_PICKUP')]
+PASS 26b competing P x 6 3 P=4 locked=0; one full order, no failed order header or orphan lines/locks [(28, 'B26-46f98f3bd6e54224a38265e94a2960b7', 'READY_FOR_PICKUP')]
+RESULT: 26b business concurrency pass=9 fail=0
+RESULT: B 26b on committed v1.1, disposable database removed
+
+C 库清理
+db_id_after_cleanup trancount
+------------------- -----------
+               NULL           0
