@@ -4,7 +4,7 @@
 
 **Architecture:** 沿用前两阶段的业务线——A 主数据、定价与会员，B 订单、支付与履约，C 库存、补货、权限与集成。第三阶段不改这条线，改的是"业务规则放在哪里"：原先散在页面层或过程里的计算下沉为数据库对象，页面只负责取参、调用和展示；数据库结构只做加法，形成 v1.1。
 
-**Spec:** 教学安排《第三阶段 · 第 10—13 周 数据库编程与事务处理》的第 10、11 周讲解（2026-11-12 收到）与第 12 周讲解（2026-11-18 收到），以及同一份阶段安排里的周次表。第 13 周的详细讲解尚未收到，本计划按周次表推导并发控制部分，并在 §2 中标为待核；讲解原文按前两阶段约定不归档，C 核对后只保留编号化摘录。
+**Spec:** 教学安排《第三阶段 · 第 10—13 周 数据库编程与事务处理》的第 10、11 周讲解（2026-11-12 收到）、第 12 周讲解（2026-11-18 收到）与第 13 周讲解（2026-11-25 收到），以及同一份阶段安排里的周次表。四周任务均已按讲解核对；讲解原文按前两阶段约定不归档，C 核对后只保留编号化摘录。
 
 ## 0. 阶段目标与四个子阶段
 
@@ -79,17 +79,21 @@
 | R11-08 | 触发器一次可能处理多行，不能只用一个变量存一行；结合 `inserted` / `deleted`；考虑插入、修改、删除；业务不要过重 | 触发器的多行测试与实现评审清单（§5.4） | B / C |
 | R11-09 | 窗口函数不减少行数；累计值明确排序；移动平均说明窗口大小 | 三条查询各配"行数前后一致"与"窗口帧"说明 | A / B |
 
-### 2.3 第 12—13 周（3.3、3.4；第 12 周已核对，第 13 周待核）
+### 2.3 第 12—13 周（3.3、3.4，均已核对）
 
 | 编号 | 周次表要求 | 本仓落点 | 主笔 |
 | --- | --- | --- | --- |
 | R3-01 | 完成一项层级递归查询，结果层级正确 | `24b_recursive_query.sql`：订单明细的套餐组件树（已有结构说明） | B |
 | R3-02 | 实现订单完成事务，验证提交与回滚 | `25b_tx_order_completion.sql`：围绕 `sp_finish_production` 的制作完成事务（含库存实扣） | B |
 | R3-03 | 实现模拟补货入库事务，验证提交与回滚 | `25c_tx_replenishment_receipt.sql` | C |
-| R3-04 | 围绕库存与补货记录完成锁等待、隔离级别、死锁实验，并验证改进方案 | `26a_isolation_experiment.sql`（A）、`26c_lock_deadlock_experiment.sql`（C） | A / C |
-| R3-05 | 两个会话的实验脚本、锁信息、运行结果与分析；能指出被锁数据、等待关系、死锁原因和解决方法 | `docs/stage3/concurrency.md` + `result/stage3/c-concurrency-*.txt` | C（A/B 提供各自会话与分析） |
+| R3-04 | 围绕库存与补货记录完成锁等待、隔离级别、死锁实验，并验证改进方案 | `26a_isolation_experiment.sql`（A）、`26b_order_concurrency.sql`（B）、`26c_lock_deadlock_experiment.sql`（C） | A / B / C |
+| R3-05 | 两个会话的实验脚本、锁信息、运行结果与分析；能指出被锁数据、等待关系、死锁原因和解决方法 | `docs/stage3/concurrency.md` + `result/stage3/{a,b,c}-concurrency-*.txt` | C（A/B 提供各自会话与分析） |
+| R3-06 | 两笔订单同时购买同一商品 P×6，只能一单成功，另一单库存不足，最终库存 4，失败单不得完成 | `26b_order_concurrency.sql` 的并发购买场景 + `25b` 订单事务 | B |
+| R3-07 | 阶段整理：README、代码/结果目录、阶段报告、组内分工、ai_log；教学版本 v2.0 | `README.md`、`result/stage3/`、`docs/stage3/reports/`、`docs/stage3/team-division.md`、`docs/AI使用记录.md` | A / C（各域提供） |
 
 **2026-11-18 按第十二周讲解修订：** R3-01 的讲解示例是“商品分类—子分类”，本库 `Category` 没有父级列；作业同时允许“已有结构说明”，故仍采用 `SalesOrderItem.parent_order_item_id` 的套餐组件树，不为此扩 v1.1。R3-02 的事务主体定为制作完成（`sp_finish_production`），因为本库的库存实扣只发生在 `sp_consume_order_inventory`，取餐/送达终态不再扣减；详见 §6.2。
+
+**2026-11-25 按第十三周讲解修订：** R3-04 拆成 A 的隔离级别（脏读、RC/RR）与 B/C 的订单—补货锁等待、死锁；新增 R3-06 并发购买和 R3-07 阶段整理。A 的 `26a` 不再只做销售汇总，改用库存 P 的读写；B 新增 `26b` 订单侧会话；C 的 `26c` 从 `sp_adjust_inventory` 改到 `25c` 补货事务。详见 §7。
 
 ## 3. 分工原则
 
@@ -264,25 +268,48 @@ operated_at        DATETIME2(0) NOT NULL
 
 | 成员 | 负责范围 |
 | --- | --- |
-| A | 隔离级别实验：销售统计在 `READ COMMITTED` 与 `REPEATABLE READ` 下对并发下单的可见性差异 |
-| B | 订单完成侧的第二个会话脚本与业务影响分析（完成与库存调整相遇时谁等谁） |
-| C | 锁等待、死锁实验与改进方案；`concurrency.md` 汇总；全部原始输出 |
+| A | 隔离级别实验：脏读（`READ UNCOMMITTED` vs `READ COMMITTED`）与不可重复读（`READ COMMITTED` vs `REPEATABLE READ`），以库存 P 为对象；记录 SQL Server 版本、会话隔离级别与 RCSI；A 段分析 |
+| B | 订单侧会话：`25b` 制作完成事务、锁等待/死锁的订单端、两笔 P×6 并发购买；订单侧分析 |
+| C | 补货侧会话：`25c` 补货事务、锁等待/死锁的补货端与统一加锁顺序改进；`concurrency.md` 汇总、全部原始输出 |
 
-### 7.1 锁等待（C）
+### 7.0 实验基线与步骤（A/B/C）
 
-两个 sqlcmd 会话：会话 1 开事务调用 `sp_adjust_inventory` 锁住某原料行并 `WAITFOR DELAY`；会话 2 对同一原料发起调整，设置 `SET LOCK_TIMEOUT 3000`。用 `sys.dm_tran_locks`、`sys.dm_exec_requests` 抓被锁资源、等待类型与阻塞链，分别记录"等待后成功"和"超时失败"两种结果。分析要指出被锁的业务数据（哪一行库存）、等待关系（谁阻塞谁）、业务上是否可以接受。
+- 使用一次性测试库或可恢复副本，准备库存 P=10、Q=8，以及对应的测试订单/补货单；记录初始值。
+- 三个会话分别用 `@@SPID` 确认不同；记录 SQL Server 版本、各会话 `transaction_isolation_level` 与 `sys.databases.is_read_committed_snapshot_on`。
+- 每轮拆成 A1、B1、A2 等步骤，用 `PRINT`/脚本阶段输出标出暂停、提交、回滚、重置位置；不一次执行两个完整脚本。
+- 每轮结束检查 `@@TRANCOUNT`、恢复隔离级别、重置 P/Q 与订单/补货单据；实验数据只留在一次性库。
+- 不擅自修改共享数据库的 RCSI 设置；需要锁读对照时用 `READCOMMITTEDLOCK` 并注明。
+
+### 7.1 同一库存上的写入等待（B/C）
+
+B 的订单会话在事务内调用 `25b`/`sp_finish_production`（或订单侧扣减路径）扣 P 的 2 件，暂不提交；C 的补货会话用 `25c` 的补货事务给同一 P 增加 5 件。观察 B 等待、记录 `blocking_session_id` 与 `wait_resource`：
+
+- B 提交后放行 C，P 最终为 **13**；
+- 重置后 B 回滚再放行 C，P 最终为 **15**；
+- 对照订单与补货单据状态，说明为什么“订单提交”与“订单回滚”导致不同库存结果。
 
 ### 7.2 隔离级别（A）
 
-会话 1 在 `REPEATABLE READ` 中先读销售汇总，`WAITFOR` 后重读；会话 2 在同一区间完成一笔新订单（`COMPLETED`）。对照 `READ COMMITTED`：前者两次读一致，后者能看到新增；若数据库已启用 `READ_COMMITTED_SNAPSHOT`，另记一组快照读结果，未启用则不擅自改库设置。实验说明"报表要稳定就读高一级隔离，但会持锁更久"的取舍。
+A 的 `26a_isolation_experiment.sql` 以库存 P 为对象，覆盖两组：
 
-### 7.3 死锁与改进（C 主笔，B 提供订单侧会话）
+1. **脏读对照**：补货事务把 P 从 10 改为 15、暂不提交；另一个会话先 `READ UNCOMMITTED` 读到 15，补货回滚后恢复 10；重置后改用 `READ COMMITTED`，应等待或只读到已提交的 10。若 RCSI 开启，另记快照读结果；不修改数据库设置。
+2. **不可重复读与 RR**：A 在 `READ COMMITTED` 下第一次读 P=10，B 提交补货后 A 第二次读应看到 15；重置后 A 用 `REPEATABLE READ`，第一次读后保持事务，B 的补货被阻塞，A 第二次仍读 10，A 提交后 B 才能继续。结论要说明 RR 只保护已读取的数据，不等于解决所有并发问题。
 
-构造两会话反向加锁：会话 1 先锁原料 A 再锁 B，会话 2 先 B 再 A（或订单完成与补货收货各持一半资源），触发死锁；从 `system_health` 或 `DBCC TRACEON(1222)` 抓死锁图，指出牺牲者、两个会话各持有什么、循环等待在哪。改进方案：所有涉及多原料的事务按 `ingredient_id` 升序加锁、缩短事务、失败重试；改后重跑同一脚本，两个会话都成功、无死锁。B 补一段"订单完成在该场景下的等待与失败表现"，不另写一套死锁。
+A 输出每一步的读取值、提交/回滚顺序与锁等待现象；不把 `26a` 写成销售汇总实验，销售口径只在需要时引用 `sales-semantics.md`。
 
-### 7.4 3.4 完成标准
+### 7.3 死锁与改进（C 主笔，B 提供订单端）
 
-锁等待、隔离级别、死锁三类现象各有可复现脚本与原始输出；死锁图能读出资源与等待环；改进方案在同一脚本上验证通过；`concurrency.md` 按"现象—数据—原因—解决"四段写，C 汇总，A/B 各写自己那一段；实验全部回滚，不留锁与测试数据。
+构造反向加锁：B 的订单事务先更新 P，C 的补货事务先更新 Q，两者都不提交；随后 B 请求 Q、C 请求 P，形成循环等待。C 抓取错误 `1205`、会话/锁记录或 `system_health` 死锁图，画出“B 持有 P 等 Q、C 持有 Q 等 P”的关系，核对被终止事务的回滚结果。
+
+改进方案：两项业务涉及多原料时统一按 `ingredient_id` 升序、逐项 `UPDLOCK` 加锁并缩短事务；重跑同一场景，验证反向循环被消除（仍允许普通等待）。B 在 `concurrency.md` 补订单侧的等待/失败表现，不另写一套死锁脚本。
+
+### 7.4 两笔并发购买（B）
+
+在一次性测试库把 P 重置为 10，两笔不同订单同时购买 P×6：只允许一单成功，另一单因可用量不足被拒绝，最终 P=4；失败订单不得进入完成状态，订单/明细/锁流水不能留下“半单”。记录两会话的开始、加锁、成功/失败、提交/回滚顺序与最终库存。
+
+### 7.5 3.4 完成标准
+
+锁等待（P=13/15）、脏读、RC/RR、死锁图与统一加锁改进、并发购买（最终 4、失败单未完成）各有可复现脚本与原始输出；`concurrency.md` 按“现象—数据—原因—解决”整理，A/B/C 各写自己段落；实验全部回滚或清理，`@@TRANCOUNT=0`；`27_permissions.sql` 与 `verify_stage3.sql` 完成正式 v1.1 验收；README、代码/结果目录、阶段报告、组内分工与 ai_log 按教学 v2.0 收口。
 
 ## 8. 贯穿全程的约定
 
@@ -308,7 +335,7 @@ operated_at        DATETIME2(0) NOT NULL
 | `sql/stage3/23a_window_queries.sql`、`23b_window_queries.sql` | A、B 各自文件 | 排名与移动平均、累计值；配业务说明 |
 | `sql/stage3/24b_recursive_query.sql`、`25b_tx_order_completion.sql` | B | 套餐组件递归树；以制作完成（实扣库存）为主体的订单事务，提交/拒绝/回滚三路径 |
 | `sql/stage3/25c_tx_replenishment_receipt.sql` | C | 补货入库事务；提交/回滚两路径 |
-| `sql/stage3/26a_isolation_experiment.sql`、`26c_lock_deadlock_experiment.sql` | A、C 各自文件 | 双会话脚本；固定等待与超时，输出可直接留证 |
+| `sql/stage3/26a_isolation_experiment.sql`、`26b_order_concurrency.sql`、`26c_lock_deadlock_experiment.sql` | A、B、C 各自文件 | 隔离级别（A）、订单侧并发（B）、补货侧锁/死锁（C）；固定等待与步骤标记，输出可直接留证 |
 | `sql/stage3/27_permissions.sql` | C | 新权限码、RolePermission、GRANT、目录/映射/实际授权核对 |
 | `sql/stage3/run_stage3.sql`、`verify_stage3.sql` | C | 单事务入口（20→21→22→27→检查→v1.1 标记）与提交后回归汇总 |
 | `sql/stage3/28a/28b/28c_stage3_regression.sql` | A、B、C 各自文件 | 本域断言、硬编码分母、精确错误码、回滚夹具 |
@@ -328,7 +355,7 @@ operated_at        DATETIME2(0) NOT NULL
 2. **3.1（11-13—11-15）**：B 先交 `v_settled_sales_line` 与 `sp_sales_report` 骨架；A 交两个函数；C 交 `sp_adjust_inventory` 复核与 `fn_replenishment_qty`；C 串 `run_stage3.sql` 骨架；三人各自跑通正反例，冻结 3.1 签名。
 3. **3.2（11-16—11-22）**：C 建审计表与触发器，B 建订单完成触发器并排查旧夹具，A/B 交三条窗口查询；C 起 `27_permissions.sql`；全组跑一遍 v1.0 的 38 条回归与七套应用测试，变红先修触发器/夹具，不放宽断言。
 4. **3.3（11-23—11-29）**：B 交递归查询与制作完成事务（`sp_finish_production`，库存只在此实扣），C 交补货入库事务；提交路径在临时副本、回滚与拒绝路径在主库；C 起 `verify_stage3.sql`，A 复核销售口径、金额/折扣断言与“取餐/送达不再扣库存”。
-5. **3.4（11-30—12-06）**：C 领先跑锁等待与死锁，A 做隔离实验，B 补订单侧分析；C 汇总 `concurrency.md` 与测试报告；A 出组级报告，B/C 出成员报告。
+5. **3.4（11-30—12-06）**：A 做隔离级别（脏读、RC/RR），B 做订单侧会话与并发购买，C 做补货侧锁等待/死锁与改进；C 汇总 `concurrency.md` 与测试报告；A 出组级报告，B/C 出成员报告。
 6. **收口（12-07 前）**：v1.1 迁移在干净副本上从 v1.0 一次通过；`regression` 38/0、七套 118/0、`verify_stage3.sql` 全绿；README、字典、ER 图、操作手册与 v1.1 一致。
 
 ### 8.3 版本、脚本与权限口径
@@ -360,7 +387,7 @@ operated_at        DATETIME2(0) NOT NULL
 
 **第 10 周只剩四天。** 五个对象、正反例与文档要在 11-15 前收口。缓解：3.1 先保"五个对象可调用 + 七类用例"，报表页与润色放 3.2 并行；宁可少一个页面，不缺口试脚本。
 
-**第 13 周要求可能比推导更细。** 第 12 周讲解已核对并据此修正了订单事务边界；第 13 周讲解未到，并发实验的期望现象与死锁改进验收点仍可能被补充要求改变。缓解：并发脚本与文档留出可替换的边界（只换会话与断言），不把结论提前写死进 v1.1 迁移。
+**第 13 周实验比前两周更依赖现场。** 第 13 周讲解已核对；锁等待、脏读/RC/RR、死锁与并发购买都需要双会话时序，超时、启动过晚或 RCSI 差异都可能让结果不同。缓解：脚本拆步骤、固定等待窗口、每轮重置并留原始输出；无法复现时按失败重跑，不用截图代替证据。
 
 **范围膨胀。** 第三阶段只做教学要求的对象与两个事务，不顺手加新业务表、不重做报表系统、不改前两阶段已冻结的接口。确实需要新表时先登记开放问题，三人同意后再进 v1.1。
 
@@ -374,14 +401,14 @@ operated_at        DATETIME2(0) NOT NULL
 | 窗口查询 | `window_query.sql` | `23a_window_queries.sql`（排名、移动平均）+ `23b_window_queries.sql`（累计） | A / B |
 | 递归查询 | `recursive_query.sql` | `24b_recursive_query.sql`（套餐组件树；已有结构说明） | B |
 | 业务事务 | 订单完成（制作完成实扣）/ 补货入库 | `25b_tx_order_completion.sql` + `25c_tx_replenishment_receipt.sql` | B / C |
-| 并发实验 | 双会话脚本、锁信息、分析 | `26a_isolation_experiment.sql` + `26c_lock_deadlock_experiment.sql` + `docs/stage3/concurrency.md` | A / C |
+| 并发实验 | 双会话脚本、锁信息、分析 | `26a_isolation_experiment.sql` + `26b_order_concurrency.sql` + `26c_lock_deadlock_experiment.sql` + `docs/stage3/concurrency.md` | A / B / C |
 | 结构 | v1.1 增量 | `20_schema_v1_1.sql` + `27_permissions.sql` + `run_stage3.sql` + `verify_stage3.sql` | C |
 | 测试 | 调用与测试脚本、结果记录 | `tests/stage3/` + `result/stage3/` + `docs/stage3/test-report.md` | A / B / C，C 汇总 |
 | 应用 | 页面只调用数据库 | `app/reports/`（销售报表）、订单折扣展示、库存审计/补货展示 | A / B / C |
 | 文档 | 分工、口径、分界、并发、手册 | `docs/stage3/` 五份 + `docs/stage3/user-manual.md` 增补 + `README.md` | A / B / C |
 | 报告 | 阶段报告 | `docs/stage3/reports/` 三份成员报告 + 组级 `阶段报告.md` | 各域；总报告 A |
 
-截至 2026-11-17，`docs/stage3/`、`sql/stage3/`、`tests/stage3/`、`result/stage3/` 均已建立：计划、`sales-semantics.md`（含附录 A）、`21a_master_programmability.sql`、`23a_window_queries.sql`、`26a_isolation_experiment.sql`、`28a_stage3_regression.sql`，A 域三套可编程测试（折扣 27、汇总 15、窗口 10，tempdb 桩库合计 52/0）与报表页 fake-DAO 测试 9/0；26a 的 RR/RC 证据与分析稿在 `result/stage3/`。`app/reports/` 已建骨架（route/service/dao + 模板），真库联调仍等 B 的 `21b`；报表页尚未加入 C 的菜单。其余文件由表中属主在对应子阶段创建。教学交付名与本仓文件名的对应关系以本表为准，提交时在 `test-report.md` 里再列一次，避免老师按 `procedure.sql` 找不到文件。
+截至 2026-11-25，B 已交付 `21b/22b/23b/24b/25b/28b`，C 已交付 `20/21c/22c/25c/26c/28c`，A 已有 `21a/23a/26a/28a`，`verify_stage3` 可串 `28a/28b/28c`；B 的联合验收 52+8+63=123 条通过、七套 118/0，但 `27_permissions.sql` 未交付，正式 `run_stage3.sql` 的 v1.1 权限升级仍未验收。A 的 `app/reports/` 已建骨架并接入 C 的菜单，真库联调仍等正式 v1.1。第十三周讲解已核对，3.4 的脚本与证据按 §7 新分工执行。教学交付名与本仓文件名的对应关系以本表为准，提交时在 `test-report.md` 里再列一次，避免老师按 `procedure.sql` 找不到文件。
 
 ## 12. 变更记录
 
@@ -392,11 +419,12 @@ operated_at        DATETIME2(0) NOT NULL
 | 2026-11-14 | A 提前落稿 `23a_window_queries.sql`（排名 + 移动平均）与 `26a_isolation_experiment.sql`（RC/RR 双会话实验），窗口测试 10/10 并入 A 域入口（三套 52/0）；26a 在 `KFC_DB(v1.0)` 实测 RR 两次读 100、RC 第二次读 105，证据在 `result/stage3/a-concurrency-26a-*.txt`。`sales-semantics.md` 补附录 A（R10-06 应用层计算清单） |
 | 2026-11-17 | 落实 S3-01：`app/common/errors.py` 映射 54301–54308，common 测试仍 18/0；A 的 `app/reports/` 报表页骨架落地（route/service/dao + 模板，fake-DAO 9/0），只调 `sp_sales_report`、不在 Python 汇总；补 `28a_stage3_regression.sql` 草稿（依赖 21b/21a，待真库）；26a 分析稿与 S3-02 回执进 `result/stage3/` |
 | 2026-11-18 | 收到第十二周讲解并按原文核对：R3-01 保留套餐组件树，理由是本库 `Category` 无父级列、作业允许“已有结构说明”，不扩 v1.1；R3-02 事务主体由取餐/送达改为 `sp_finish_production`（`sp_consume_order_inventory` 是唯一实扣入口），补拒绝路径、重复调用与“终态不再扣库存”验收；R3-03 补货事务与原文一致。C 需在 `source-requirements.md` 同步 R3-01/R3-02 的落点与状态 |
+| 2026-11-25 | 收到第十三周讲解并按原文核对：3.4 拆成 A 的脏读/RC/RR、B 的订单侧会话与 P×6 并发购买、C 的补货侧锁等待/死锁与统一加锁改进；新增 R3-06/R3-07，计划 §2.3/§7/§8.1/§8.2/§11 同步。B 的 21b/22b/23b/24b/25b/28b 已交付，C 的 27_permissions 仍缺，正式 v1.1 未提交 |
 
 ## 13. 本次设计自查
 
 - 第 10 周六项任务（销售统计、库存调整、补货量、销售汇总、折扣、整合）全部有落点与主笔，R10-01—R10-10 无遗漏；
-- 第 11 周五项任务与三条注意事项全部有落点，R11-01—R11-09 无遗漏；第 12 周讲解已核对（递归查询、订单完成事务、补货入库事务、重复调用与回滚），第 13 周仍按周次表登记并标“待核”；
+- 第 11 周五项任务与三条注意事项全部有落点，R11-01—R11-09 无遗漏；第 12 周讲解已核对（递归查询、订单完成事务、补货入库事务、重复调用与回滚），第 13 周讲解已核对（锁等待、脏读、RC/RR、死锁与改进、并发购买、阶段整理）；
 - 四个子阶段各有可验收的收敛日与完成标准，上游签名冻结后才开下游；
 - 每个对象/脚本只有一个属主，合并入口与权限归 C，跨域调用只经冻结签名；
 - v1.1 只有加法，`run_stage3.sql` 单事务、失败回滚、重复执行被版本标记拦住，不删库不删表；
