@@ -1,6 +1,6 @@
 # A 域 v1.1 真库联调清单
 
-> 属主：A。用途：B 的 `21b/22b/27` 到齐后，按本清单把 A 的对象、回归、报表页一次跑完并留证。
+> 属主：A。用途：B 的 `21b/22b` 已到、C 的 `27_permissions.sql` 尚未交付；等 27 到齐后按本清单把 A 的对象、回归、报表页一次跑完并留证。B 的一次性库已能跑 `28a` 52/0，可先做 A 域预检。
 > 前置：`KFC_DB` 已由 `run_migration.sql` 提交 v1.0；应用停写；本机 `sqlcmd` 能连 `localhost`。
 > 不在本清单里：B/C 的脚本内容、C 的 `verify_stage3.sql` 汇总、组级报告。
 
@@ -18,6 +18,8 @@
 ```bash
 ls sql/stage3/{20_schema_v1_1,21b_order_programmability,21a_master_programmability,21c_inventory_programmability,22b_order_triggers,22c_inventory_triggers,27_permissions,run_stage3}.sql
 ```
+
+**当前到齐情况（2026-11-25）：** `21b`、`22b` 已由 B 交付；`27_permissions.sql` 仍缺，正式 `run_stage3.sql` 不能完整提交；B 的联合验收用一次性库的域对象演练，不能替代正式 v1.1。
 
 ## 1. 备份与迁移前快照
 
@@ -75,6 +77,8 @@ SELECT (SELECT COUNT(*) FROM dbo.Permission) AS permission_codes,
 ```
 
 ## 4. A 域回归（28a）
+
+**预检（不需要 27）：** B 的 `tests/stage3/b_programmability/run_b_stage3.py --verify-all` 会建一次性库、部署 `20/21b/21a/21c/22b/22c` 并调用 `28a`；A 已于 2026-11-25 跑过并归档 `result/stage3/a-28a-precheck-2026-11-25.txt`（28a 52/0、28b 8/0、28c 63/0），证据注明“域对象预检，不是正式 v1.1”。
 
 - [ ] `28a_stage3_regression.sql` 通过，收尾行 `RESULT: stage3-a-regression suites=3 pass=52 fail=0`
 - [ ] 单独跑 `run_a_programmability.sql`，保留三条 `RESULT` 行（27/15/10）
