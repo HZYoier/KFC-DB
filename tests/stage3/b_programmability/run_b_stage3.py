@@ -404,6 +404,7 @@ def main():
     parser.add_argument('--sql-server', required=True)
     parser.add_argument('--verify-all', action='store_true', help='Also run the delivered A/B/C SQL verification entry')
     parser.add_argument('--concurrency', action='store_true', help='Run order completion versus inventory adjustment, six rounds')
+    parser.add_argument('--concurrency-v2', action='store_true', help='Run week 13 order/receipt and competing purchases')
     args = parser.parse_args()
     if not __debug__:
         parser.error('Run without Python optimization so test assertions are enabled.')
@@ -428,6 +429,9 @@ def main():
         check_b(conn, name, args.sql_server)
         if args.concurrency:
             check_concurrency(conn, cs, name)
+        if args.concurrency_v2:
+            from concurrency_v2 import check
+            check(conn, cs, name)
         if args.verify_all:
             verification = expand('sql/stage3/verify_stage3.sql', name)
             # C's 28c includes 25c with an SQLCMD-local rollback mode.
