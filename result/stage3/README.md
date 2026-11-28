@@ -13,12 +13,13 @@
 | [c-concurrency-2026-11-22.txt](c-concurrency-2026-11-22.txt) | 26c 等待、超时、死锁 XML、同序加锁、回滚复查；28c 固定分母验收 | 四模式各三轮；28c 63/0；一次性库已清理 |
 | [c-integration-2026-11-25.txt](c-integration-2026-11-25.txt) | 正式迁移、权限、两版回归、三域验收、应用联调与清理 | 权限 64/78，回归两版各 38/0，合并 123/0，七套 118/0 |
 | [c-business-concurrency-2026-11-25.txt](c-business-concurrency-2026-11-25.txt) | 真实订单和补货的等待、反向死锁、同序加锁、锁图及 B 并发复跑 | C 四模式各三轮 12/0，B 三模式各三轮 9/0 |
+| [c-integration-2026-11-28.txt](c-integration-2026-11-28.txt) | 原始同日种子、正式 v1.1、一键验收、应用和 C 并发复核 | 两版各 38/0，三域 123/0，七套 118/0，C 业务并发 12/0 |
 
 ## 正式 v1.1 复跑
 
 1. 仓库根目录使用 `sqlcmd -S '.\SQLEXPRESS' -E -C -f 65001 -b -I`。在一次性库执行 `sql/stage1/run_all.sql`，执行 `sql/stage2/capture_baseline.sql -v SourceBaseline=C-Stage3-Disposable ConfirmAppStopped=YES`，再执行 `sql/stage2/run_migration.sql`。用 `-i` 指定各脚本。
 2. 运行 `sql/stage2/regression.sql`，正式执行 `sql/stage3/run_stage3.sql`，再次运行 `sql/stage2/regression.sql`。两次均需 38/0。
-3. 运行 [跨日验收夹具](scripts/c-verify-sales-fixture.sql)（显式 `-d KFC_DB`）后，运行 `sql/stage3/verify_stage3.sql` 核对 123/0。
+3. 直接运行 [Stage 3 一键验收](../../tests/stage3/run-all.ps1) 核对三域 123/0、A App 9/0、C App 8/0，也可单独运行 `sql/stage3/verify_stage3.sql` 核对三域。参数见[测试报告](../../docs/stage3/test-report.md)。
 4. 在同一一次性库以 `-v Mode=commit` 执行 25c 留下审计样例。运行 [应用联调](scripts/c-v11-app-smoke.py) 及 [C 业务并发](../../tests/stage3/c_concurrency/run_c_business_concurrency.py)。按[并发说明](../../docs/stage3/concurrency.md)取图、核对事务数并删除一次性库。
 
 ## C 域增量单测复跑前提
@@ -61,9 +62,12 @@ dd28b8e9b0d06a7caae2bf2b8bf70e60d493f1041715356e3d2608a15037d02c  tests/stage3/c
 c9336d8971abd5f4b907d4d4646f99746052be36e2f0fcc0d7a4ce23553d8e48  result/stage3/scripts/c-v11-app-smoke.py
 0bf30c9e6fe4c29d9e9db75944a2dd034374908d1feb0d18c43ba5258bcf966c  result/stage3/c-integration-2026-11-25.txt
 b529913eada83be3a9fbb5eb5715b96c525463618a7bbeac0cf433375e934e89  result/stage3/c-business-concurrency-2026-11-25.txt
+43863d803b51fb5161130678784e1ff8dcd0bb5585f698fcb2b6ca3e0efe2149  result/stage3/c-integration-2026-11-28.txt
+2a7c996541fc12175758ef5c9aeeadba68660cb07fa8aa2d701fb82ce78cd4f8  tests/stage3/run-all.ps1
 ```
 
 ## 历史证据
 
+- [跨日验收夹具](scripts/c-verify-sales-fixture.sql)用于复现 11 月 25 日的验收流程。新版 28a 已覆盖同日种子，正式流程直接使用原始种子。
 - `c-stage3-31` 基于 v1.0 + C 增量。当时的 13b 兼容性问题 S3-03 已在正式 v1.1 关闭。
 - 21c 的 543xx 已由 A 映射（S3-01）；22c 的 DELETE 边界见 S3-02。
