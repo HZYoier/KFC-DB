@@ -14,6 +14,11 @@
 | [c-integration-2026-11-25.txt](c-integration-2026-11-25.txt) | 正式迁移、权限、两版回归、三域验收、应用联调与清理 | 权限 64/78，回归两版各 38/0，合并 123/0，七套 118/0 |
 | [c-business-concurrency-2026-11-25.txt](c-business-concurrency-2026-11-25.txt) | 真实订单和补货的等待、反向死锁、同序加锁、锁图及 B 并发复跑 | C 四模式各三轮 12/0，B 三模式各三轮 9/0 |
 | [c-integration-2026-11-28.txt](c-integration-2026-11-28.txt) | 原始同日种子、正式 v1.1、一键验收、应用和 C 并发复核 | 两版各 38/0，三域 123/0，七套 118/0，C 业务并发 12/0 |
+| [c-b-handoff-2026-11-28.txt](c-b-handoff-2026-11-28.txt) | 在 `33de726` 复核 B 正式入口、权限与 C 并发回执 | 两版各 38/0，B 专项 21/0、业务并发 9/0，C 死锁对照 6 轮，合并 123/0 |
+
+## B 正式交接
+
+B 的独立演练入口已包含正式 v1.1 迁移。B 个人报告及截图撤回，交付复跑入口、权限及原始输出见[正式收尾与权限回执](b-closeout-2026-11-28.md)。
 
 ## 正式 v1.1 复跑
 
@@ -64,6 +69,7 @@ c9336d8971abd5f4b907d4d4646f99746052be36e2f0fcc0d7a4ce23553d8e48  result/stage3/
 b529913eada83be3a9fbb5eb5715b96c525463618a7bbeac0cf433375e934e89  result/stage3/c-business-concurrency-2026-11-25.txt
 43863d803b51fb5161130678784e1ff8dcd0bb5585f698fcb2b6ca3e0efe2149  result/stage3/c-integration-2026-11-28.txt
 2a7c996541fc12175758ef5c9aeeadba68660cb07fa8aa2d701fb82ce78cd4f8  tests/stage3/run-all.ps1
+99b3fa2e00bc0a05912b827c5df0bc0b1bd1f146c683d808a4f30b8dd03cb8b2  result/stage3/c-b-handoff-2026-11-28.txt
 ```
 
 ## 历史证据

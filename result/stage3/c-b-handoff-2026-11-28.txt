@@ -1,0 +1,80 @@
+C 复核 B 正式入口与跨域回执，2026-11-28
+基线 33de726，正式入口修复来自 606b987。
+SQL Server 2025 Express，Windows 集成登录。测试在隔离库执行。
+
+1. 首轮差异与归因
+
+旧演练用模拟 v1.1 标记配 v1.0 权限。13c 按 v1.1 应核对的 64/78
+和新增映射检查失败，旧入口退出 1，SQL 错误 51998。首轮输出见同目录
+c-integration-2026-11-28.txt 的第 1 节。
+
+2. 修正清单
+
+B 改用正式 run_stage3.sql 完成 27 授权与版本提交。
+B 随交接交付六个岗位的权限复核和 C 业务死锁、统一顺序复跑。
+C 在当前分支不改 B 文件，从其原始入口分别验证正式合并和 C 并发复核。
+
+3. 终轮输出
+
+C 执行 B 正式交接命令，exit 0。原始结果摘录。
+
+python -X utf8 tests/stage3/b_programmability/run_b_stage3.py --sql-server '.\SQLEXPRESS' --verify-all --concurrency-v2 --review-c
+
+RESULT: migration committed (v1.0 marker written; 11a/11b/11c/12).
+PASS: 13c-1 Permission 58 / RolePermission 71 / 新增码集合一致
+PASS: 13c-6 71 对 role_* GRANT 与映射逐对相等
+RESULT: regression files=4 expected_pass=38 fail=0 (13a 10 + 13b 5 + 13b 8 + 13c 15)
+RESULT: 27 new_permission_codes=6 new_role_grants=7
+RESULT: stage3 migration committed (v1.1 marker written; 20/21b/21a/21c/22b/22c/27).
+PASS: 13c-1 Permission 64 / RolePermission 78 / 新增码集合一致
+PASS: 13c-6 78 对 role_* GRANT 与映射逐对相等
+RESULT: regression files=4 expected_pass=38 fail=0 (13a 10 + 13b 5 + 13b 8 + 13c 15)
+PASS B permissions test_store_manager report/view/discount/update (1, 1, 1, 0)
+PASS B permissions test_cashier report/view/discount/update (0, 0, 0, 0)
+PASS B permissions test_chef report/view/discount/update (0, 0, 0, 0)
+PASS B permissions test_packer report/view/discount/update (0, 0, 0, 0)
+PASS B permissions test_rider report/view/discount/update (0, 0, 0, 0)
+PASS B permissions test_shift_manager report/view/discount/update (0, 0, 0, 0)
+RESULT: pass=21 fail=0 total=21
+RESULT: 26b business concurrency pass=9 fail=0
+receipt deadlock victim: ('40001', '[40001] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Transaction (Process ID 55) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction. (1205) (SQLExecDirectW)')
+PASS B review of C business deadlock and ordered locks round 1
+receipt deadlock victim: ('40001', '[40001] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Transaction (Process ID 55) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction. (1205) (SQLExecDirectW)')
+PASS B review of C business deadlock and ordered locks round 2
+receipt deadlock victim: ('40001', '[40001] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Transaction (Process ID 55) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction. (1205) (SQLExecDirectW)')
+PASS B review of C business deadlock and ordered locks round 3
+RESULT: stage3-regression suites=10 pass=123 fail=0 (28a 52 + 28b 8 + 28c 63)
+PASS combined A/B/C verification completed with no open transaction
+
+C 另行验证 B 技术等待与超时入口，exit 0。选项为
+--verify-all --concurrency --concurrency-v2。原始结果摘录。
+
+PASS B concurrency wait 1 error/status/seconds (0, 'READY_FOR_DELIVERY', 0.078)
+PASS B concurrency wait 2 error/status/seconds (0, 'READY_FOR_DELIVERY', 0.016)
+PASS B concurrency wait 3 error/status/seconds (0, 'READY_FOR_DELIVERY', 0.031)
+PASS B concurrency timeout 1 error/status/seconds (1222, None, 1.5)
+PASS B concurrency timeout 2 error/status/seconds (1222, None, 1.515)
+PASS B concurrency timeout 3 error/status/seconds (1222, None, 1.578)
+RESULT: stage3-regression suites=10 pass=123 fail=0 (28a 52 + 28b 8 + 28c 63)
+PASS combined A/B/C verification completed with no open transaction
+
+七套旧应用、A 报表与 C 库存应用复跑，exit 0。
+
+RESULT: pass=18 fail=0 skip=0 total=18
+RESULT: pass=10 fail=0 skip=0 total=10
+RESULT: pass=36 fail=0 skip=0 total=36
+RESULT: pass=20 fail=0 skip=0 total=20
+RESULT: pass=12 fail=0 skip=0 total=12
+RESULT: pass=10 fail=0 skip=0 total=10
+RESULT: pass=12 fail=0 skip=0 total=12
+RESULT: run-all files=7 failed=0
+
+A 报表 RESULT: pass=9 fail=0 skip=0 total=9
+
+C 库存 RESULT: pass=8 fail=0 skip=0 total=8
+
+验收后临时库复查
+
+c_db_id b_lab_count trancount
+------- ----------- -----------
+   NULL           0           0

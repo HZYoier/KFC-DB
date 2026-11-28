@@ -21,6 +21,8 @@ C 使用真实 `sp_finish_production` 和 `sp_receive_inventory`。每轮创建�
 
 结束后立即用 26c 的 `Mode=graph` 取事件，以 UTC 时间、SPID、被阻塞的键资源与此次运行对照。实际轮次和从图提取的锁归属见[业务并发证据](../../result/stage3/c-business-concurrency-2026-11-25.txt)。
 
+B 在其独立正式 v1.1 库中复核了反向持锁和同序加锁，各三轮。C 从最新分支执行 B 的完整交接命令，复核六轮与三域验收均通过。 [B 的复核回执](../../result/stage3/b-closeout-2026-11-28.md) · [C 的复跑输出](../../result/stage3/c-b-handoff-2026-11-28.txt)
+
 ## A 的隔离级别对照
 
 A 以同构实验表 P=10 运行四组。RU 可读到未提交的 15，回滚后读 10。RC 等待写事务回滚后读 10。RC 在两次读取之间遇到已提交收货，读到 10→15。RR 持共享锁至提交，两次都读 10，收货等待。实验 RCSI 关闭，临时表已清理。[A 的场景与原始输出](../../result/stage3/a-concurrency-26a-analysis.md)
