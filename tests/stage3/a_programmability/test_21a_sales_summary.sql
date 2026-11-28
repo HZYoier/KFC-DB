@@ -152,8 +152,8 @@ IF NOT EXISTS (SELECT 1 FROM dbo.fn_product_sales_summary(DATEADD(DAY, -1, @star
 ELSE
     INSERT INTO #counters_summary VALUES (0, 1);
 
--- S-11 起止倒置返回空集
-IF NOT EXISTS (SELECT 1 FROM dbo.fn_product_sales_summary(@end, @start))
+-- S-11 起止倒置返回空集（结束日故意早于起始日；当天数据同日起止也应判倒置）
+IF NOT EXISTS (SELECT 1 FROM dbo.fn_product_sales_summary(@end, DATEADD(DAY, -1, @start)))
     INSERT INTO #counters_summary VALUES (1, 0);
 ELSE
     INSERT INTO #counters_summary VALUES (0, 1);

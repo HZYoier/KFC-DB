@@ -1,0 +1,9 @@
+﻿已将数据库上下文更改为 "KFC_DB"。
+已将数据库上下文更改为 "KFC_DB"。
+20: InventoryAudit and SalesOrderItem discount columns created.
+已将数据库上下文更改为 "KFC_DB"。
+21c: sp_adjust_inventory upgraded and fn_replenishment_qty created.
+已将数据库上下文更改为 "KFC_DB"。
+22c: tr_Inventory_Audit created (set-based inventory audit).
+RESULT: 27 new_permission_codes=6 new_role_grants=7
+RESULT: stage3 migration committed (v1.1 marker written; 20/21b/21a/21c/22b/22c/27).

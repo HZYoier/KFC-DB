@@ -11,7 +11,7 @@
 | F-01 | v1.1 的改法 | **只加不删**：新增 `InventoryAudit` 表；`SalesOrderItem` 增加 `discount_rate DECIMAL(5,4)`、`discount_amount DECIMAL(10,2)`；不重写存量行、不删对象 | `20_schema_v1_1.sql`、两处 `ALTER PROCEDURE`、`13c` 权限计数 |
 | F-02 | 已结算销售口径 | 只看**终态**订单：自取 `PICKED_UP`、外送 `COMPLETED`；以 `completed_at` 落在统计区间为准；只算 `SELLABLE` 明细；金额用折后净额 | `21b` 的视图、`21a` 的汇总函数、全部窗口查询 |
 | F-03 | 折扣政策 | 会员等级折扣 + 满 100 减 0.02，下限 0.90；折扣额四舍五入到分；订单级折扣按行毛额比例分摊，分位残差给毛额最大行 | `fn_calculate_discount`、`sp_create_order`、`sp_customer_place_order`、订单完成触发器 |
-| F-04 | 权限计数 | `13c` 的 58 个权限码 / 71 行授权改为按 `SchemaVersion` 取常量；v1.1 追加 12 个新码与 19 行授权，断言条数仍为 38 | `27_permissions.sql`、`13c`、`verify_stage3.sql` |
+| F-04 | 权限计数 | `13c` 的 58 个权限码 / 71 行授权改为按 `SchemaVersion` 取常量；v1.1 实际追加 6 个新码与 7 行授权（原预估 12/19 已由 2026-11-28 变更订正），最终 64 码 / 78 行，断言条数仍为 15（`13c`）+ 38（`regression`） | `27_permissions.sql`、`13c`、`verify_stage3.sql` |
 
 **F-01 的边界：** 折扣两列只对 v1.1 之后新生成的订单写入；v1.0 存量订单的 `discount_amount` 一律为 0，不回填、不推测历史折扣。
 
@@ -171,6 +171,7 @@ SUM(ROUND(unit_price * quantity, 2) - discount_amount) = SalesOrder.total_amount
 | --- | --- | --- | --- |
 | 2026-11-12 | 首次冻结：F-01 至 F-04，§1 销售口径、§2 折扣与分摊、§5 测试锚点 | A | 待 B/C 回执；回执前按本文执行，异议先改本节 |
 | 2026-11-14 | 补附录 A：应用层计算清单（R10-06），结论为 Python 无业务计算，补货建议数量待 C 接函数 | A | — |
+| 2026-11-28 | 按正式 27 交付订正 F-04：v1.1 新增 6 码/7 行，最终 64/78；A 同步计划与联调清单（S3-04） | A | C 已实测 |
 
 **变更规则：** 任何一条口径变化，必须同时更新本文、`20_schema_v1_1.sql`（如涉列）、`21a/21b` 实现、`28a/28b` 断言与 `13c` 版本常量，五处缺一不可；不允许只在代码里改。
 

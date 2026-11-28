@@ -1,6 +1,6 @@
 # A 域 v1.1 真库联调清单
 
-> 属主：A。用途：B 的 `21b/22b` 已到、C 的 `27_permissions.sql` 尚未交付；等 27 到齐后按本清单把 A 的对象、回归、报表页一次跑完并留证。B 的一次性库已能跑 `28a` 52/0，可先做 A 域预检。
+> 属主：A。用途：`21b/22b` 与 `27_permissions.sql` 均已到齐，按本清单把 A 的对象、回归、报表页一次跑完并留证。C 已在一次性库跑过正式 v1.1（64/78、28a 52/0），本清单用于本机主库/最终演示库复核。
 > 前置：`KFC_DB` 已由 `run_migration.sql` 提交 v1.0；应用停写；本机 `sqlcmd` 能连 `localhost`。
 > 不在本清单里：B/C 的脚本内容、C 的 `verify_stage3.sql` 汇总、组级报告。
 
@@ -19,7 +19,7 @@
 ls sql/stage3/{20_schema_v1_1,21b_order_programmability,21a_master_programmability,21c_inventory_programmability,22b_order_triggers,22c_inventory_triggers,27_permissions,run_stage3}.sql
 ```
 
-**当前到齐情况（2026-11-25）：** `21b`、`22b` 已由 B 交付；`27_permissions.sql` 仍缺，正式 `run_stage3.sql` 不能完整提交；B 的联合验收用一次性库的域对象演练，不能替代正式 v1.1。
+**当前到齐情况（2026-11-28）：** B 的 `21b/22b`、C 的 `27_permissions.sql` 均已交付；C 的正式 v1.1 在一次性库通过（64/78、28a 52/0、28b 8/0、28c 63/0）。本机主库已于 2026-11-28 备份后执行 `run_stage3`，得到 v1.1 / 64/78，`28a` 52/0，`verify_stage3` 123/0；证据见本节命令产物。
 
 ## 1. 备份与迁移前快照
 
@@ -40,12 +40,12 @@ SELECT version_code, applied_at FROM dbo.SchemaVersion ORDER BY applied_at;
 
 - [ ] 用 `run_stage3.sql` 一次应用；失败会整体回滚，库仍是 v1.0
 - [ ] 看到收尾行：`RESULT: stage3 migration committed (v1.1 marker written; 20/21b/21a/21c/22b/22c/27).`
-- [ ] 证据写到 `result/stage3/a-run-stage3-2026-11-22.txt`
+- [ ] 证据写到 `result/stage3/a-run-stage3-2026-11-28.txt`
 
 ```bash
 sqlcmd -S localhost -E -C -f 65001 -b -d KFC_DB \
   -i sql/stage3/run_stage3.sql \
-  -o result/stage3/a-run-stage3-2026-11-22.txt
+  -o result/stage3/a-run-stage3-2026-11-28.txt
 ```
 
 失败处理：不要重跑、不要改 C 的入口；先看 `SchemaVersion` 是否仍无 v1.1、事务是否回滚，必要时用备份恢复，再把错误原文交给对应属主。
@@ -56,7 +56,7 @@ sqlcmd -S localhost -E -C -f 65001 -b -d KFC_DB \
 - [ ] A 的三个对象存在
 - [ ] 视图存在且非空
 - [ ] 折扣两列存在
-- [ ] 权限计数为 70 / 90（v1.0 58/71 + 12/19）
+- [ ] 权限计数为 64 / 78（v1.0 58/71 + v1.1 6/7）
 
 ```sql
 SET NOCOUNT ON;
@@ -73,16 +73,16 @@ SELECT COL_LENGTH(N'dbo.SalesOrderItem', N'discount_rate') AS rate_col,
        COL_LENGTH(N'dbo.SalesOrderItem', N'discount_amount') AS amount_col;
 SELECT (SELECT COUNT(*) FROM dbo.Permission) AS permission_codes,
        (SELECT COUNT(*) FROM dbo.RolePermission) AS role_grants;
--- 期望 70 / 90
+-- 期望 64 / 78（v1.0 58/71 + v1.1 6/7）
 ```
 
 ## 4. A 域回归（28a）
 
 **预检（不需要 27）：** B 的 `tests/stage3/b_programmability/run_b_stage3.py --verify-all` 会建一次性库、部署 `20/21b/21a/21c/22b/22c` 并调用 `28a`；A 已于 2026-11-25 跑过并归档 `result/stage3/a-28a-precheck-2026-11-25.txt`（28a 52/0、28b 8/0、28c 63/0），证据注明“域对象预检，不是正式 v1.1”。
 
-- [ ] `28a_stage3_regression.sql` 通过，收尾行 `RESULT: stage3-a-regression suites=3 pass=52 fail=0`
+- [x] `28a_stage3_regression.sql` 通过，收尾行 `RESULT: stage3-a-regression suites=3 pass=52 fail=0`（2026-11-28 主库实测）
 - [ ] 单独跑 `run_a_programmability.sql`，保留三条 `RESULT` 行（27/15/10）
-- [ ] 证据写到 `result/stage3/a-programmability-2026-11-22.txt`、`a-28a-2026-11-22.txt`
+- [ ] 证据写到 `result/stage3/a-programmability-2026-11-22.txt`、`a-28a-2026-11-28.txt`
 
 ```bash
 sqlcmd -S localhost -E -C -f 65001 -b -d KFC_DB \
@@ -91,15 +91,15 @@ sqlcmd -S localhost -E -C -f 65001 -b -d KFC_DB \
 
 sqlcmd -S localhost -E -C -f 65001 -b -d KFC_DB \
   -i sql/stage3/28a_stage3_regression.sql \
-  -o result/stage3/a-28a-2026-11-22.txt
+  -o result/stage3/a-28a-2026-11-28.txt
 ```
 
 失败处理：先保留原始失败行和 `THROW` 文案；不要改断言分母或放宽条件。若失败点在 21b 的视图/过程，交给 B；若在 A 的函数/窗口，由 A 修。
 
-**4b. 合并验收（等 B 的 `28b` 到齐后）**
+**4b. 合并验收（28b 已到；主库 2026-11-28 已通过）**
 
-- [ ] `sql/stage3/verify_stage3.sql` 顺序跑 `28a/28b/28c`；缺少 28b 时会停在 `:r`，属预期
-- [ ] 证据写到 `result/stage3/a-verify-stage3-2026-11-22.txt`
+- [x] `sql/stage3/verify_stage3.sql` 顺序跑 `28a/28b/28c`；主库 2026-11-28 实测 **123/0**（52+8+63）
+- [x] 证据写到 `result/stage3/a-verify-stage3-2026-11-28.txt`
 
 ```bash
 sqlcmd -S localhost -E -C -f 65001 -b -d KFC_DB \
@@ -165,9 +165,9 @@ EXEC dbo.sp_sales_report @start_date = '2026-11-01', @end_date = '2026-11-30';
 
 ## 8. 证据命名与报告
 
-- `a-run-stage3-2026-11-22.txt`：迁移入口原始输出
+- `a-run-stage3-2026-11-28.txt`：迁移入口原始输出
 - `a-programmability-2026-11-22.txt`：21a + 23a 三套测试
-- `a-28a-2026-11-22.txt`：A 域回归汇总
+- `a-28a-2026-11-28.txt`：A 域回归汇总
 - `a-window-2026-11-22.txt`：23a 两条查询结果
 - `a-reports-2026-11-22/`：报表页截图与 `README.md`（日期区间、账号角色、每图说明）
 

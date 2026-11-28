@@ -1,0 +1,41 @@
+﻿已将数据库上下文更改为 "KFC_DB"。
+已将数据库上下文更改为 "KFC_DB"。
+已将数据库上下文更改为 "KFC_DB"。
+case_code            expected_rate actual_rate expected_amt actual_amt  
+-------------------- ------------- ----------- ------------ ------------
+RESULT: a-programmability discount pass=27 fail=0 total=27
+已将数据库上下文更改为 "KFC_DB"。
+RESULT: a-programmability sales-summary pass=15 fail=0 total=15
+已将数据库上下文更改为 "KFC_DB"。
+RESULT: a-programmability windows pass=10 fail=0 total=10
+RESULT: stage3-a-regression suites=3 pass=52 fail=0
+已将数据库上下文更改为 "KFC_DB"。
+PASS 28b sales report date guard 54201
+PASS 28b sales report date guard 54202
+PASS 28b batch completion and settled net lines
+PASS 28b completion trigger guard 54210
+PASS 28b completion trigger guard 54211
+PASS 28b completion trigger guard 54212
+PASS 28b completion trigger guard 54213
+PASS 28b completion trigger guard 54214
+RESULT: stage3-b-regression suites=2 pass=8 fail=0
+已将数据库上下文更改为 "KFC_DB"。
+已将数据库上下文更改为 "KFC_DB"。
+=== c-programmability: schema v1.1 ===
+已将数据库上下文更改为 "KFC_DB"。
+RESULT: c-programmability schema pass=14 fail=0 total=14
+=== c-programmability: fn_replenishment_qty ===
+已将数据库上下文更改为 "KFC_DB"。
+RESULT: c-programmability replenishment pass=10 fail=0 total=10
+=== c-programmability: sp_adjust_inventory ===
+已将数据库上下文更改为 "KFC_DB"。
+RESULT: c-programmability adjust_inventory pass=15 fail=0 total=15
+RESULT: c-programmability files=3 failed=0
+已将数据库上下文更改为 "KFC_DB"。
+=== c-triggers: InventoryAudit ===
+已将数据库上下文更改为 "KFC_DB"。
+RESULT: c-triggers inventory_audit pass=10 fail=0 total=10
+RESULT: c-triggers files=1 failed=0
+RESULT: c-transaction replenishment mode=rollback pass=14 fail=0 total=14
+RESULT: stage3-c-regression suites=5 pass=63 fail=0
+RESULT: stage3-regression suites=10 pass=123 fail=0 (28a 52 + 28b 8 + 28c 63)

@@ -1,0 +1,10 @@
+﻿已将数据库上下文更改为 "KFC_DB"。
+已将数据库上下文更改为 "KFC_DB"。
+case_code            expected_rate actual_rate expected_amt actual_amt  
+-------------------- ------------- ----------- ------------ ------------
+RESULT: a-programmability discount pass=27 fail=0 total=27
+已将数据库上下文更改为 "KFC_DB"。
+RESULT: a-programmability sales-summary pass=15 fail=0 total=15
+已将数据库上下文更改为 "KFC_DB"。
+RESULT: a-programmability windows pass=10 fail=0 total=10
+RESULT: stage3-a-regression suites=3 pass=52 fail=0
