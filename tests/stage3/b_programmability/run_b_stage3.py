@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / 'tests/stage2/orders'))
 from check_migration import as_user, expand, expect_error, run, run_batches
 
 
-def check_b(conn, name, server):
+def check_b(conn, name, server, capture_dir=None):
     count = 0
 
     def passed(label):
@@ -48,18 +48,28 @@ def check_b(conn, name, server):
 
     script('sql/stage2/13b_order_baseline_check.sql')
     passed('13b v1.0 baseline')
-    # Apply exact domain scripts in relative deployment order. 27 is not supplied
-    # by this rehearsal, so the version marker below is fixture metadata only.
-    run(conn, 'BEGIN TRANSACTION;')
-    for part in ('20_schema_v1_1', '21b_order_programmability', '21a_master_programmability',
-                 '21c_inventory_programmability', '22b_order_triggers', '22c_inventory_triggers'):
-        script('sql/stage3/' + part + '.sql')
-    run(conn, """INSERT dbo.SchemaVersion(version_code,object_digest,batch_id,applied_at,note)
-        SELECT 'v1.1',object_digest,batch_id,SYSDATETIME(),'B domain rehearsal, excludes 27'
-        FROM dbo.SchemaVersion WHERE version_code='v1.0'; COMMIT TRANSACTION;""")
-    passed('domain scripts install in 20 -> 21b -> 21a -> 21c -> 22b -> 22c order')
+    script('sql/stage3/run_stage3.sql')
+    assert rows('SELECT COUNT(*) FROM dbo.Permission;') == [(64,)]
+    assert rows('SELECT COUNT(*) FROM dbo.RolePermission;') == [(78,)]
+    passed('formal v1.1 migration commits with 64 permissions and 78 role mappings')
     script('sql/stage2/regression.sql')
-    passed('v1.1 domain rehearsal passes all 38 legacy SQL checks with existing grants')
+    passed('formal v1.1 passes all 38 legacy SQL checks including versioned permissions')
+    for account in ('test_store_manager', 'test_cashier', 'test_chef', 'test_packer', 'test_rider', 'test_shift_manager'):
+        run(conn, f"EXECUTE AS USER='{account}';")
+        try:
+            permissions = rows("""SELECT HAS_PERMS_BY_NAME('dbo.sp_sales_report','OBJECT','EXECUTE'),
+                HAS_PERMS_BY_NAME('dbo.v_settled_sales_line','OBJECT','SELECT'),
+                HAS_PERMS_BY_NAME('dbo.fn_calculate_discount','OBJECT','SELECT'),
+                HAS_PERMS_BY_NAME('dbo.SalesOrder','OBJECT','UPDATE');""")[0]
+            expected = (1, 1, 1, 0) if account == 'test_store_manager' else (0, 0, 0, 0)
+            assert permissions == expected, (account, permissions)
+            if account == 'test_store_manager':
+                assert len(run(conn, "EXEC dbo.sp_sales_report '19000101','19000101';")) == 2
+            else:
+                expect_error(conn, "EXEC dbo.sp_sales_report '19000101','19000101';", 229)
+            print('PASS B permissions', account, 'report/view/discount/update', permissions)
+        finally:
+            run(conn, 'REVERT;')
     script('sql/stage3/28b_stage3_regression.sql')
     assert rows('SELECT COUNT(*) FROM dbo.SalesOrderItem WHERE discount_rate<>0 OR discount_amount<>0;') == [(0,)]
     passed('pre-existing lines have zero discount snapshots')
@@ -76,8 +86,6 @@ def check_b(conn, name, server):
         run(conn, 'IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;')
     passed('13b v1.1 rejects unapproved additional columns')
 
-    # A consumer can select the report via 27 in the real migration; keep
-    # production grants out of this fixture and call it as deployer.
     expect_error(conn, 'EXEC dbo.sp_sales_report NULL, \'20261116\';', 54201)
     expect_error(conn, "EXEC dbo.sp_sales_report '20261117','20261116';", 54202)
     passed('sales report date validation')
@@ -135,6 +143,9 @@ def check_b(conn, name, server):
                                    orders=[], products=[], recent_numbers=[])
 
         html = page(items)
+        if capture_dir:
+            capture_dir.mkdir(parents=True, exist_ok=True)
+            (capture_dir / 'payment.html').write_text(html, encoding='utf-8')
         assert '会员折扣率' in html and '会员折扣额' in html
         for item in items:
             assert f"{item['discount_rate']:.2%}" in html and f"¥{item['discount_amount']}" in html
@@ -405,6 +416,8 @@ def main():
     parser.add_argument('--verify-all', action='store_true', help='Also run the delivered A/B/C SQL verification entry')
     parser.add_argument('--concurrency', action='store_true', help='Run order completion versus inventory adjustment, six rounds')
     parser.add_argument('--concurrency-v2', action='store_true', help='Run week 13 order/receipt and competing purchases')
+    parser.add_argument('--capture-dir', type=Path, help='Save the actual cashier response for report screenshots')
+    parser.add_argument('--review-c', action='store_true', help='Rerun the delivered C business deadlock and ordered-lock experiments')
     args = parser.parse_args()
     if not __debug__:
         parser.error('Run without Python optimization so test assertions are enabled.')
@@ -426,12 +439,26 @@ def main():
         run_batches(conn, initial.replace(create, f'USE [{name}];\nGO\n', 1))
         for path in ('capture_baseline', 'run_migration', 'regression'):
             run_batches(conn, expand(f'sql/stage2/{path}.sql', name))
-        check_b(conn, name, args.sql_server)
+        check_b(conn, name, args.sql_server, args.capture_dir)
         if args.concurrency:
             check_concurrency(conn, cs, name)
         if args.concurrency_v2:
             from concurrency_v2 import check
             check(conn, cs, name)
+        if args.review_c:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location('c_business', ROOT / 'tests/stage3/c_concurrency/run_c_business_concurrency.py')
+            lab = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(lab)
+            def connect_lab():
+                connection = pyodbc.connect(cs, autocommit=True)
+                connection.timeout = 15
+                run(connection, f'USE [{name}]; SET LANGUAGE us_english; SET LOCK_TIMEOUT 10000; SET TRANSACTION ISOLATION LEVEL READ COMMITTED;')
+                return connection
+            for repeat in range(1, 4):
+                lab.experiment(connect_lab, ordered=False)
+                lab.experiment(connect_lab, ordered=True)
+                print('PASS B review of C business deadlock and ordered locks round', repeat)
         if args.verify_all:
             verification = expand('sql/stage3/verify_stage3.sql', name)
             # C's 28c includes 25c with an SQLCMD-local rollback mode.

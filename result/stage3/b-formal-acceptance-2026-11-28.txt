@@ -1,0 +1,415 @@
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]模块 'sp_create_product' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]模块 'sp_update_product_price' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]模块 'sp_set_product_bom' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]模块 'sp_set_combo_component' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]模块 'sp_create_promotion' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]模块 'sp_update_promotion_status' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]模块 'sp_add_promotion_product_rule' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]模块 'sp_update_promotion_product_rule' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]模块 'sp_create_member_level' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]模块 'sp_update_member_level' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]模块 'sp_update_member_level_status' 取决于缺少的对象 'dbo.sp_write_audit_log'。仍将创建此模块；但是，只有在该对象存在之后它才能成功运行。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: B seed orders
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]09d 完成：采购单 CLOSED 且收齐、关联建议 CLOSED、现有量回到安全线、RECEIPT 两条、审计齐备。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A1 重复手机号被拒
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A2 新手机号可建档、初始积分为 0 且带默认等级
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A3 负数价格被拒
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A4 正数价格可改且落库
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A5 促销结束早于开始被拒
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A6 合法促销可建且建档即未启用
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A7 重叠促销按 priority 取唯一最高优先级
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A8 视图与函数在同一时刻同价同促销 ID
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A9 无用料单品不能上架
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A10 有用料单品可以上架
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A11 子项无用料的套餐不能上架
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A12 单品 BOM 视图分支
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A13 套餐 BOM 视图分支（展开、缩放与跨子项合计）
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: pass=13 fail=0
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: invalid JSON is rejected
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: non-positive quantity is rejected
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: inactive product is rejected
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: active product without BOM is rejected
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: unpaid order cannot start production
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: payment amount mismatch is rejected
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: duplicate payment is rejected
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: customer without an active member level cannot pay
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: payment FK fault rolls back payment order and ledger
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: invalid state transition is rejected
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: item price snapshot survives product price change
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: combo order expands through B item snapshot, A BOM view, and C inventory lock
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: pickup makes ledger effective with snapshot FLOOR points and known threshold level change
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: delivery completion makes ledger effective
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: full pre-consume refund cancels order and refunds paid amount
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: pass=15 fail=0
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T1 E2E-01/04 三笔种子订单终态与成交价/促销快照
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T2 流水形状合规、三类迁移按单据去重 LOCK 3 / CONSUME 2 / RELEASE 1
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T3 库存永不为负，账本双向勾稽（锁定/现有量），流水引用约定成立
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T4 E2E-02/03 积分流水全部 EFFECTIVE，顾客积分与流水勾稽
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T5 E2E-06 建议已关闭且唯一、采购单 CLOSED 收齐、两张 RECEIPT 与建议量勾稽
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T6 敏感操作（收货/提交/审批/角色分配）审计齐备且字段完整
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T7 E2E-05 库存不足下单被拒（50000：可用库存不足）且订单/明细/流水零新增
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T8 E2E-05 对照 小数量下单成功并写入 LOCK 流水（锁定量按 BOM 用量增加）
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T9 制作完成抛错被拒（50000：现有量或锁定量小于待实扣量），整批回滚后订单/明细/流水/锁定量均回到测试前状态
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T10 建议 PENDING→（调整）→SUBMITTED→REJECTED，调整/建议调整/提交/驳回四类审计齐备
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T10b 值班经理审批被拒（229：EXECUTE 只授给 role_store_manager）
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T10c 对已提交建议的调整被拒（50000：仅可调整处于 PENDING 的建议）
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T11 E2E-06 下压→建议→提交→审批→两次收货 APPROVED→PARTIALLY_RECEIVED→CLOSED，收货后现有量增加且账实相符
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T12 E2E-07 取餐员可查取餐板、查不到含金额视图，厨师可查后厨队列，收银员不能调整库存（229）
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T12b 收银员不能直接修改商品价格、库存或顾客积分
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T12c 骑手不能确认分配给其他员工的配送单
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T13 已关闭采购单再收货被拒（50000：只允许对 APPROVED 或 PARTIALLY_RECEIVED 收货）
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: T14 值班经理不能调用角色分配过程（229：EXECUTE 只授给 role_store_manager）
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: pass=18 fail=0
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: baseline batch completed.
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]12: cust_app grants applied (4 customer procedures).
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]12: employee grants, cust_app, and role-sync signatures verified.
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: migration committed (v1.0 marker written; 11a/11b/11c/12).
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]=== regression: 13a master ===
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A1 UQ_Category_category_name 拒绝重复
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A2 UQ_Product_product_name 拒绝重复
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A3 UQ_Ingredient_name_unit 拒绝重复
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A4 UQ_MemberLevel_threshold_points 拒绝重复
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A5 UQ_MemberLevel_level_name 拒绝重复
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A6 期初 offset 与基线一致（3 位顾客）
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A7 EFFECTIVE 流水事实与基线一致（2 笔）
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A8 等级停用后成员等级置空
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A9 调门槛与加档都不回溯已有顾客
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A10 同窗两档价取高优先级
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: pass=10 fail=0
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]=== regression: 13b order baseline ===
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline SalesOrder
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline SalesOrderItem
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline Payment
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline Delivery
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline PointLedger
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT 13b baseline: pass=5 fail=0 total=5
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]=== regression: 13b order write contract ===
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT 13b write signatures: pass=8 fail=0 total=8
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]=== regression: 13c inventory security ===
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-1 Permission 58 / RolePermission 71 / 新增码集合一致
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-2 旧 46 码名称保真
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-3 旧 52 行保真
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-4 新增 19 行（context 7 / A 4 / B 6 / C 1）/ v1.1 新增 0 行
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-5 白名单 = Permission = RolePermission 码集合
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-6 71 对 role_* GRANT 与映射逐对相等
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-7 cust_app 仅四个顾客过程、无角色成员
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-8 cust_app 直调员工过程/基表均 229
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-9 身份上下文 51004 + test_cashier 三结果集正例
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-10 同建议单第二张采购单被唯一约束拒绝
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-11 库存非负、锁定/现有量双向勾稽
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-12 开放建议唯一、采购单恰好一条明细
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-13 三个角色同步过程各一条签名
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-14 C 域四视图 QUOTED_IDENTIFIER/ANSI_NULLS 均为 ON
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-15 员工角色查询仅店长可读、普通岗位 229
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: pass=15 fail=0
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: regression files=4 expected_pass=38 fail=0 (13a 10 + 13b 5 + 13b 8 + 13c 15)
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline SalesOrder
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline SalesOrderItem
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline Payment
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline Delivery
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline PointLedger
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT 13b baseline: pass=5 fail=0 total=5
+PASS 01 13b v1.0 baseline
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]20: InventoryAudit and SalesOrderItem discount columns created.
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]21c: sp_adjust_inventory upgraded and fn_replenishment_qty created.
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]22c: tr_Inventory_Audit created (set-based inventory audit).
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: 27 new_permission_codes=6 new_role_grants=7
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: stage3 migration committed (v1.1 marker written; 20/21b/21a/21c/22b/22c/27).
+PASS 02 formal v1.1 migration commits with 64 permissions and 78 role mappings
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]=== regression: 13a master ===
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A1 UQ_Category_category_name 拒绝重复
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A2 UQ_Product_product_name 拒绝重复
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A3 UQ_Ingredient_name_unit 拒绝重复
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A4 UQ_MemberLevel_threshold_points 拒绝重复
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A5 UQ_MemberLevel_level_name 拒绝重复
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A6 期初 offset 与基线一致（3 位顾客）
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A7 EFFECTIVE 流水事实与基线一致（2 笔）
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A8 等级停用后成员等级置空
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A9 调门槛与加档都不回溯已有顾客
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: A10 同窗两档价取高优先级
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: pass=10 fail=0
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]=== regression: 13b order baseline ===
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline SalesOrder
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline SalesOrderItem
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline Payment
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline Delivery
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 13b baseline PointLedger
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT 13b baseline: pass=5 fail=0 total=5
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]=== regression: 13b order write contract ===
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT 13b write signatures: pass=8 fail=0 total=8
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]=== regression: 13c inventory security ===
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-1 Permission 64 / RolePermission 78 / 新增码集合一致
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-2 旧 46 码名称保真
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-3 旧 52 行保真
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-4 新增 19 行（context 7 / A 4 / B 6 / C 1）/ v1.1 新增 7 行
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-5 白名单 = Permission = RolePermission 码集合
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-6 78 对 role_* GRANT 与映射逐对相等
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-7 cust_app 仅四个顾客过程、无角色成员
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-8 cust_app 直调员工过程/基表均 229
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-9 身份上下文 51004 + test_cashier 三结果集正例
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-10 同建议单第二张采购单被唯一约束拒绝
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-11 库存非负、锁定/现有量双向勾稽
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-12 开放建议唯一、采购单恰好一条明细
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-13 三个角色同步过程各一条签名
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-14 C 域四视图 QUOTED_IDENTIFIER/ANSI_NULLS 均为 ON
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS: 13c-15 员工角色查询仅店长可读、普通岗位 229
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: pass=15 fail=0
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: regression files=4 expected_pass=38 fail=0 (13a 10 + 13b 5 + 13b 8 + 13c 15)
+PASS 03 formal v1.1 passes all 38 legacy SQL checks including versioned permissions
+PASS B permissions test_store_manager report/view/discount/update (1, 1, 1, 0)
+PASS B permissions test_cashier report/view/discount/update (0, 0, 0, 0)
+PASS B permissions test_chef report/view/discount/update (0, 0, 0, 0)
+PASS B permissions test_packer report/view/discount/update (0, 0, 0, 0)
+PASS B permissions test_rider report/view/discount/update (0, 0, 0, 0)
+PASS B permissions test_shift_manager report/view/discount/update (0, 0, 0, 0)
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b sales report date guard 54201
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b sales report date guard 54202
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b batch completion and settled net lines
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54210
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54211
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54212
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54213
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54214
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: stage3-b-regression suites=2 pass=8 fail=0
+PASS 04 pre-existing lines have zero discount snapshots
+PASS 05 13b v1.1 still rejects base column drift
+PASS 06 13b v1.1 rejects unapproved additional columns
+PASS 07 sales report date validation
+PASS 08 empty report returns zero summary and empty breakdown
+PASS 09 both order paths persist same discount; cents and net total reconcile
+PASS v1.1 payment SQL snapshots render in the cashier page, including legacy rows
+PASS 10 both order paths allocate a rounding residual beyond one line
+PASS 11 actual pickup and its completion trigger
+PASS 12 actual delivery after BOM edit consumes only reserved ingredients
+PASS 13 reject repeated completion and invalid transition
+PASS 14 set-based trigger accepts two valid updated rows
+PASS 15 one invalid row rejects whole batch with no half completion
+PASS 16 finish with no stock consumption is rejected
+PASS 17 terminal transition rejects empty lines or missing completion time
+PASS 18 a line without BOM or prior reservations needs no stock movement
+PASS 19 both terminal states count; midnight boundary and component exclusion
+PASS 20 reports agree with A summary on the same day
+PASS 21 daily cumulative net sales preserve day count and reconcile
+RESULT: pass=21 fail=0 total=21
+24b order=33 focus=None: [(None, 0, '/49/', '双人分享餐', 2), (49, 1, '/49/50/', '香辣鸡腿堡', 2), (49, 1, '/49/51/', '劲脆鸡腿堡', 2), (49, 1, '/49/52/', '可乐(中)', 4)]
+PASS 24b real one-level order uses snapshot quantities without multiplying twice
+24b order=33 focus=49: [(None, 0, '/49/', '双人分享餐', 2), (49, 1, '/49/50/', '双人分享餐', 2), (50, 2, '/49/50/53/', '香辣鸡腿堡', 6), (49, 1, '/49/51/', '劲脆鸡腿堡', 2), (49, 1, '/49/52/', '可乐(中)', 4)]
+24b order=33 focus=50: [(49, 1, '/49/50/', '双人分享餐', 2), (50, 2, '/49/50/53/', '香辣鸡腿堡', 6)]
+24b order=33 focus=53: [(50, 2, '/49/50/53/', '香辣鸡腿堡', 6)]
+24b order=-1 focus=None: []
+24b order=33 focus=-1: []
+PASS 24b two levels, root/middle/leaf, missing order and missing item
+PASS 24b fixture rolled back
+25b | commit pickup | 34 | READY_FOR_PICKUP | 2026-11-28 18:05:19 | 38.00 | 1.90 | 36.10 | 0 | 1
+25b | 1 | 106.000 | 104.000 | 8.000 | 6.000 | -2.000 | -2.000
+25b | 2 | 374.000 | 372.000 | 8.000 | 6.000 | -2.000 | -2.000
+25b | 3 | 4340.000 | 4280.000 | 210.000 | 150.000 | -60.000 | -60.000
+25b | 4 | 7420.000 | 7380.000 | 175.000 | 135.000 | -40.000 | -40.000
+25b | commit pickup | None | READY_FOR_PICKUP | 2026-11-28 18:05:19 | 0 | 4 | 0
+25b | PICKUP | 52401 | READY_FOR_PICKUP | 0
+25b | PICKUP | 52401 | PICKED_UP | 0
+25b | commit delivery | 35 | READY_FOR_DELIVERY | 2026-11-28 18:05:19 | 38.00 | 1.90 | 36.10 | 1 | 1
+25b | 1 | 104.000 | 102.000 | 8.000 | 6.000 | -2.000 | -2.000
+25b | 2 | 372.000 | 370.000 | 8.000 | 6.000 | -2.000 | -2.000
+25b | 3 | 4280.000 | 4220.000 | 210.000 | 150.000 | -60.000 | -60.000
+25b | 4 | 7380.000 | 7340.000 | 175.000 | 135.000 | -40.000 | -40.000
+25b | commit delivery | None | READY_FOR_DELIVERY | 2026-11-28 18:05:19 | 1 | 4 | 0
+25b | DELIVERY | 52401 | READY_FOR_DELIVERY | 0
+25b | DELIVERY | 52401 | COMPLETED | 0
+25b | forced rollback after writes | 36 | READY_FOR_DELIVERY | 2026-11-28 18:05:19 | 38.00 | 1.90 | 36.10 | 1 | 1
+25b | 1 | 102.000 | 100.000 | 8.000 | 6.000 | -2.000 | -2.000
+25b | 2 | 370.000 | 368.000 | 8.000 | 6.000 | -2.000 | -2.000
+25b | 3 | 4220.000 | 4160.000 | 210.000 | 150.000 | -60.000 | -60.000
+25b | 4 | 7340.000 | 7300.000 | 175.000 | 135.000 | -40.000 | -40.000
+25b | forced rollback after writes | 54222 | IN_PRODUCTION | None | 0 | 0 | 0
+25b | 1 | 102.000 | 102.000 | 8.000 | 8.000
+25b | 2 | 370.000 | 370.000 | 8.000 | 8.000
+25b | 3 | 4220.000 | 4220.000 | 210.000 | 210.000
+25b | 4 | 7340.000 | 7340.000 | 175.000 | 175.000
+25b | missing order | 52401 | IN_PRODUCTION | None | 0 | 0 | 0
+25b | 1 | 102.000 | 102.000 | 10.000 | 10.000
+25b | 2 | 370.000 | 370.000 | 10.000 | 10.000
+25b | 3 | 4220.000 | 4220.000 | 270.000 | 270.000
+25b | 4 | 7340.000 | 7340.000 | 215.000 | 215.000
+25b | no sellable lines | 52402 | IN_PRODUCTION | None | 0 | 0 | 0
+25b | 1 | 102.000 | 102.000 | 12.000 | 12.000
+25b | 2 | 370.000 | 370.000 | 12.000 | 12.000
+25b | 3 | 4220.000 | 4220.000 | 330.000 | 330.000
+25b | 4 | 7340.000 | 7340.000 | 255.000 | 255.000
+25b | no outstanding reservation | 50000 | IN_PRODUCTION | None | 0 | 0 | 0
+25b | 1 | 102.000 | 102.000 | 14.000 | 14.000
+25b | 2 | 370.000 | 370.000 | 14.000 | 14.000
+25b | 3 | 4220.000 | 4220.000 | 390.000 | 390.000
+25b | 4 | 7340.000 | 7340.000 | 295.000 | 295.000
+25b | insufficient locked quantity | 50000 | IN_PRODUCTION | None | 0 | 0 | 0
+25b | 1 | 102.000 | 102.000 | 16.000 | 16.000
+25b | 2 | 370.000 | 370.000 | 16.000 | 16.000
+25b | 3 | 4220.000 | 4220.000 | 450.000 | 450.000
+25b | 4 | 7340.000 | 7340.000 | 335.000 | 335.000
+25b | 25b PASS | 7 | 0
+26b environment Microsoft SQL Server 2025 (RTM) - 17.0.1000.7 (X64)
+	Oct 21 2025 12:05:57
+	Copyright (C) 2025 Microsoft Corporation
+	Standard Developer Edition (64-bit) on Windows 10 Home China 10.0 <X64> (Build 26300: ) (Hypervisor)
+ RCSI False
+26b P/Q 9 10 initial 10/8
+26b session/isolation (57, 2)
+26b session/isolation (66, 2)
+26b session/isolation (67, 2)
+26b A1 finish held 41 P 8.000
+26b B1 receipt waiting (66, 57, 'LCK_M_U', 'KEY: 9:72057594048806912 (eeaf10979ec2)')
+PASS 26b receipt/order 1 commit P 13.000 locked 0.000 order READY_FOR_PICKUP purchase CLOSED; trancount 0
+26b session/isolation (57, 2)
+26b session/isolation (66, 2)
+26b session/isolation (67, 2)
+26b A1 finish held 42 P 8.000
+26b B1 receipt waiting (66, 57, 'LCK_M_U', 'KEY: 9:72057594048806912 (5cd3004a5da8)')
+PASS 26b receipt/order 2 commit P 13.000 locked 0.000 order READY_FOR_PICKUP purchase CLOSED; trancount 0
+26b session/isolation (57, 2)
+26b session/isolation (66, 2)
+26b session/isolation (67, 2)
+26b A1 finish held 43 P 8.000
+26b B1 receipt waiting (66, 57, 'LCK_M_U', 'KEY: 9:72057594048806912 (38892bf5928b)')
+PASS 26b receipt/order 3 commit P 13.000 locked 0.000 order READY_FOR_PICKUP purchase CLOSED; trancount 0
+26b session/isolation (57, 2)
+26b session/isolation (66, 2)
+26b session/isolation (67, 2)
+26b A1 finish held 44 P 8.000
+26b B1 receipt waiting (66, 57, 'LCK_M_U', 'KEY: 9:72057594048806912 (61b7a31bf3be)')
+PASS 26b receipt/order 1 rollback P 15.000 locked 2.000 order IN_PRODUCTION purchase CLOSED; trancount 0
+26b session/isolation (57, 2)
+26b session/isolation (66, 2)
+26b session/isolation (67, 2)
+26b A1 finish held 45 P 8.000
+26b B1 receipt waiting (66, 57, 'LCK_M_U', 'KEY: 9:72057594048806912 (8af53b2851e1)')
+PASS 26b receipt/order 2 rollback P 15.000 locked 2.000 order IN_PRODUCTION purchase CLOSED; trancount 0
+26b session/isolation (57, 2)
+26b session/isolation (66, 2)
+26b session/isolation (67, 2)
+26b A1 finish held 46 P 8.000
+26b B1 receipt waiting (66, 57, 'LCK_M_U', 'KEY: 9:72057594048806912 (d3cbb3c630d4)')
+PASS 26b receipt/order 3 rollback P 15.000 locked 2.000 order IN_PRODUCTION purchase CLOSED; trancount 0
+26b buyer starts 67 B26-9e85fded02e343aeb52825f18f415d7b
+26b buyer starts 66 B26-5399f55773ec4161b1e99896d3992c0a
+26b buyer ends 67 B26-9e85fded02e343aeb52825f18f415d7b success trancount 0
+26b buyer ends 66 B26-5399f55773ec4161b1e99896d3992c0a insufficient stock trancount 0
+PASS 26b competing P x 6 1 P=4 locked=0; one full order, no failed order header or orphan lines/locks [(48, 'B26-9e85fded02e343aeb52825f18f415d7b', 'READY_FOR_PICKUP')]
+26b buyer starts 67 B26-43a6ceb6718240939a9c99a3b638979c
+26b buyer starts 66 B26-7909d1f5c88f47bbb4744b077739f446
+26b buyer ends 66 B26-7909d1f5c88f47bbb4744b077739f446 success trancount 0
+26b buyer ends 67 B26-43a6ceb6718240939a9c99a3b638979c insufficient stock trancount 0
+PASS 26b competing P x 6 2 P=4 locked=0; one full order, no failed order header or orphan lines/locks [(49, 'B26-7909d1f5c88f47bbb4744b077739f446', 'READY_FOR_PICKUP')]
+26b buyer starts 67 B26-81ee0b88f30a4d2a81f281e3a5078bff
+26b buyer starts 66 B26-3930b80aef0e439b9dfeaad5e1665f56
+26b buyer ends 66 B26-3930b80aef0e439b9dfeaad5e1665f56 success trancount 0
+26b buyer ends 67 B26-81ee0b88f30a4d2a81f281e3a5078bff insufficient stock trancount 0
+PASS 26b competing P x 6 3 P=4 locked=0; one full order, no failed order header or orphan lines/locks [(51, 'B26-3930b80aef0e439b9dfeaad5e1665f56', 'READY_FOR_PICKUP')]
+RESULT: 26b business concurrency pass=9 fail=0
+reverse P/Q 19 20 observer/order/receipt SPIDs [66, 67, 68]
+lock wait (67, 68, 'LCK_M_S', 'KEY: 9:72057594048872448 (2bf8186ba30a)')
+receipt deadlock victim: ('40001', '[40001] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Transaction (Process ID 68) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction. (1205) (SQLExecDirectW)')
+ingredient=19 order=53 purchase=11 (Decimal('8.000'), Decimal('0.000')) READY_FOR_PICKUP ('APPROVED', Decimal('0.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000'))] [(Decimal('-2.000'), Decimal('-2.000'))]
+ingredient=20 order=54 purchase=12 (Decimal('6.000'), Decimal('0.000')) READY_FOR_PICKUP ('APPROVED', Decimal('0.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000'))] [(Decimal('-2.000'), Decimal('-2.000'))]
+transactions open: 0/0/0
+ordered P/Q 21 22 observer/order/receipt SPIDs [66, 67, 68]
+lock wait (68, 67, 'LCK_M_U', 'KEY: 9:72057594048806912 (95272f5d4ae4)')
+ingredient=21 order=55 purchase=13 (Decimal('13.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+ingredient=22 order=56 purchase=14 (Decimal('11.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+transactions open: 0/0/0
+PASS B review of C business deadlock and ordered locks round 1
+reverse P/Q 23 24 observer/order/receipt SPIDs [66, 67, 68]
+lock wait (67, 68, 'LCK_M_S', 'KEY: 9:72057594048872448 (356a75773004)')
+receipt deadlock victim: ('40001', '[40001] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Transaction (Process ID 68) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction. (1205) (SQLExecDirectW)')
+ingredient=23 order=57 purchase=15 (Decimal('8.000'), Decimal('0.000')) READY_FOR_PICKUP ('APPROVED', Decimal('0.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000'))] [(Decimal('-2.000'), Decimal('-2.000'))]
+ingredient=24 order=58 purchase=16 (Decimal('6.000'), Decimal('0.000')) READY_FOR_PICKUP ('APPROVED', Decimal('0.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000'))] [(Decimal('-2.000'), Decimal('-2.000'))]
+transactions open: 0/0/0
+ordered P/Q 25 26 observer/order/receipt SPIDs [66, 67, 68]
+lock wait (68, 67, 'LCK_M_U', 'KEY: 9:72057594048806912 (efef69fe16c9)')
+ingredient=25 order=59 purchase=17 (Decimal('13.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+ingredient=26 order=60 purchase=18 (Decimal('11.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+transactions open: 0/0/0
+PASS B review of C business deadlock and ordered locks round 2
+reverse P/Q 27 28 observer/order/receipt SPIDs [66, 67, 68]
+lock wait (67, 68, 'LCK_M_S', 'KEY: 9:72057594048872448 (e08cc5aea451)')
+receipt deadlock victim: ('40001', '[40001] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Transaction (Process ID 68) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction. (1205) (SQLExecDirectW)')
+ingredient=27 order=61 purchase=19 (Decimal('8.000'), Decimal('0.000')) READY_FOR_PICKUP ('APPROVED', Decimal('0.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000'))] [(Decimal('-2.000'), Decimal('-2.000'))]
+ingredient=28 order=62 purchase=20 (Decimal('6.000'), Decimal('0.000')) READY_FOR_PICKUP ('APPROVED', Decimal('0.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000'))] [(Decimal('-2.000'), Decimal('-2.000'))]
+transactions open: 0/0/0
+ordered P/Q 29 30 observer/order/receipt SPIDs [66, 67, 68]
+lock wait (68, 67, 'LCK_M_U', 'KEY: 9:72057594048806912 (60f7da727bb5)')
+ingredient=29 order=63 purchase=21 (Decimal('13.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+ingredient=30 order=64 purchase=22 (Decimal('11.000'), Decimal('0.000')) READY_FOR_PICKUP ('CLOSED', Decimal('5.000')) [('CONSUME', Decimal('-2.000'), Decimal('-2.000')), ('RECEIPT', Decimal('5.000'), Decimal('0.000'))] [(Decimal('-2.000'), Decimal('-2.000')), (Decimal('5.000'), Decimal('0.000'))]
+transactions open: 0/0/0
+PASS B review of C business deadlock and ordered locks round 3
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: a-programmability discount pass=27 fail=0 total=27
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: a-programmability sales-summary pass=15 fail=0 total=15
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: a-programmability windows pass=10 fail=0 total=10
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: stage3-a-regression suites=3 pass=52 fail=0
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b sales report date guard 54201
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b sales report date guard 54202
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b batch completion and settled net lines
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54210
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54211
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54212
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54213
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]PASS 28b completion trigger guard 54214
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: stage3-b-regression suites=2 pass=8 fail=0
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]=== c-programmability: schema v1.1 ===
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: c-programmability schema pass=14 fail=0 total=14
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]=== c-programmability: fn_replenishment_qty ===
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: c-programmability replenishment pass=10 fail=0 total=10
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]=== c-programmability: sp_adjust_inventory ===
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: c-programmability adjust_inventory pass=15 fail=0 total=15
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: c-programmability files=3 failed=0
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]=== c-triggers: InventoryAudit ===
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]已将数据库上下文更改为 "KFC_B_STAGE3_0d717e72191240c4bc6b009d912a2c2b"。
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: c-triggers inventory_audit pass=10 fail=0 total=10
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: c-triggers files=1 failed=0
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: c-transaction replenishment mode=rollback pass=14 fail=0 total=14
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: stage3-c-regression suites=5 pass=63 fail=0
+[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]RESULT: stage3-regression suites=10 pass=123 fail=0 (28a 52 + 28b 8 + 28c 63)
+PASS combined A/B/C verification completed with no open transaction
+PASS isolated database removed
