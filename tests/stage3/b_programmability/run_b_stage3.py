@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / 'tests/stage2/orders'))
 from check_migration import as_user, expand, expect_error, run, run_batches
 
 
-def check_b(conn, name, server, capture_dir=None):
+def check_b(conn, name, server):
     count = 0
 
     def passed(label):
@@ -143,9 +143,6 @@ def check_b(conn, name, server, capture_dir=None):
                                    orders=[], products=[], recent_numbers=[])
 
         html = page(items)
-        if capture_dir:
-            capture_dir.mkdir(parents=True, exist_ok=True)
-            (capture_dir / 'payment.html').write_text(html, encoding='utf-8')
         assert '会员折扣率' in html and '会员折扣额' in html
         for item in items:
             assert f"{item['discount_rate']:.2%}" in html and f"¥{item['discount_amount']}" in html
@@ -416,7 +413,6 @@ def main():
     parser.add_argument('--verify-all', action='store_true', help='Also run the delivered A/B/C SQL verification entry')
     parser.add_argument('--concurrency', action='store_true', help='Run order completion versus inventory adjustment, six rounds')
     parser.add_argument('--concurrency-v2', action='store_true', help='Run week 13 order/receipt and competing purchases')
-    parser.add_argument('--capture-dir', type=Path, help='Save the actual cashier response for report screenshots')
     parser.add_argument('--review-c', action='store_true', help='Rerun the delivered C business deadlock and ordered-lock experiments')
     args = parser.parse_args()
     if not __debug__:
@@ -439,7 +435,7 @@ def main():
         run_batches(conn, initial.replace(create, f'USE [{name}];\nGO\n', 1))
         for path in ('capture_baseline', 'run_migration', 'regression'):
             run_batches(conn, expand(f'sql/stage2/{path}.sql', name))
-        check_b(conn, name, args.sql_server, args.capture_dir)
+        check_b(conn, name, args.sql_server)
         if args.concurrency:
             check_concurrency(conn, cs, name)
         if args.concurrency_v2:
